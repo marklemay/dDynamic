@@ -1,0 +1,19 @@
+
+
+data boool : * {
+  | ttrue  : boool
+  | flasle : boool
+  | maybe  : boool -> boool
+};
+
+data wierd : (A : *) -> A -> *  {
+  | wha    : wierd * *
+  | just   : (A : *) -> (a:A) -> wierd A a
+  };
+
+not : boool -> boool ;
+not x = case x {
+  | ttrue => flasle
+  | flasle => ttrue
+  | maybe b => maybe (not b)
+};

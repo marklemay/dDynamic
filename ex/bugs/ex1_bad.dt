@@ -1,0 +1,10 @@
+
+
+data boool : * {
+  | ttrue  : boool
+};
+
+not : boool -> boool ;
+not arg = case arg {
+  | ttrue => ttrue
+};

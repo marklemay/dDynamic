@@ -1,0 +1,12 @@
+data Eq : (A : *) -> A -> A -> * {
+  | refl : (A : *) -> (x : A) -> Eq A x x
+} ;
+
+ind1 : (A : *) -> (x : A) -> (y : A) -> (Eq A x y) -> (P : A -> *) -> P x -> P y ;
+ind1 A x y e =
+  case e <_ : Eq A' x' y' => (P : A' -> *) -> P x' -> P y' > {
+    | refl A'' a => \ P => \ pa => pa
+  } ;
+
+ind : (A : *) -> (x : A) -> (P : A -> *) -> P x -> (y : A) -> (Eq A x y) -> P y ;
+ind A x P f y e = ind1 A x y e P f;

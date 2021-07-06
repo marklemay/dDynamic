@@ -1,0 +1,36 @@
+
+
+data Unit : * {
+  | tt  : Unit
+};
+
+data Bool : * {
+  | true  : Bool
+  | false : Bool
+};
+
+data Nat : * {
+  | Z : Nat
+  | S : Nat -> Nat
+};
+
+
+data Vec : * -> Nat -> * {
+  | Nil  : (A : *) -> Vec A 0
+  | Cons : (A : *) -> A -> (n : Nat) -> Vec A n -> Vec A (S n)
+};
+
+head : (A : *) -> (n : Nat) -> Vec A (S n) -> A ;
+head A n v = 
+  Case v < _ : Vec A' n' => 
+    Case n' {
+      | Z -> Unit
+      | S _ -> A'
+    }
+  >{
+   | Nil _ -> tt
+   | Cons _ a _ _ -> a
+   } ;
+
+okFun : Nat -> Bool ;
+okFun x = head Bool x (rep Bool true (add x 1)) ;
