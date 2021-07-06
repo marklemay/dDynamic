@@ -42,15 +42,7 @@ tyInfer (TCon tCName) = do
   targs <- lookupTCName tCName
   ty <- tellAsFun targs (\ () -> pure TyU)
   pure (TCon tCName, ty)
-
--- tyInfer (Fun (An (Just (argTy, bndBodTy))) bndbndbod) = do
---   let fullty = Pi argTy bndBodTy
---   fullty' <- isTy fullty
---   ((selfName,argName), bod) <- unbind bndbndbod
   
---   (bod, bodTy) <- extendCtx selfName fullty' $ extendCtx argName argTy $ tyCheck bod $ substBind bndBodTy (V argName) 
-
---   pure (Fun (An (Just (argTy, bndBodTy))) bndbndbod, fullty') -- TODO: could probably pass around normalizations slightly better
 tyInfer (f `App` a) = setRegionFrom f $ do
   (f', fty) <- tyInfer f -- implies that tyInfer should return WHNF
   case erasePos fty of -- TODO only needs to erase the positions up to head

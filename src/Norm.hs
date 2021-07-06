@@ -149,8 +149,3 @@ safeEval :: (MonadError String m, DefnCtx ctx, MonadReader ctx m, Fresh m)
   => Exp -> m Exp
 safeEval e@(Fun _) = safeWhnf e
 safeEval e = whnf' safeEval e
-
-
-
--- no bug, good test
--- esafewhnf = vflde $ safeWhnf $ (lam  (s2n "_") $ n 0) `App`  V (s2n "x") 

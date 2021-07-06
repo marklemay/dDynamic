@@ -340,20 +340,3 @@ e1 = loadFile "ex1_bad.dt"
 
 
 e2 = loadSurfaceFile "examples/motive.dt"
-
-
--- ee = runTcMonad stdlib $ cbv $ V add `App` n 2 `App` n 2 
-
--- :l examples/motive.dt
--- :l examples/motive1.dt
--- :l examples/motive2.dt
--- :ls examples/motive.dt
--- :ls examples/motive1.dt
--- :ls examples/motive2.dt
-
--- :l examples/bugs.dt
--- append Nat 2 [1,2]<Nat> 3 [7,8,9]<Nat>
--- revapp Nat 2 [1,2]<Nat> 3 [7,8,9]<Nat>
-
--- append Nat 0 []<Nat> 0 []<Nat> 
--- I must be beiing carless with a cast somewhere?
