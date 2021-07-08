@@ -1,5 +1,6 @@
 # dDynamic
 [![Haskell CI](https://github.com/marklemay/dDynamic/actions/workflows/haskell.yml/badge.svg)](https://github.com/marklemay/dDynamic/actions/workflows/haskell.yml)
+
 a minimal dependently typed langugage were deffintional equality can be resolved dynamically at runtime.
 
 ## REPL
