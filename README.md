@@ -18,7 +18,7 @@ supports commands for
 
 for example
 ```
-dt-surface> :ls examples/ex1.dt
+dt-surface> :ls ex/ex1.dt
 parsed
 typechecked
 loaded
