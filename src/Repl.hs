@@ -227,11 +227,11 @@ repl' m = do
           ) 
         mod
         (Just $ SourceRange (Just s) (SourcePos "" 0 0) (endPos "" s)) of
-        Right e @ (C.tyInf -> Just ty) -> do
+        Right e@(C.tyInf -> Just ty) -> do
           -- putStrLn $ "elaborated to, " ++ show e
           putStrLn $ " : " ++ show (C.e ty)
           
-        Right e @ (C.tyInf -> Nothing) -> do
+        Right e@(C.tyInf -> Nothing) -> do
           putStrLn $ "elaborated to , " ++ show e
           putStrLn "could not infer the type"
 
@@ -295,10 +295,10 @@ repl' m = do
           ) 
         mod
         (Just $ SourceRange (Just s) (SourcePos "" 0 0) (endPos "" s)) of
-        Right (e @ (C.tyInf -> Just ty)) -> do --TODO eval the ty for presentation!
+        Right (e@(C.tyInf -> Just ty)) -> do --TODO eval the ty for presentation!
           -- putStrLn $ "elaborated to, " ++ show e
           putStrLn $ " : " ++ show (C.e ty)
-        Right (e @ (C.tyInf -> Nothing)) -> do
+        Right (e@(C.tyInf -> Nothing)) -> do
           putStrLn $ "elaborated to , " ++ show e
           putStrLn "could not infer the type"
 
