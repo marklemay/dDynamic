@@ -4,7 +4,7 @@
 a minimal dependently typed langugage were deffintional equality can be resolved dynamically at runtime.
 
 The project is tested in the following environments:
-- GHC 9.0.1 and cabal 3.4.0.0
+- GHC 8.10.4 and cabal 3.4.0.0
 
 ## REPL
 
