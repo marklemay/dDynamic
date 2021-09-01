@@ -31,6 +31,9 @@ import Control.Monad.Except (catchError, MonadError(throwError))
 import Control.Monad (guard) -- TODO: need a version with string error
 import Control.Monad.Reader
 
+-- for command line features
+import System.Console.Haskeline
+
 import System.IO
 
 import Debug.Trace
