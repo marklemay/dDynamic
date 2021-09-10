@@ -163,7 +163,7 @@ setREPLState :: ReplState -> InputT IO (Maybe ReplState)
 setREPLState = return . return
 
 -- action to execute when REPL load a file path with cast language
-evalFilePath :: REPLEval string
+evalFilePath :: REPLEval FilePath 
 evalFilePath curState path =  do
   res <- lift $ loadFile path
   case res of
@@ -186,7 +186,7 @@ evalFilePath curState path =  do
 
 
 -- action to execute when REPL load a file with surface language
-evalSurfaceFilePath :: REPLEval string
+evalSurfaceFilePath :: REPLEval FilePath 
 evalSurfaceFilePath curState path =  do
   res <- lift $ loadSurfaceFile path
   case res of
