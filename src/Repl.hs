@@ -29,6 +29,7 @@ import Unbound.Generics.LocallyNameless.Internal.Fold (foldMapOf, toListOf)
 
 import Control.Monad.Except (catchError, MonadError(throwError))
 import Control.Monad (guard) -- TODO: need a version with string error
+import qualified Data.Foldable
 import Control.Monad.Reader
 
 -- for command line features
@@ -163,7 +164,7 @@ setREPLState :: ReplState -> InputT IO (Maybe ReplState)
 setREPLState = return . return
 
 -- action to execute when REPL load a file path with cast language
-evalCastFilePath :: REPLEval FilePath 
+evalCastFilePath :: REPLEval FilePath
 evalCastFilePath curState path =  do
   res <- lift $ loadFile path
   case res of
@@ -186,7 +187,7 @@ evalCastFilePath curState path =  do
 
 
 -- action to execute when REPL load a file with surface language
-evalSurfaceFilePath :: REPLEval FilePath 
+evalSurfaceFilePath :: REPLEval FilePath
 evalSurfaceFilePath curState path =  do
   res <- lift $ loadSurfaceFile path
   case res of
@@ -344,7 +345,7 @@ evalREPLCom curState inpStr =
     (Right (LoadSurface path,_,""), _) -> evalSurfaceFilePath curState path
 
     -- get type info
-    (Right (TyInf exp,_,""), Surface (ddefs, trmdefs))-> 
+    (Right (TyInf exp,_,""), Surface (ddefs, trmdefs))->
       getSurfaceExpTypeInfo curState (inpStr, exp, ddefs, trmdefs)
 
     (Right (TyInf exp,_,""), Cast (ddefs, trmdefs)) ->
@@ -355,7 +356,7 @@ evalREPLCom curState inpStr =
       evalSurfaceExp curState (exp, ddefs, trmdefs)
 
     (Right (Eval exp,_,""), Cast (ddefs, trmdefs))->
-      evalCastExp curState (inpStr, exp, ddefs, trmdefs) 
+      evalCastExp curState (inpStr, exp, ddefs, trmdefs)
 
     -- get all info
     (Right (AllInfo exp,_,""), Surface (ddefs, trmdefs)) ->
@@ -373,16 +374,14 @@ evalREPLCom curState inpStr =
 
 repl :: IO ()
 repl = runInputT defaultSettings (loop NothingLoaded)
-  where 
-    loop curState = do 
+  where
+    loop curState = do
       input <- getInputLine "dt> "
-      case input of 
+      case input of
         Nothing -> return ()
         Just inputStr -> do
           res <- evalREPLCom curState inputStr
-          case res of 
-            Nothing -> return ()
-            Just newState -> loop newState
+          Data.Foldable.forM_ res loop
 
 
 -- TODO
@@ -392,6 +391,7 @@ repl = runInputT defaultSettings (loop NothingLoaded)
 -- Some other repls for refference
 -- https://github.com/diku-dk/futhark/blob/ee780c984227ed59548a16fa6ab6d8b52348a7a4/src/Futhark/CLI/REPL.hs
 
+e0 :: IO (ReplRes (Map TCName C.DataDef, Map C.Var C.Term))
 e0 = loadFile "examples/ex0.dt"
 
 e = loadFile "examples/ex1.dt"
