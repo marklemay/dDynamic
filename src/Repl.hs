@@ -286,22 +286,22 @@ allInfoCastExp curState (inpStr, exp, ddefs, trmdefs) = do
   let exp' = C.undermodule exp mod
 
   case C.runC (do
-      e'' <- C.elabInf exp' Map.empty Map.empty
-      C.cbvCheck e''
+      exp'' <- C.elabInf exp' Map.empty Map.empty
+      C.cbvCheck exp''
       )
     mod
-    (Just $ SourceRange (Just s) (SourcePos "" 0 0) (endPos "" inpStr)) of
-      Right e -> do
-        outputStrLn $ show $ C.e e
-      Left e -> do
-        outputStrLn $ C.prettyErr e
+    (Just $ SourceRange (Just inpStr) (SourcePos "" 0 0) (endPos "" inpStr)) of
+      Right exp -> do
+        outputStrLn $ show $ C.e exp
+      Left exp -> do
+        outputStrLn $ C.prettyErr exp
 
   case C.runC (do
-      e'' <- C.elabInf e' Map.empty Map.empty
-      C.whnfann e''
+      exp'' <- C.elabInf exp' Map.empty Map.empty
+      C.whnfann exp''
       )
     mod
-    (Just $ SourceRange (Just s) (SourcePos "" 0 0) (endPos "" s)) of
+    (Just $ SourceRange (Just inpStr) (SourcePos "" 0 0) (endPos "" inpStr)) of
     Right e@(C.tyInf -> Just ty) -> do --TODO eval the ty for presentation!
 
       -- putStrLn $ "elaborated to, " ++ show e
