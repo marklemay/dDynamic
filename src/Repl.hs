@@ -151,12 +151,19 @@ data ReplState
   deriving Show
 
 
+-- type for a single evaluation in the REPL
+type REPLEval a = 
+  ReplState  -- state before eval
+  -> a  -- expression to eval
+  -> InputT IO (Maybe ReplState)  -- state after eval
+
+
 -- helper function to output an REPLState in the REPL functions
 setREPLState :: ReplState -> InputT IO (Maybe ReplState)
 setREPLState = return . return
 
 -- action to execute when REPL load a file path with cast language
-evalFilePath :: ReplState -> String -> InputT IO (Maybe ReplState)
+evalFilePath :: REPLEval string
 evalFilePath curState path =  do
   res <- lift $ loadFile path
   case res of
@@ -179,7 +186,7 @@ evalFilePath curState path =  do
 
 
 -- action to execute when REPL load a file with surface language
-evalSurfaceFilePath :: ReplState -> String -> InputT IO (Maybe ReplState)
+evalSurfaceFilePath :: REPLEval string
 evalSurfaceFilePath curState path =  do
   res <- lift $ loadSurfaceFile path
   case res of
@@ -201,6 +208,41 @@ evalSurfaceFilePath curState path =  do
       outputStrLn $ show res
       setREPLState curState
 
+
+-- get type info for a cast language expression in REPL
+getCastExpTypeInfo :: REPLEval (String, Exp, Map TCName DataDef, Map Var (Term, Ty) )
+getCastExpTypeInfo curState (expStr, exp, ddefs, trmdefs) = do
+  let exp' = undermodule exp ddefs
+  case runTcMonadS "" expStr (TyEnv Map.empty ddefs trmdefs) $ tyInfer exp' of
+    Right a -> outputStrLn $ show a
+    Left s -> outputStrLn s
+  setREPLState curState
+
+
+-- get type info for a surface language expression in REPL
+getSurfaceExpTypeInfo :: REPLEval (String, Exp, Map TCName C.DataDef, Map C.Var C.Term )
+getSurfaceExpTypeInfo curState (expStr, exp, ddefs, trmdefs) = do
+  let mod = C.makeMod ddefs trmdefs
+  let exp' = C.undermodule exp mod
+  case C.runC (do
+      e'' <- C.elabInf exp' Map.empty Map.empty
+      C.whnfann e''
+      )
+    mod
+    (Just $ SourceRange (Just expStr) (SourcePos "" 0 0) (endPos "" expStr)) of
+    Right e@(C.tyInf -> Just ty) -> do
+      -- putStrLn $ "elaborated to, " ++ show e
+      outputStrLn $ " : " ++ show (C.e ty)
+
+    Right e@(C.tyInf -> Nothing) -> do
+      outputStrLn $ "elaborated to , " ++ show e
+      outputStrLn "could not infer the type"
+
+    Left e -> do
+      outputStrLn $ C.prettyErr e
+    e -> do
+      outputStrLn $ "catchall? " ++ show e
+  setREPLState curState
 
 
 
@@ -268,8 +310,8 @@ evalREPLCom m s =
       -- case runTcMonadS "" s (TyEnv Map.empty  (dataCtx stdlib `Map.union` ddefs) (defCtx stdlib `Map.union` trmdefs)) $ tyInfer e' of
       case runTcMonadS "" s (TyEnv Map.empty ddefs trmdefs) $ tyInfer e' of
 
-        Right a -> putStrLn $ show a
-        Left s -> putStrLn s
+        Right a -> outputStrLn $ show a
+        Left s -> outputStrLn s
       repl' m
 
     (Right (TyInf e,_,""), Cast (ddefs, trmdefs)) -> do
