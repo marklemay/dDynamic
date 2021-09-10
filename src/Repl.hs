@@ -152,7 +152,7 @@ data ReplState
 
 
 -- type for a single evaluation in the REPL
-type REPLEval a = 
+type REPLEval a =
   ReplState  -- state before eval
   -> a  -- expression to eval
   -> InputT IO (Maybe ReplState)  -- state after eval
@@ -209,9 +209,9 @@ evalSurfaceFilePath curState path =  do
       setREPLState curState
 
 
--- get type info for a cast language expression in REPL
-getCastExpTypeInfo :: REPLEval (String, Exp, Map TCName DataDef, Map Var (Term, Ty) )
-getCastExpTypeInfo curState (expStr, exp, ddefs, trmdefs) = do
+-- get type info for a surface language expression in REPL
+getSurfaceExpTypeInfo :: REPLEval (String, Exp, Map TCName DataDef, Map Var (Term, Ty) )
+getSurfaceExpTypeInfo curState (expStr, exp, ddefs, trmdefs) = do
   let exp' = undermodule exp ddefs
   case runTcMonadS "" expStr (TyEnv Map.empty ddefs trmdefs) $ tyInfer exp' of
     Right a -> outputStrLn $ show a
@@ -219,9 +219,9 @@ getCastExpTypeInfo curState (expStr, exp, ddefs, trmdefs) = do
   setREPLState curState
 
 
--- get type info for a surface language expression in REPL
-getSurfaceExpTypeInfo :: REPLEval (String, Exp, Map TCName C.DataDef, Map C.Var C.Term )
-getSurfaceExpTypeInfo curState (expStr, exp, ddefs, trmdefs) = do
+-- get type info for a cast language expression in REPL
+getCastExpTypeInfo :: REPLEval (String, Exp, Map TCName C.DataDef, Map C.Var C.Term )
+getCastExpTypeInfo curState (expStr, exp, ddefs, trmdefs) = do
   let mod = C.makeMod ddefs trmdefs
   let exp' = C.undermodule exp mod
   case C.runC (do
@@ -243,6 +243,80 @@ getSurfaceExpTypeInfo curState (expStr, exp, ddefs, trmdefs) = do
     e -> do
       outputStrLn $ "catchall? " ++ show e
   setREPLState curState
+
+
+-- evaluate a cast language expression in REPL
+evalSurfaceExp :: REPLEval (Exp, Map TCName DataDef, Map Var (Term, Ty) )
+evalSurfaceExp curState (exp, ddefs, trmdefs) = do
+  let exp' = undermodule exp ddefs
+  let res = runTcMonad (TyEnv Map.empty  ddefs trmdefs) $ cbv exp
+  outputStrLn $ show res
+  setREPLState curState
+
+-- evaluate a surface language expression in REPL
+evalCastExp :: REPLEval (String, Exp, Map TCName C.DataDef, Map C.Var C.Term )
+evalCastExp curState (expStr, exp, ddefs, trmdefs) = do
+  let mod = C.makeMod ddefs trmdefs
+  let exp' = C.undermodule exp mod
+  case C.runC (do
+      e'' <- C.elabInf exp' Map.empty Map.empty
+      C.cbvCheck e''
+      )
+    mod
+    (Just $ SourceRange (Just expStr) (SourcePos "" 0 0) (endPos "" s)) of
+      Right e -> do
+        outputStrLn $ show $ C.e e
+      Left e -> do
+        outputStrLn $ C.prettyErr e
+  setREPLState curState
+
+
+-- get all info for a cast language expression in REPL
+allInfoSurfaceExp :: REPLEval (Exp, Map TCName DataDef, Map Var (Term, Ty) )
+allInfoSurfaceExp curState (exp, ddefs, trmdefs) = do
+  let exp' = undermodule exp ddefs
+  outputStrLn $ show $ runTcMonad (TyEnv Map.empty ddefs trmdefs) $ tyInfer exp'
+  outputStrLn $ show $ runTcMonad (TyEnv Map.empty ddefs trmdefs) $ cbv exp'
+  setREPLState curState
+
+-- get all info for a surface language expression in REPL
+allInfoCastExp :: REPLEval (String, Exp, Map TCName C.DataDef, Map C.Var C.Term )
+allInfoCastExp curState (expStr, exp, ddefs, trmdefs) = do
+  let mod = C.makeMod ddefs trmdefs
+  let exp' = C.undermodule exp mod
+
+  case C.runC (do
+      e'' <- C.elabInf exp' Map.empty Map.empty
+      C.cbvCheck e''
+      )
+    mod
+    (Just $ SourceRange (Just s) (SourcePos "" 0 0) (endPos "" expStr)) of
+      Right e -> do
+        outputStrLn $ show $ C.e e
+      Left e -> do
+        outputStrLn $ C.prettyErr e
+
+  case C.runC (do
+      e'' <- C.elabInf e' Map.empty Map.empty
+      C.whnfann e''
+      )
+    mod
+    (Just $ SourceRange (Just s) (SourcePos "" 0 0) (endPos "" s)) of
+    Right e@(C.tyInf -> Just ty) -> do --TODO eval the ty for presentation!
+
+      -- putStrLn $ "elaborated to, " ++ show e
+      outputStrLn $ " : " ++ show (C.e ty)
+    Right e@(C.tyInf -> Nothing) -> do
+      outputStrLn $ "elaborated to , " ++ show e
+      outputStrLn "could not infer the type"
+
+    Left e -> do
+      outputStrLn $ C.prettyErr e
+    e -> do
+      outputStrLn $ "catchall? " ++ show e
+  setREPLState curState
+
+
 
 
 
