@@ -385,16 +385,6 @@ repl = runInputT defaultSettings (loop NothingLoaded)
             Just newState -> loop newState
 
 
-
-
--- from https://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours/Building_a_REPL
-flushStr :: String -> IO ()
-flushStr str = putStr str >> hFlush stdout
-
-readPrompt :: String -> IO String
-readPrompt prompt = flushStr prompt >> getLine
-
-
 -- TODO
 -- cross instance up arrow competion
 -- https://github.com/judah/haskeline ?
