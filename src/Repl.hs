@@ -211,9 +211,9 @@ evalSurfaceFilePath curState path =  do
 
 -- get type info for a surface language expression in REPL
 getSurfaceExpTypeInfo :: REPLEval (String, Exp, Map TCName DataDef, Map Var (Term, Ty) )
-getSurfaceExpTypeInfo curState (expStr, exp, ddefs, trmdefs) = do
+getSurfaceExpTypeInfo curState (inpStr, exp, ddefs, trmdefs) = do
   let exp' = undermodule exp ddefs
-  case runTcMonadS "" expStr (TyEnv Map.empty ddefs trmdefs) $ tyInfer exp' of
+  case runTcMonadS "" inpStr (TyEnv Map.empty ddefs trmdefs) $ tyInfer exp' of
     Right a -> outputStrLn $ show a
     Left s -> outputStrLn s
   setREPLState curState
@@ -221,7 +221,7 @@ getSurfaceExpTypeInfo curState (expStr, exp, ddefs, trmdefs) = do
 
 -- get type info for a cast language expression in REPL
 getCastExpTypeInfo :: REPLEval (String, Exp, Map TCName C.DataDef, Map C.Var C.Term )
-getCastExpTypeInfo curState (expStr, exp, ddefs, trmdefs) = do
+getCastExpTypeInfo curState (inpStr, exp, ddefs, trmdefs) = do
   let mod = C.makeMod ddefs trmdefs
   let exp' = C.undermodule exp mod
   case C.runC (do
@@ -229,7 +229,7 @@ getCastExpTypeInfo curState (expStr, exp, ddefs, trmdefs) = do
       C.whnfann e''
       )
     mod
-    (Just $ SourceRange (Just expStr) (SourcePos "" 0 0) (endPos "" expStr)) of
+    (Just $ SourceRange (Just inpStr) (SourcePos "" 0 0) (endPos "" inpStr)) of
     Right e@(C.tyInf -> Just ty) -> do
       -- putStrLn $ "elaborated to, " ++ show e
       outputStrLn $ " : " ++ show (C.e ty)
@@ -255,7 +255,7 @@ evalSurfaceExp curState (exp, ddefs, trmdefs) = do
 
 -- evaluate a surface language expression in REPL
 evalCastExp :: REPLEval (String, Exp, Map TCName C.DataDef, Map C.Var C.Term )
-evalCastExp curState (expStr, exp, ddefs, trmdefs) = do
+evalCastExp curState (inpStr, exp, ddefs, trmdefs) = do
   let mod = C.makeMod ddefs trmdefs
   let exp' = C.undermodule exp mod
   case C.runC (do
@@ -263,7 +263,7 @@ evalCastExp curState (expStr, exp, ddefs, trmdefs) = do
       C.cbvCheck e''
       )
     mod
-    (Just $ SourceRange (Just expStr) (SourcePos "" 0 0) (endPos "" s)) of
+    (Just $ SourceRange (Just inpStr) (SourcePos "" 0 0) (endPos "" s)) of
       Right e -> do
         outputStrLn $ show $ C.e e
       Left e -> do
@@ -281,7 +281,7 @@ allInfoSurfaceExp curState (exp, ddefs, trmdefs) = do
 
 -- get all info for a surface language expression in REPL
 allInfoCastExp :: REPLEval (String, Exp, Map TCName C.DataDef, Map C.Var C.Term )
-allInfoCastExp curState (expStr, exp, ddefs, trmdefs) = do
+allInfoCastExp curState (inpStr, exp, ddefs, trmdefs) = do
   let mod = C.makeMod ddefs trmdefs
   let exp' = C.undermodule exp mod
 
@@ -290,7 +290,7 @@ allInfoCastExp curState (expStr, exp, ddefs, trmdefs) = do
       C.cbvCheck e''
       )
     mod
-    (Just $ SourceRange (Just s) (SourcePos "" 0 0) (endPos "" expStr)) of
+    (Just $ SourceRange (Just s) (SourcePos "" 0 0) (endPos "" inpStr)) of
       Right e -> do
         outputStrLn $ show $ C.e e
       Left e -> do
