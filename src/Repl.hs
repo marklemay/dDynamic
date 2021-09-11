@@ -250,7 +250,7 @@ getCastExpTypeInfo curState (inpStr, exp, ddefs, trmdefs) = do
 evalSurfaceExp :: REPLEval (Exp, Map TCName DataDef, Map Var (Term, Ty) )
 evalSurfaceExp curState (exp, ddefs, trmdefs) = do
   let exp' = undermodule exp ddefs
-  let res = runTcMonad (TyEnv Map.empty  ddefs trmdefs) $ cbv exp
+  let res = runTcMonad (TyEnv Map.empty  ddefs trmdefs) $ cbv exp'
   outputStrLn $ show res
   setREPLState curState
 
