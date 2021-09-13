@@ -90,7 +90,7 @@ toEnd = do
 untillEnd p = Parser $ \ s rest ->
   case runParse p s rest of
     Right (a,s,"") -> Right (a,s,"") 
-    Right (a,s @ (SourcePos path _ _),rest) -> let
+    Right (a,s@(SourcePos path _ _),rest) -> let
       Right ((),e,"") = runParse toEnd s rest -- depends on the completness of toEnd
       in Left ("incomplete parse", s, e)
     Left e -> Left e 

@@ -63,15 +63,15 @@ prettyRange (SourceRange (Just s) l r) = prettyRange' s l r
   ++ [prettyRangeloc l r]
 
 
-prettyRange' str s @ (SourcePos path col row) s' @ (SourcePos path' col' row')
+prettyRange' str s@(SourcePos path col row) s'@(SourcePos path' col' row')
    | path == path' && col==col' && row==row' =
       [lines'  str !! col -- TODO will have line encodeing issues
       ,replicate row ' '  ++ "^"]
-prettyRange' str s @ (SourcePos path col row) s' @ (SourcePos path' col' row')
+prettyRange' str s@(SourcePos path col row) s'@(SourcePos path' col' row')
    | path == path' && col==col' =
       [lines'  str !! col -- TODO will have line encodeing issues
       ,replicate row ' '  ++  replicate (row' - row) '^']
-prettyRange' str s @ (SourcePos path col row) s' @ (SourcePos path' col' row')
+prettyRange' str s@(SourcePos path col row) s'@(SourcePos path' col' row')
    | path == path' = 
      case slice col col' $ lines' str of
        start : (snoc -> (middle, last) ) -> [replicate row ' ' ++ drop row start]  ++ middle ++ [take row' last]

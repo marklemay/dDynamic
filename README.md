@@ -3,7 +3,11 @@
 
 a minimal dependently typed langugage were deffintional equality can be resolved dynamically at runtime.
 
+The project is tested in the following environments:
+- GHC 8.10.4 and cabal 3.4.0.0
+
 ## REPL
+
 To load the surface repl
 ```
 cabal new-run repl

@@ -36,7 +36,7 @@ fullShrink s ss = shrink
   shrink (Pi aTy (unsafeUnbind-> (a, bodTy))) = 
     [aTy, bodTy] -- does the problem persist with the binder removed?
     ++ [Pi aTy' $ bind a bodTy' | (aTy', bodTy') <- s (aTy, bodTy) ] -- shrink under the binder
-  shrink (Fun (bndBod@ (unsafeUnbind-> (_, bod)))) = 
+  shrink (Fun (bndBod@(unsafeUnbind-> (_, bod)))) = 
     -- [substsssBind bndBod TyU TyU] -- does the problem persist with the binder removed?
     [bod]
       ++ (Fun <$> underBinder shrink bndBod) -- shrink under the binder
