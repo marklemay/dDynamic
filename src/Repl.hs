@@ -29,7 +29,11 @@ import Unbound.Generics.LocallyNameless.Internal.Fold (foldMapOf, toListOf)
 
 import Control.Monad.Except (catchError, MonadError(throwError))
 import Control.Monad (guard) -- TODO: need a version with string error
+import qualified Data.Foldable
 import Control.Monad.Reader
+
+-- for command line features
+import System.Console.Haskeline
 
 import System.IO
 
@@ -73,15 +77,15 @@ loadFile path = do
     Right m@(ddefs,trmdefs) -> do
       putStrLn "parsed"
       -- TODO easier to debug if the entire std lib is loaded first, will give incorrect source ranges!
-      case C.elabmodule (TyEnv 
-        Map.empty 
+      case C.elabmodule (TyEnv
+        Map.empty
         ddefs
         trmdefs) $ Just $ SourceRange (Just s) (SourcePos path 0 0) (endPos path s) of
-        Right ((ddefs,trmdefs),_) ->  do 
+        Right ((ddefs,trmdefs),_) ->  do
           putStrLn "elaborated"
           -- putStrLn $ show m
           pure $ Ok (ddefs,trmdefs)
-        Left e ->  do 
+        Left e ->  do
 
           putStrLn ""
           putStrLn ""
@@ -102,29 +106,29 @@ loadSurfaceFile path = do
     Right m@(ddefs,trmdefs) -> do
       putStrLn "parsed"
       -- TODO easier to debug if the entire std lib is loaded first, will give incorrect source ranges!
-      case runTcMonadS path s (TyEnv 
-        Map.empty 
+      case runTcMonadS path s (TyEnv
+        Map.empty
         ddefs -- (dataCtx stdlib `Map.union` ddefs) 
         trmdefs -- (defCtx stdlib `Map.union` trmdefs) ) 
         ) envWf of
-        Right () ->  do 
+        Right () ->  do
           putStrLn "typechecked"
           -- putStrLn $ show m
           pure $ Ok (ddefs,trmdefs)
-        Left e ->  do 
+        Left e ->  do
           pure $ SurfaceTypeError e
     Left ls -> pure $ ParseError ls
 
 -- pmstd :: String ->  String -> Maybe ((Map TCName DataDef, Map Var (Term, Ty)), String)
 pmstd path s = prettyParse path s $ do
-  token modulep 
+  token modulep
   -- pure $ undermodule e (dataCtx stdlib)
 
 --TODO add more semantic info
 data ReplRes a
   = ParseError [String]
   | TypeError C.Err
-  | SurfaceTypeError String 
+  | SurfaceTypeError String
   -- TODO bad path
   | Ok a
   deriving Show
@@ -148,175 +152,236 @@ data ReplState
   deriving Show
 
 
--- TODO eat blank cmds
-repl' :: ReplState -> IO ()
-repl' m = do
-  flushStr "dt> "
-  s <- getLine -- TODO .. tab completion?
-  -- putStrLn s
+-- type for a single evaluation in the REPL
+type REPLEval a =
+  ReplState  -- state before eval
+  -> a  -- expression to eval
+  -> InputT IO (Maybe ReplState)  -- state after eval
+
+
+-- helper function to output an REPLState in the REPL functions
+setREPLState :: ReplState -> InputT IO (Maybe ReplState)
+setREPLState = return . return
+
+-- action to execute when REPL load a file path with cast language
+evalCastFilePath :: REPLEval FilePath
+evalCastFilePath curState path =  do
+  res <- lift $ loadFile path
+  case res of
+    Ok x -> do
+      outputStrLn "loaded"
+      setREPLState $ Cast x
+    ParseError ls -> do
+      outputStrLn "ParseError"
+      outputStrLn $ unlines ls
+      setREPLState curState
+
+    TypeError e -> do
+      outputStrLn "TypeError"
+      outputStrLn $ C.prettyErr e
+      setREPLState curState
+    _ -> do
+      outputStrLn "err"
+      outputStrLn $ show res
+      setREPLState curState
+
+
+-- action to execute when REPL load a file with surface language
+evalSurfaceFilePath :: REPLEval FilePath
+evalSurfaceFilePath curState path =  do
+  res <- lift $ loadSurfaceFile path
+  case res of
+    Ok x -> do
+      outputStrLn "loaded"
+      setREPLState $ Surface x
+    ParseError ls -> do
+      outputStrLn "ParseError"
+      outputStrLn $ unlines ls
+      setREPLState curState
+
+    SurfaceTypeError s -> do
+      outputStrLn "SurfaceTypeError"
+      outputStrLn s
+      setREPLState curState
+
+    _ -> do
+      outputStrLn "err"
+      outputStrLn $ show res
+      setREPLState curState
+
+
+-- get type info for a surface language expression in REPL
+getSurfaceExpTypeInfo :: REPLEval (String, Exp, Map TCName DataDef, Map Var (Term, Ty) )
+getSurfaceExpTypeInfo curState (inpStr, exp, ddefs, trmdefs) = do
+  let exp' = undermodule exp ddefs
+  case runTcMonadS "" inpStr (TyEnv Map.empty ddefs trmdefs) $ tyInfer exp' of
+    Right a -> outputStrLn $ show a
+    Left s -> outputStrLn s
+  setREPLState curState
+
+
+-- get type info for a cast language expression in REPL
+getCastExpTypeInfo :: REPLEval (String, Exp, Map TCName C.DataDef, Map C.Var C.Term )
+getCastExpTypeInfo curState (inpStr, exp, ddefs, trmdefs) = do
+  let mod = C.makeMod ddefs trmdefs
+  let exp' = C.undermodule exp mod
+  case C.runC (do
+      e'' <- C.elabInf exp' Map.empty Map.empty
+      C.whnfann e''
+      )
+    mod
+    (Just $ SourceRange (Just inpStr) (SourcePos "" 0 0) (endPos "" inpStr)) of
+    Right e@(C.tyInf -> Just ty) -> do
+      -- putStrLn $ "elaborated to, " ++ show e
+      outputStrLn $ " : " ++ show (C.e ty)
+
+    Right e@(C.tyInf -> Nothing) -> do
+      outputStrLn $ "elaborated to , " ++ show e
+      outputStrLn "could not infer the type"
+
+    Left e -> do
+      outputStrLn $ C.prettyErr e
+    e -> do
+      outputStrLn $ "catchall? " ++ show e
+  setREPLState curState
+
+
+-- evaluate a cast language expression in REPL
+evalSurfaceExp :: REPLEval (Exp, Map TCName DataDef, Map Var (Term, Ty) )
+evalSurfaceExp curState (exp, ddefs, trmdefs) = do
+  let exp' = undermodule exp ddefs
+  let res = runTcMonad (TyEnv Map.empty  ddefs trmdefs) $ cbv exp'
+  outputStrLn $ show res
+  setREPLState curState
+
+-- evaluate a surface language expression in REPL
+evalCastExp :: REPLEval (String, Exp, Map TCName C.DataDef, Map C.Var C.Term )
+evalCastExp curState (inpStr, exp, ddefs, trmdefs) = do
+  let mod = C.makeMod ddefs trmdefs
+  let exp' = C.undermodule exp mod
+  case C.runC (do
+      e'' <- C.elabInf exp' Map.empty Map.empty
+      C.cbvCheck e''
+      )
+    mod
+    (Just $ SourceRange (Just inpStr) (SourcePos "" 0 0) (endPos "" inpStr)) of
+      Right e -> do
+        outputStrLn $ show $ C.e e
+      Left e -> do
+        outputStrLn $ C.prettyErr e
+  setREPLState curState
+
+
+-- get all info for a cast language expression in REPL
+allInfoSurfaceExp :: REPLEval (Exp, Map TCName DataDef, Map Var (Term, Ty) )
+allInfoSurfaceExp curState (exp, ddefs, trmdefs) = do
+  let exp' = undermodule exp ddefs
+  outputStrLn $ show $ runTcMonad (TyEnv Map.empty ddefs trmdefs) $ tyInfer exp'
+  outputStrLn $ show $ runTcMonad (TyEnv Map.empty ddefs trmdefs) $ cbv exp'
+  setREPLState curState
+
+-- get all info for a surface language expression in REPL
+allInfoCastExp :: REPLEval (String, Exp, Map TCName C.DataDef, Map C.Var C.Term )
+allInfoCastExp curState (inpStr, exp, ddefs, trmdefs) = do
+  let mod = C.makeMod ddefs trmdefs
+  let exp' = C.undermodule exp mod
+
+  case C.runC (do
+      exp'' <- C.elabInf exp' Map.empty Map.empty
+      C.cbvCheck exp''
+      )
+    mod
+    (Just $ SourceRange (Just inpStr) (SourcePos "" 0 0) (endPos "" inpStr)) of
+      Right exp -> do
+        outputStrLn $ show $ C.e exp
+      Left exp -> do
+        outputStrLn $ C.prettyErr exp
+
+  case C.runC (do
+      exp'' <- C.elabInf exp' Map.empty Map.empty
+      C.whnfann exp''
+      )
+    mod
+    (Just $ SourceRange (Just inpStr) (SourcePos "" 0 0) (endPos "" inpStr)) of
+    Right e@(C.tyInf -> Just ty) -> do --TODO eval the ty for presentation!
+
+      -- putStrLn $ "elaborated to, " ++ show e
+      outputStrLn $ " : " ++ show (C.e ty)
+    Right e@(C.tyInf -> Nothing) -> do
+      outputStrLn $ "elaborated to , " ++ show e
+      outputStrLn "could not infer the type"
+
+    Left e -> do
+      outputStrLn $ C.prettyErr e
+    e -> do
+      outputStrLn $ "catchall? " ++ show e
+  setREPLState curState
+
+
+
+
+
+-- eval the input string and print out the output once
+-- If the output state is empty, that indicates termination of computation
+evalREPLCom :: ReplState -> String -> InputT IO (Maybe ReplState)
+evalREPLCom curState inpStr =
   case (parse (
     (do keyword ":ls"; path <- token $ some $ sat (/= '\n'); pure $ LoadSurface path) <|>
     (do keyword ":l"; path <- token $ some $ sat (/= '\n'); pure $ Load path) <|>
     (do keyword ":t"; e <- token exp;                       pure $ TyInf e  ) <|>
     (do keyword ":n"; e <- token exp;                       pure $ Eval e   ) <|>
     (do keyword ":q";                                       pure   Quit     ) <|>
-    (do e <- token  exp;                                    pure $ AllInfo e) 
-    ) s, m) of
-    (Right (Quit,_,_), _) -> flushStr "bye"
+    (do e <- token  exp;                                    pure $ AllInfo e)
+    ) inpStr, curState) of
 
-    (Right (Load path,_,""), _) -> do
-      res <- loadFile path
-      -- putStrLn $ show $ res
+    -- quite
+    (Right (Quit,_,_), _) -> do
+      outputStrLn "bye"
+      return Nothing
 
-      case res of
-        Ok x -> do
-          putStrLn "loaded"
-          -- putStrLn $ show x
-          repl' $ Cast x
-        ParseError ls -> do
-          putStrLn "ParseError"
-          putStrLn $ unlines ls
-          repl' m
+    -- load file
+    (Right (Load path,_,""), _) -> evalCastFilePath curState path
 
-        TypeError e -> do
-          putStrLn "TypeError"
-          putStrLn $ C.prettyErr e
-          repl' m
-        _ -> do
-          putStrLn "err"
-          putStrLn $ show res
-          repl' m
+    (Right (LoadSurface path,_,""), _) -> evalSurfaceFilePath curState path
 
+    -- get type info
+    (Right (TyInf exp,_,""), Surface (ddefs, trmdefs))->
+      getSurfaceExpTypeInfo curState (inpStr, exp, ddefs, trmdefs)
 
-    (Right (LoadSurface path,_,""), _) -> do
-      putStrLn path
-      res <- loadSurfaceFile path
-      case res of
-        Ok x -> do
-          putStrLn "loaded"
-          -- putStrLn $ show x
-          repl' $ Surface x
-        ParseError ls -> do
-          putStrLn "ParseError"
-          putStrLn $ unlines ls
-          repl' m
+    (Right (TyInf exp,_,""), Cast (ddefs, trmdefs)) ->
+      getCastExpTypeInfo curState (inpStr, exp, ddefs, trmdefs)
 
-        SurfaceTypeError s -> do
-          putStrLn "SurfaceTypeError"
-          putStrLn s
-          repl' m
-        _ -> do
-          putStrLn "err"
-          putStrLn $ show res
-          repl' m
-    (Right (TyInf e,_,""), Surface (ddefs, trmdefs))-> do
-      let e' = undermodule e ddefs
-      -- case runTcMonadS "" s (TyEnv Map.empty  (dataCtx stdlib `Map.union` ddefs) (defCtx stdlib `Map.union` trmdefs)) $ tyInfer e' of
-      case runTcMonadS "" s (TyEnv Map.empty ddefs trmdefs) $ tyInfer e' of
+    -- eval
+    (Right (Eval exp,_,""), Surface (ddefs, trmdefs))->
+      evalSurfaceExp curState (exp, ddefs, trmdefs)
 
-        Right a -> putStrLn $ show a
-        Left s -> putStrLn s
-      repl' m
+    (Right (Eval exp,_,""), Cast (ddefs, trmdefs))->
+      evalCastExp curState (inpStr, exp, ddefs, trmdefs)
 
-    (Right (TyInf e,_,""), Cast (ddefs, trmdefs)) -> do
-      let mod = C.makeMod ddefs trmdefs
-      let e' = C.undermodule e mod
-      case C.runC (do 
-          e'' <- C.elabInf e' Map.empty Map.empty
-          C.whnfann e''
-          ) 
-        mod
-        (Just $ SourceRange (Just s) (SourcePos "" 0 0) (endPos "" s)) of
-        Right e @ (C.tyInf -> Just ty) -> do
-          -- putStrLn $ "elaborated to, " ++ show e
-          putStrLn $ " : " ++ show (C.e ty)
-          
-        Right e @ (C.tyInf -> Nothing) -> do
-          putStrLn $ "elaborated to , " ++ show e
-          putStrLn "could not infer the type"
+    -- get all info
+    (Right (AllInfo exp,_,""), Surface (ddefs, trmdefs)) ->
+      allInfoSurfaceExp curState (exp, ddefs, trmdefs)
 
-        Left e -> do
-          putStrLn $ C.prettyErr e
-        e -> do
-          putStrLn $ "catchall? " ++ show e
-      repl' m
+    (Right (AllInfo exp,_,""), Cast (ddefs, trmdefs)) ->
+      allInfoCastExp curState (inpStr, exp, ddefs, trmdefs)
 
-    (Right (Eval e,_,""), Surface (ddefs, trmdefs))-> do
-      let e' = undermodule e ddefs
-      -- let res = runTcMonad (TyEnv Map.empty  (dataCtx stdlib `Map.union` ddefs) (defCtx stdlib `Map.union` trmdefs)) $ cbv e'
-      let res = runTcMonad (TyEnv Map.empty  ddefs trmdefs) $ cbv e'
-      putStrLn $ show res
-      repl' m
-
-
-    (Right (Eval e,_,""), Cast (ddefs, trmdefs))-> do
-      let mod = C.makeMod ddefs trmdefs
-      let e' = C.undermodule e mod
-      case C.runC (do 
-          e'' <- C.elabInf e' Map.empty Map.empty
-          C.cbvCheck e''
-          ) 
-        mod
-        (Just $ SourceRange (Just s) (SourcePos "" 0 0) (endPos "" s)) of
-          Right e -> do
-            putStrLn $ show $ C.e e
-          Left e -> do
-            putStrLn $ C.prettyErr e
-      repl' m
-
-    (Right (AllInfo e,_,""), Surface (ddefs, trmdefs)) -> do
-      -- let e' = undermodule e (dataCtx stdlib `Map.union` ddefs)
-      -- putStrLn $ show $ runTcMonad (TyEnv Map.empty  (dataCtx stdlib `Map.union` ddefs) (defCtx stdlib `Map.union` trmdefs)) $ tyInfer e'
-      -- putStrLn $ show $ runTcMonad (TyEnv Map.empty  (dataCtx stdlib `Map.union` ddefs) (defCtx stdlib `Map.union` trmdefs)) $ safeEval e'
-      let e' = undermodule e ddefs
-      putStrLn $ show $ runTcMonad (TyEnv Map.empty ddefs trmdefs) $ tyInfer e'
-      putStrLn $ show $ runTcMonad (TyEnv Map.empty ddefs trmdefs) $ cbv e'
-      repl' m
-
-    (Right (AllInfo e,_,""), Cast (ddefs, trmdefs)) -> do
-      
-      let mod = C.makeMod ddefs trmdefs
-      let e' = C.undermodule e mod
-
-      case C.runC (do 
-          e'' <- C.elabInf e' Map.empty Map.empty
-          C.cbvCheck e''
-          ) 
-        mod
-        (Just $ SourceRange (Just s) (SourcePos "" 0 0) (endPos "" s)) of
-          Right e -> do
-            putStrLn $ show $ C.e e
-          Left e -> do
-            putStrLn $ C.prettyErr e
-      
-      case C.runC (do 
-          e'' <- C.elabInf e' Map.empty Map.empty
-          C.whnfann e''
-          ) 
-        mod
-        (Just $ SourceRange (Just s) (SourcePos "" 0 0) (endPos "" s)) of
-        Right (e @ (C.tyInf -> Just ty)) -> do --TODO eval the ty for presentation!
-          -- putStrLn $ "elaborated to, " ++ show e
-          putStrLn $ " : " ++ show (C.e ty)
-        Right (e @ (C.tyInf -> Nothing)) -> do
-          putStrLn $ "elaborated to , " ++ show e
-          putStrLn "could not infer the type"
-
-        Left e -> do
-          putStrLn $ C.prettyErr e
-        e -> do
-          putStrLn $ "catchall? " ++ show e
-      repl' m
-
+    -- parse error
     (ee, _) -> do
-      putStrLn "unknown cmd"
-      print ee
-      repl' m
+      outputStrLn "unknown cmd"
+      outputStrLn $ show ee
+      setREPLState curState
 
 
-repl = repl' NothingLoaded -- $ Surface (Map.empty, Map.empty)
-
-
+repl :: IO ()
+repl = runInputT defaultSettings (loop NothingLoaded)
+  where
+    loop curState = do
+      input <- getInputLine "dt> "
+      case input of
+        Nothing -> return ()
+        Just inputStr -> do
+          res <- evalREPLCom curState inputStr
+          Data.Foldable.forM_ res loop
 
 -- from https://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours/Building_a_REPL
 flushStr :: String -> IO ()
@@ -333,6 +398,7 @@ readPrompt prompt = flushStr prompt >> getLine
 -- Some other repls for refference
 -- https://github.com/diku-dk/futhark/blob/ee780c984227ed59548a16fa6ab6d8b52348a7a4/src/Futhark/CLI/REPL.hs
 
+e0 :: IO (ReplRes (Map TCName C.DataDef, Map C.Var C.Term))
 e0 = loadFile "examples/ex0.dt"
 
 e = loadFile "examples/ex1.dt"

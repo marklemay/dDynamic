@@ -41,6 +41,7 @@ library
     , unbound-generics, lens
     , logict
     , raw-strings-qq
+    , haskeline
 
   hs-source-dirs:     src
   default-language:   Haskell2010
@@ -54,6 +55,7 @@ executable repl
     , unbound-generics, lens
     , logict
     , raw-strings-qq  
+    , haskeline
   hs-source-dirs:     src
   build-depends:
     dDynamic
