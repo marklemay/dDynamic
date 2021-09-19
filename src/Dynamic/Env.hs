@@ -125,6 +125,12 @@ class (Monad m) => WithDynDefs m where
    getDefnm' :: C.Var -> m (Maybe C.Term)
    -- TODO explicitly handle the var remapping?
 
+instance (WithDynDefs m) => (WithDynDefs (ReaderT r m)) where
+  getDatadef' = lift . getDatadef' 
+  getConsTcon' = lift . getConsTcon'
+  getDefn' = lift . getDefn' 
+  getDefnTy' = lift . getDefnTy'
+  getDefnm' = lift . getDefnm'
 
 
 instance (WithDynDefs m) => (WithDynDefs (FreshMT m)) where
@@ -160,12 +166,30 @@ instance MonadTrans WithModuleMT where
   lift = WithModuleMT . lift
 
 
+-- instance (MonadReader r m) => ( MonadReader r (WithModuleMT m)) where
+--   ask = lift . ask
+--   local = _
+-- --   getDatadef' = lift . getDatadef' 
+-- --   getConsTcon' = lift . getConsTcon'
+-- --   getDefn' = lift . getDefn' 
+-- --   getDefnTy' = lift . getDefnTy'
+-- --   getDefnm' = lift . getDefnm'
+
+
 instance (Fresh m) => (Fresh (WithModuleMT m)) where
   fresh = lift . fresh
 
 instance (MonadError e m) => (MonadError e (WithModuleMT m)) where
   throwError = lift . throwError
   catchError m h = error "not done yet"
+
+
+-- TODO: double check
+instance (MonadReader r m) => (MonadReader r (WithModuleMT m)) where
+  ask = lift ask
+  local f ma = do
+    a <- ma
+    lift $ local f $ pure a
 
 instance (Fresh m, Monad m) => (WithDynDefs (WithModuleMT m)) where
   getDatadef' tcName = WithModuleMT $ do
@@ -300,6 +324,14 @@ instance (MonadError e m) => (MonadError e (WithSourceLocMT m)) where
   throwError = lift . throwError
   catchError m h = error "not done yet"
 --m h = FreshMT $ EC.catchError (unFreshMT m) (unFreshMT . h)
+
+-- TODO: double check
+instance (MonadReader r m) => (MonadReader r  (WithSourceLocMT m)) where
+  ask = lift ask
+  local f ma = do
+    a <- ma
+    lift $ local f $ pure a
+
 
 instance WithDynDefs m => WithDynDefs (WithSourceLocMT m) where
   getDatadef' = lift . getDatadef'

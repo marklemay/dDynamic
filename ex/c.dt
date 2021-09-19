@@ -91,17 +91,40 @@ append A n vn =
    | Cons A'' a pn pvn => \ m => \ vm => Cons A'' a (add pn m) (append A'' pn pvn m vm)
   };
 
-test : Bool ;
-test = 1 ;
 
 okFun : Nat -> Bool ;
 okFun x = head Bool x (rep Bool true (add x 1)) ;
 
+
+
+
+
+
+
+
+
+
+
+
 badFun : Nat -> Bool ;
 badFun x = head Bool x (rep Bool true x) ;
 
+
+
+
 almostFun : Nat -> Bool ;
 almostFun x = head Bool x (rep Bool true (badd x 1)) ;
+
+
+
+
+
+
+
+
+
+test : Bool ;
+test = 1 ;
 
 
 

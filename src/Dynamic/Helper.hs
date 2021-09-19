@@ -11,6 +11,7 @@ import qualified Data.Set as Set
 
 import Unbound.Generics.LocallyNameless
 import Control.Monad.Except
+import Control.Monad.Reader
 
 import Control.Monad.Identity
 import StdLib (n, s, nat, add, rep, head, stdlib)
@@ -23,6 +24,15 @@ runC :: WithSourceLocMT (WithModuleMT (FreshMT (ExceptT e Identity))) a
   -> Module -> Maybe SourceRange -> Either e a
 runC e modul s = runIdentity $ runExceptT $ runFreshMT $ runWithModuleMT (runWithSourceLocMT e s ) modul
 
+
+-- runCHack :: ReaderT
+--   r (WithSourceLocMT (WithModuleMT (FreshMT (ExceptT e Identity)))) a
+--   -> r -> Module -> Maybe SourceRange -> Either e a
+
+runCHack :: WithSourceLocMT
+  (WithModuleMT (FreshMT (ExceptT e (ReaderT r Identity)))) a
+  -> r -> Module -> Maybe SourceRange -> Either e a
+runCHack e r modul s = runIdentity $ runReaderT (runExceptT $ runFreshMT $ runWithModuleMT (runWithSourceLocMT (e) s ) modul) r
 
 runCIo :: HasCallStack => Module ->  WithSourceLocMT (WithModuleMT (FreshMT (ExceptT Err Identity))) a
   -> IO a

@@ -118,14 +118,14 @@ norm crit whyN simp (App f a an) = do
       pure $ TConF tCName args' noAn
     TConF tCName args (An (Just (TelBnd _ bndrestTel))) -> do
       args' <- mapM simp $ args ++ [a]
-      pure $ TConF tCName args' $ ann $ substBind bndrestTel a -- TODO normaliza annotation
+      pure $ TConF tCName args' $ ann $ substBind bndrestTel a -- TODO normalize annotation
 
     DConF dCName args (An Nothing) -> do
       args' <- mapM simp $ args ++ [a]
       pure $ DConF dCName args' noAn
     DConF dCName args (An (Just (tCName, TelBnd _ bndrestTel))) -> do -- assumes casts are already made
       args' <- mapM simp $ args ++ [a]
-      pure $ DConF dCName args' $ ann (tCName, substBind bndrestTel a) -- TODO normaliza annotation
+      pure $ DConF dCName args' $ ann (tCName, substBind bndrestTel a) -- TODO normalize annotation
 
     C u uty w t -> do
       case (uty, w, t) of
@@ -238,7 +238,8 @@ whnfann x = pure x -- everything else already in whnf
 
 
 
-cbvCheck (Same l info r) | sameCon l r == Just False = 
+cbvCheck :: (MonadError Err m, Fresh m, WithDynDefs m) => Term -> m Exp
+cbvCheck (Same l info r) | sameCon l r == Just False = do
   throwInfoError (show (e l) ++ "=/=" ++ show (e r)) info
   -- error "throw info error"
   -- runWithSourceLocMT (throwPrettyError $ "because " ++ show o ++ ", " ++ show (e l) ++ "=/=" ++ show (e r)) $ Just src

@@ -39,6 +39,7 @@ library
   build-depends:
       containers, mtl,  base 
     , unbound-generics, lens
+    , logict
     , raw-strings-qq
 
   hs-source-dirs:     src
@@ -51,6 +52,7 @@ executable repl
   build-depends:
       containers, mtl,  base 
     , unbound-generics, lens
+    , logict
     , raw-strings-qq  
   hs-source-dirs:     src
   build-depends:
@@ -71,6 +73,7 @@ test-suite test
   build-depends:
       containers, mtl, base
     , unbound-generics, lens
+    , logict
     , tasty >= 1.3.1, tasty-hunit, tasty-quickcheck
     , QuickCheck
     , dDynamic
