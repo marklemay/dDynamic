@@ -16,22 +16,21 @@ data Nat : * {
 
 add : Nat -> Nat -> Nat ;
 add x y = 
-  case x {
-   | Z   => y
-   | S p => S (add p y)
+  case x <_ => Nat> {
+   | (Z)   => y
+   | (S p) => S (add p y)
    } ;
 
 badd : Nat -> Nat -> Nat ;
 badd x y = 
-  case x {
-   | Z   => add x y
-   | S p => 
-      case p {
-      | Z   => 0
-      | S p =>  add x y
-      }
+  case x <_ => Nat> {
+   | (Z)   => y
+   | (S (Z)) => 0 -- incorrect exactly when x = 1
+   | (S (S (Z))) => S (S y)
+   | (S p) => S (add p y)
    } ;
 
+-- length indexed lists
 data Vec : * -> Nat -> * {
   | Nil  : (A : *) -> Vec A 0
   | Cons : (A : *) -> A -> (n : Nat) -> Vec A n -> Vec A (S n)
@@ -40,56 +39,39 @@ data Vec : * -> Nat -> * {
 
 head : (A : *) -> (n : Nat) -> Vec A (S n) -> A ;
 head A n v = 
-  case v < _ : Vec A' n' => 
-    case n' {
-      | Z   => Unit
-      | S _ => A'
-    }
-  >{
-   | Nil _        => tt
-   | Cons _ a _ _ => a
+  case v <_ => A >{
+   | (Cons _ a _ _) => a
    } ;
+
 tail : (A : *) -> (n : Nat) -> Vec A (S n) -> Vec A n ;
 tail A n v = 
-  case v < _ : Vec A' n' => 
-    case n' {
-      | Z   => Unit
-      | S pn => Vec A' pn
-    }
-  >{
-   | Nil _        => tt
-   | Cons _ _ _ v => v
+  case v <_ => Vec A n >{
+   | (Cons _ _ _ v) => v
    } ;
 
 append : (A : *) -> (n : Nat) -> Vec A n -> (m : Nat) -> Vec A m -> Vec A (add n m) ;
-append A n vn = 
-  case vn <_ : Vec A' n' => (m' : Nat) -> Vec A' m' -> Vec A' (add n' m') >{
-   | Nil _ => \ m => \ vm => vm
-   | Cons A'' a pn pvn => \ m => \ vm => Cons A'' a (add pn m) (append A'' pn pvn m vm)
+append A n vn m vm = 
+  case n, vn < n' => _ : Vec A n' => Vec A (add n' m) >{ -- multi matching allows for definitional computation
+   | (Z)   => (Nil _) => vm
+   | (S _) => (Cons _ a pn pvn) => Cons A a (add pn m) (append A pn pvn m vm)
   };
 
 
 mapVec : (A : *) -> (n : Nat) -> Vec A n -> (B : *) -> (A -> B) -> Vec B n ;
 mapVec A n v =
-  case v < _ : Vec A' n' => (B : *) -> (A' -> B) -> Vec B n' >{
-   | Nil A          => \ B => \ _ => Nil B
-   | Cons A a pn pv => \ B => \ f => Cons B (f a) pn (mapVec A pn pv B f)
+  case v < _ : Vec A n => (B : *) -> (A -> B) -> Vec B n >{
+   | (Nil A)          => \ B => \ _ => Nil B
+   | (Cons A a pn pv) => \ B => \ f => Cons B (f a) pn (mapVec A pn pv B f)
   };
 
 
 rep : (A : *) -> A -> (n : Nat) -> Vec A n ;
 rep A a n = 
   case n < n' : Nat => Vec A n' >{
-   | Z   => Nil A
-   | S p => Cons A a p (rep A a p)
+   | (Z)   => Nil A
+   | (S p) => Cons A a p (rep A a p)
    } ;
 
-append : (A : *) -> (n : Nat) -> Vec A n -> (m : Nat) -> Vec A m -> Vec A (add n m) ;
-append A n vn = 
-  case vn <_ : Vec A' n' => (m' : Nat) -> Vec A' m' -> Vec A' (add n' m') >{
-   | Nil _ => \ m => \ vm => vm
-   | Cons A'' a pn pvn => \ m => \ vm => Cons A'' a (add pn m) (append A'' pn pvn m vm)
-  };
 
 
 okFun : Nat -> Bool ;
@@ -108,7 +90,7 @@ okFun x = head Bool x (rep Bool true (add x 1)) ;
 
 badFun : Nat -> Bool ;
 badFun x = head Bool x (rep Bool true x) ;
-
+-- TODO make cbv checknig more aggressive
 
 
 
@@ -131,12 +113,12 @@ test = 1 ;
 revapp : (A : *) -> (m : Nat) -> Vec A m -> 
                     (n : Nat) -> Vec A n -> Vec A (add m n) ;
 revapp A m vm n vn =
-  case vm < _ : Vec A' m' =>
-    case m' {
-      | Z => Vec A n
-      | S m' => Vec A (add m' (S n))
+  case vm < _ : Vec A m =>
+    case m < _ => * >{
+      | (Z) => Vec A n
+      | (S m') => Vec A (add m' (S n))
     }
   >{
-    | Nil _ => vn
-    | Cons _ a m vm => revapp A m vm (S n) (Cons A a n vn)
+    | (Nil _) => vn
+    | (Cons _ a m vm) => revapp A m vm (S n) (Cons A a n vn)
    } ;

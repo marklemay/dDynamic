@@ -33,9 +33,12 @@ import GHC.Generics (Generic, U1 (U1))
 import Unbound.Generics.LocallyNameless
 import Control.Monad.Except
 import Unbound.Generics.LocallyNameless.Unsafe (unsafeUnbind)
+import Control.Monad.Reader
 
 import PreludeHelper
 import UnboundHelper
+import AlphaShow
+import SourcePos
 
 import Dynamic.Ast
 import Dynamic.Env
@@ -43,60 +46,158 @@ import Dynamic.Err
 import Dynamic.Erase
 
 
+data YesNoStuck a --b
+  = Yes a
+  | No
+  | Stuck --b
+  deriving (Show)
 
-norm :: HasCallStack => (Fresh m, WithDynDefs m) => (Exp -> m Exp) -> (Exp -> m Exp) -> (Exp -> m Exp) -> Exp -> m Exp
-norm crit whyN simp (V x ann) = do -- expand module deffinitions, TODO can facrtor this out like in the prevous attempt
+-- sort of like neu
+withPath :: Exp -> (Exp, Path)
+withPath (C u info tu why ty) = let (e,p) = withPath u in (e, Trans p $ Step info why True tu ty)
+--TODO could include Csym here
+withPath e  = (e, Refl)
+
+match :: 
+  HasCallStack => 
+  (Monad m) => 
+  (Exp -> m Exp) -> (Exp -> m Exp) -> [(Exp,Pat)]
+  -> m (YesNoStuck (Map Var Exp, Map PathVar Path))
+match critN argN [] = pure $ Yes (Map.empty, Map.empty)
+match critN argN ((e, PVar x):ms) = do 
+  e' <- argN e
+  xxx <- match critN argN ms
+  pure $ case xxx of
+    Yes (es, paths) -> Yes (Map.insert x e es, paths)
+    No -> No
+    Stuck -> Stuck
+match critN argN ((e, Pat pv dcName pats): ms) = do 
+  e' <- argN e
+  case withPath e' of 
+    (DConF dcName' _ _ , _) | dcName' /= dcName -> pure No
+    (DConF dcName' args _, _) | length args /= length pats -> error "really broke bad lengths"
+    (DConF dcName' args _, path) -> do
+      xxx <- match critN argN (zip args pats ++ ms)
+      pure $ case xxx of
+        Yes (es, paths) -> Yes (es, Map.insert pv path paths)
+        No -> No
+        Stuck -> Stuck
+        --   match critN argN (zip args pats ++ ms) bod
+    _ -> pure Stuck -- TODO exposing the partial stuck state as a valid expression would allow for more definitional eqs, and possibly make the metatheory easier
+
+
+matches ::
+  HasCallStack => 
+  (Fresh m) => 
+  (Exp -> m Exp) -> (Exp -> m Exp) -> [Exp] -> [Match] -> m (Either ([Exp], [Match]) (Either Path Term))
+matches critN argN scrutinees [] = pure $ Left (scrutinees, [])
+
+  -- TODO inefficint since that scrutinee is recalculated every branch!
+  -- TODO can simplify much more then currently
+matches critN argN scrutinees ms@((Match bndbod):rest) = do
+  (pats, (assign, bod)) <- unbind bndbod
+  if length pats /= length scrutinees
+    then error "diff len"
+    else do 
+    ans <- match critN argN (zip scrutinees pats) --TODO need a monadically safe zip with HasCallStack and a good error message
+    case ans of
+      Yes (es, ps) ->
+        pure $ Right $ substs (Map.toList ps) $ substs (Map.toList es) $ bod
+      No -> matches critN argN scrutinees rest
+      Stuck -> pure $ Left (scrutinees, ms)
+
+
+-- TODO add simp?
+normPath :: HasCallStack => (Fresh m, WithDynDefs m) => (Exp -> m Exp) -> Path -> m [Path]
+normPath crit  (PathV v ann) = pure $ [PathV v ann]
+normPath crit  (Step info w d l r) = do
+  l' <- crit l  
+  r' <- crit r  
+  w' <- crit w 
+  pure $ [Step info w' d l' r']
+normPath crit  (Refl) = pure $ []
+normPath crit  (Trans l r) = do
+  l' <- normPath crit  l 
+  r' <- normPath crit  r
+  pure $ l' ++ r'
+normPath crit  (Sym p) = do
+  ps <- normPath crit  p 
+  pure $ fmap rev $ reverse ps
+normPath crit  (InjTcon p i) = do
+  ps <- normPath crit  p
+  pure $ fmap (\ pp -> mapInjTcon pp i) ps
+normPath crit  (InjDcon p i) = do
+  ps <- normPath crit  p
+  pure $ fmap (\ pp -> mapInjDcon pp i) ps
+
+norm :: HasCallStack => (Fresh m, WithDynDefs m) => (Exp -> m Exp) -> (Exp  -> m Exp) -> Exp -> m Exp
+norm crit simp (V x ann) = do -- expand module deffinitions,, TODO can facrtor this out like in the prevous attempt
    me <- getDefnm' x
    case me of
      Just e -> crit e
      Nothing -> pure $ V x ann
-norm crit whyN simp (Same (C l _ _ _) info r) = crit $ Same l info r 
-norm crit whyN simp (Same l info (C r _ _ _)) = crit $ Same l info r 
-norm crit whyN simp (Same l info r) = do
+
+norm crit simp (Csym trm path bndty ann) = do
+  paths <- normPath crit path
+  casts <- forM paths $ \ p -> do
+    case p of
+      Step info w d l r -> do
+        (x, ty) <- unbind bndty
+        ety <- eraseCast ty
+        why <- norm crit simp $ subst x w ety
+
+        lty <- norm crit simp $ substBind bndty l
+        rty <- norm crit simp $ substBind bndty r
+        
+        pure $ \ under -> C under info lty why rty
+      compositepath -> pure $ \ under -> Csym under compositepath bndty (An $ substBind bndty <$> snd <$> endpoints compositepath)
+  -- filter out Casts with no content
+  -- casts' <- filterM (\ (_, bndty)-> do
+  --   (px, ty) <- unbind bndty
+  --   pure $ occursIn px ty) casts
+  trm' <- crit trm
+  pure $ foldl (\ e c -> c e) trm' casts
+
+norm crit simp (Same (under -> Just l) obs r) = crit (Same l obs r)
+norm crit simp (Same l obs (under -> Just r)) = crit (Same l obs r)
+
+norm crit simp (Same l obs r) = do
   l' <- crit l
-  r' <- crit r
-  case (l',r') of
+  r' <- crit r 
+  case (l', r') of
     (TyU, TyU) -> pure TyU
-    (DCon dCName params _, DCon dCName' params' _)  | dCName == dCName' -> 
-      error "depricated"
-      -- do logg $ "depricated"  ;whyN $ DCon dCName (fmap (\(x, o', y) -> Same x ll o' y) (zip3 params (fmap (\ i -> Index i o) [0..]) params')) noAn
-    (DConF dCName params _, DConF dCName' params' _)  | dCName == dCName' -> do
-      resparams <- mapM whyN $ fmap (\(x, info', y) -> Same x info' y) (zip3 params (fmap (\ i -> obsmap (Index i) info) [0..]) params')
-      resparams' <- mapM simp resparams
-      -- logg $ "SAME FIRST!!!" ++ dCName
-      pure $ DConF dCName resparams' noAn
-    (tConPat -> Just (tCName, params), tConPat -> Just (tCName', params')) | tCName == tCName' -> do
-      resparams <- mapM whyN $ fmap (\(x, info', y) -> Same x info'  y) (zip3 params (fmap (\ i -> obsmap (Index i) info) [0..]) params')
-      resparams' <- mapM simp resparams
-      pure $ tCon tCName resparams'
+
+    (TConF tCNamel argsl _, TConF tCNamer argsr _) | tCNamel == tCNamer && length argsl == length argsr -> do
+      args <- mapM (\ (i, ll, rr) -> simp (Same ll (Index i obs) rr)) $ zip3 [0..] argsl argsr
+      pure $ TConF tCNamel args noAn
+
+    (DConF dCNamel argsl _, DConF dCNamer argsr _)  | dCNamel == dCNamer && length argsl == length argsr  -> do
+      args <- mapM (\ (i, ll, rr) -> simp (Same ll (Index i obs) rr)) $ zip3 [0..] argsl argsr
+      pure $ DConF dCNamel args noAn
+
+    (Pi aTyl bndbodTyl, Pi aTyr bndbodTyr) -> do
+      (argnamel, bodl) <- unbind bndbodTyl --TODO unbind2 ?
+      (argnamer, bodr) <- unbind bndbodTyr
+      aTy <- simp (Same aTyl (Aty obs) aTyr)
+      bodTy <- simp (Same bodl (Bty (v argnamel) obs) $ subst argnamer (v argnamel) bodr)
+
+      pure $ Pi aTy $ bind argnamel bodTy -- TODO rename or swap would be better
+    
     (Fun bndbodl _, Fun bndbodr _) -> do
       ((selfl, argnamel), bodl) <- unbind bndbodl
       ((slefr, argnamer), bodr) <- unbind bndbodr
       -- logg ""
       -- logg bodl
       -- logg bodr
-      let bod = Same bodl (obsmap (AppW (v argnamel)) info) $ subst slefr (v selfl) $ subst argnamer (v argnamel) bodr
+      bod <- simp (Same bodl (AppW (v argnamel) obs) $ subst slefr (v selfl) $ subst argnamer (v argnamel) bodr)
       -- logg bod
       -- logg ""
-      bod' <- whyN bod
-      bod'' <- simp bod'
-      pure $ Fun (bind (selfl, argnamel) bod'') noAn
-    (Pi aTyl bndbodTyl, Pi aTyr bndbodTyr) -> do
-      (argnamel, bodl) <- unbind bndbodTyl
-      (argnamer, bodr) <- unbind bndbodTyr
-      let aTy = Same aTyl (obsmap Aty info) aTyr
-      let bodTy = Same bodl (obsmap (Bty (v argnamel)) info) $ subst argnamer (v argnamel) bodr
+      pure $ Fun (bind (selfl, argnamel) bod) noAn
 
-      aTy' <- whyN aTy
-      bodTy' <- whyN bodTy
+    _ -> pure $ Same l' obs r'
 
-      aTy'' <- simp aTy'
-      bodTy'' <- simp bodTy'
 
-      pure $ Pi aTy'' $ bind argnamel bodTy'' -- TODO rename or swap would be better
-    _ -> pure $ Same l' info r'
-
-norm crit whyN simp (C trm uty why ty) = do
+norm crit simp (C trm info uty why ty) = do
   uty' <- crit uty
   why' <- crit why 
   ty' <- crit ty
@@ -104,9 +205,10 @@ norm crit whyN simp (C trm uty why ty) = do
     (TyU, TyU) -> crit trm -- TODO can be blocked by why' ?
     _ -> do 
       trm' <- simp trm
-      pure $ C trm' uty' why' ty'
+      pure $ C trm' info uty' why' ty'
 
-norm crit whyN simp (App f a an) = do
+
+norm crit simp (App f a an) = do
   f' <- crit f
   case f' of
     Fun bndbod _ -> do
@@ -118,128 +220,118 @@ norm crit whyN simp (App f a an) = do
       pure $ TConF tCName args' noAn
     TConF tCName args (An (Just (TelBnd _ bndrestTel))) -> do
       args' <- mapM simp $ args ++ [a]
-      pure $ TConF tCName args' $ ann $ substBind bndrestTel a -- TODO normalize annotation
+      pure $ TConF tCName args' $ ann $ substBind bndrestTel a -- TODO normaliza annotation
 
     DConF dCName args (An Nothing) -> do
       args' <- mapM simp $ args ++ [a]
       pure $ DConF dCName args' noAn
     DConF dCName args (An (Just (tCName, TelBnd _ bndrestTel))) -> do -- assumes casts are already made
       args' <- mapM simp $ args ++ [a]
-      pure $ DConF dCName args' $ ann (tCName, substBind bndrestTel a) -- TODO normalize annotation
+      pure $ DConF dCName args' $ ann (tCName, substBind bndrestTel a) -- TODO normaliza annotation
 
-    C u uty w t -> do
+    C u info uty w t -> do
       case (uty, w, t) of
 
         (Pi aTy' bndbodTy', Pi aTyw bndbodTyw, Pi aTy bndbodTy) -> do
           -- logg "commute"
-          let ac = C a aTy aTyw aTy' -- TODO swap the why?
+          let ac = C a info aTy aTyw aTy' -- TODO swap the why?
           let underTy = substBind bndbodTy' ac
           let under = App u ac $ ann underTy
-          crit $ C under underTy (substBind bndbodTyw a) (substBind bndbodTy a)
+          crit $ C under info underTy (substBind bndbodTyw a) (substBind bndbodTy a)
         (_, w, t) -> do
-          w' <- whyN w
+          w' <- simp w
           u' <- simp u 
           uTy' <- simp uty 
           t' <- simp t 
           a' <- simp a
           -- an' <- mapM simp an
-          logg "TODO simp ann" 
-          pure $ App (C u' uTy' w' t') a' an -- TODO is it concievealbe that the entire cast is simplified out, but it didn't crtit out?
+          -- logg "TODO simp ann" 
+          pure $ App (C u' info uTy' w' t') a' an -- TODO is it concievealbe that the entire cast is simplified out, but it didn't crtit out?
+    -- can normalize Csym just find
 
     _ -> do
       a' <- simp a
       -- an' <- mapM simp an
-      logg "TODO simp ann" 
+      -- logg "TODO simp ann" 
       pure $ App f' a' an
 
 
-norm crit whyN simp (Case scrut bndmotive branches an) = do
-  scrut' <- crit scrut
-  case scrut' of
-    DConF (flip lkUp branches -> (Just bndbod)) args (An Nothing) -> do
-      bod <- substsBind' bndbod args 
-      crit bod
-    DConF (flip lkUp branches -> (Just bndbod)) args (An (Just (_, NoBnd _))) -> do -- block if the type annotation does not match
-      bod <- substsBind' bndbod args 
-      crit bod
-    DConF (flip lkUp branches -> Nothing) _ _  -> error $ "mismatching constructor name" ++ show scrut'
-    DConF _ _ _  -> error $ "misapplide scrutinee" ++ show scrut'
-    
-    C u uTy w t -> do
-      -- logg $ "u, " ++ show u
-      case (uTy, w, t) of -- TODO collapse case
-        -- (Nothing, _, _) -> error "blocked by loss of type info in scrut" -- the question is why the some did not eat the cast
+norm crit simp (Case scrutinees ann branches l outTy) = do
+  scrutinees' <- mapM crit scrutinees -- TODO could be tighter, only normalize the scruts that can be tested 
+  
+  ans <- matches crit simp scrutinees branches
+  case ans of
+    Right (Left _)  -> error "get srtuck with the contrediction"
+    Right (Right e) -> crit e
+    Left (scrutinee', branches') -> do
+      branches'' <- mapM (\ (Match bndBod) -> do (pat, bod') <- unbind bndBod; pure $ Match $ bind pat bod') branches' -- TODO simp
+      pure $ Case scrutinee' ann branches'' l outTy
 
-        (tConPat -> Just (tCname', args'), tConPat -> Just (tCnamew, argsw), tConPat -> Just (tCname, args)) 
-          | tCname' == tCnamew && tCname == tCnamew -> do
-            ((scrutName, argNames), motive) <- unbind bndmotive
-            let outerBodTy = subst scrutName scrut' $ substs (zip argNames args) motive
-            let innerBodTy = subst scrutName u $ substs (zip argNames args') motive
-            let under = Case u bndmotive branches $ ann (tCname', innerBodTy)
-            crit $ C under innerBodTy (subst scrutName scrut' $ substs (zip argNames argsw) motive) outerBodTy
-
-        (tConPat -> Just (tCname', args'), tConPat -> Just (tCnamew, argsw), tConPat -> Just (tCname, args)) ->
-          error $ "apparently impossible typecast in scrut, " ++ show scrut'
-
-        _ -> do
-          w' <- whyN w
-          uTy' <- simp uTy
-          u' <- simp u 
-          t' <- simp t
-          logg "TODO simp an, simp branches, simp motive" 
-          pure $ Case (C u' uTy' w' t') bndmotive branches an
-
-    _ -> do
-      logg "TODO simp an, simp branches, simp motive" 
-      pure $ Case scrut' bndmotive branches an
-
-
-norm crit whyN simp (DConF dCName params an) = do
+norm crit simp (DConF dCName params an) = do
   params' <- mapM simp params
-  logg "TODO simp ty ann" 
+  -- logg "TODO simp ty ann" 
   pure $ DConF dCName params an
-norm crit whyN simp (TConF dCName params an) = do
+norm crit simp (TConF dCName params an) = do
   params' <- mapM simp params
-  logg "TODO simp ann" 
+  -- logg "TODO simp ann" 
   pure $ TConF dCName params an
-norm crit whyN simp (Pi aty bndBodTy) = do
+norm crit simp (Pi aty bndBodTy) = do
   aty' <- simp aty
   (aName, bodTy) <- unbind bndBodTy
   bodTy' <- simp bodTy
   pure $ Pi aty' $ bind aName bodTy'
   
-norm crit whyN simp (Fun bndBod ann) = do
-  logg "TODO simp ann" 
+norm crit simp (Fun bndBod ann) = do
+  -- logg "TODO simp ann" 
   ((fname,aName), bod) <- unbind bndBod
   bod' <- simp bod
   pure $ Fun (bind (fname,aName) bod') ann
 
 
-norm crit whyN simp TyU = pure TyU
-norm crit whyN simp e = do logg $ "not done yet" ++ show e ; pure e
+norm crit simp TyU = pure TyU
+norm crit simp e = do logg $ "not done yet" ++ show e ; pure e
 
+
+normClean (C u info botTy whyTy topTy) = do
+  botTy' <- normClean botTy -- TODO this should be a safe cleaning call-by-value
+  topTy' <- normClean topTy -- TODO this should be a safe cleaning call-by-value
+  if botTy' `aeq` topTy' 
+    then normClean u
+    else do
+      u' <- normClean u
+      pure $ C u' info botTy' whyTy topTy'
+normClean (Csym (u @ (tyInf -> Just botTy)) p inThis (An (Just topTy))) = do
+  botTy' <- normClean botTy -- TODO this should be a safe cleaning call-by-value
+  topTy' <- normClean topTy -- TODO this should be a safe cleaning call-by-value
+  if botTy' `aeq` topTy' 
+    then normClean u
+    else do
+      u' <- normClean u
+      pure $ Csym u' p inThis (An (Just topTy'))
+normClean  e = norm normClean normClean e
 
 whnf :: (Fresh m, WithDynDefs m) => Exp -> m Exp
-whnf = norm whnf pure pure
+whnf = norm whnf pure
 
 
--- whnfty
 whnfann :: (Fresh m, WithDynDefs m) => Exp -> m Exp
-whnfann (C trm uty why ty) = do
-  ty' <- whnf ty
-  pure $ C trm uty why ty'
+-- whnfann (C trm uty why ty) = do
+--   ty' <- whnf ty
+--   pure $ C trm uty why ty'
 whnfann (App f a (An (Just ty))) = do
   ty' <- whnf  ty
   pure $ App f a (An (Just ty'))
-whnfann (Case s m b (An (Just (tCName, ty)))) = do
+whnfann (Case s m b l (An (Just ty))) = do
   ty' <- whnf ty
-  pure $ Case s m b (An (Just (tCName, ty')))
+  pure $ Case s m b l (An (Just ty'))
 whnfann x = pure x -- everything else already in whnf
 
 
 
-cbvCheck :: (MonadError Err m, Fresh m, WithDynDefs m) => Term -> m Exp
+cbvCheck :: (MonadReader Info m, MonadError Err m, Fresh m, WithDynDefs m) => Term -> m Exp
+-- TODO MonadReader Info m probly better as an exception
 cbvCheck (Same l info r) | sameCon l r == Just False = do
+  info <- ask 
   throwInfoError (show (e l) ++ "=/=" ++ show (e r)) info
   -- error "throw info error"
   -- runWithSourceLocMT (throwPrettyError $ "because " ++ show o ++ ", " ++ show (e l) ++ "=/=" ++ show (e r)) $ Just src
@@ -247,24 +339,33 @@ cbvCheck (App f a ann) = do
   f' <- cbvCheck f
   a' <- cbvCheck a
   -- TODO check that a is a value!
-  norm cbvCheck cbvCheck pure $ App f' a' ann --TODO some redundant computation... but the definition is at least tight
-cbvCheck (C u uTy w t) = do
+  norm cbvCheck pure $ App f' a' ann --TODO some redundant computation... but the definition is at least tight
+cbvCheck (C u info uTy w t) = do
   u' <- cbvCheck u
-  norm cbvCheck cbvCheck pure $ C u' uTy w t
+  w' <- local (\ _ -> info) $ cbvCheck w
+  uTy' <- cbvCheck uTy
+  t' <- cbvCheck t
+  pure $ C u' info uTy' w' t'
 cbvCheck (TConF tCName args an) = do
   args' <- mapM cbvCheck args
   pure $ TConF tCName args an
 cbvCheck (DConF dCName args an) = do
   args' <- mapM cbvCheck args
   pure $ DConF dCName args an
-cbvCheck e = norm cbvCheck cbvCheck pure e
+cbvCheck (Case scruts anTel branches sr ann) = do
+  scruts' <- mapM cbvCheck scruts
+  norm cbvCheck pure $ Case scruts' anTel branches sr ann
+cbvCheck e = norm cbvCheck pure e
 
 
 
 whnfCheck :: (Fresh m, MonadError Err m, WithDynDefs m) => Exp -> m Exp
-whnfCheck (Same l info r) | sameCon l r == Just False = 
-  throwInfoError (show (e l) ++ "=/=" ++ show (e r)) info
-whnfCheck e = norm whnfCheck whnfCheck pure e
+-- whnfCheck (Same l info r) | sameCon l r == Just False = 
+--   throwInfoError (show (e l) ++ "=/=" ++ show (e r)) info
+  -- error "throw info error"
+  -- runWithSourceLocMT (throwPrettyError $ "because " ++ show o ++ ", " ++ show (e l) ++ "=/=" ++ show (e r)) $ Just src
+-- whnfCheck e = norm whnfCheck whnfCheck pure e
+whnfCheck e = error " .... "
 
 
 isCon :: Exp -> Bool
@@ -272,14 +373,12 @@ isCon TyU = True
 isCon (Pi _ _) = True
 isCon (Fun _ _) = True
 isCon (tConPat -> Just _) = True
-isCon (DCon _ _ _) = True
 isCon (DConF _ _ _) = True --TODO: not exactly right
 isCon _ = False
 
 sameCon :: Exp -> Exp -> Maybe Bool
 sameCon TyU TyU = Just True
 sameCon (tConPat -> Just (s1, _)) (tConPat -> Just (s2, _)) | s1 == s2 = Just True
-sameCon (DCon s1 _ _) (DCon s2 _ _) | s1 == s2 = Just True
 sameCon (DConF s1 _ _) (DConF s2 _ _) | s1 == s2 = Just True
 sameCon (Fun _ _) (Fun _ _) = Just True
 sameCon (Pi _ _) (Pi _ _) = Just True

@@ -57,7 +57,7 @@ underConstructors' e (dCname : rest) = subst (s2n dCname) (DCon dCname) $ underC
 -- TODO : can memoize solutions in the envrironment
 
 data TyEnv = TyEnv {tyCtx :: TyCtx, dataCtx :: DataCtx, defCtx :: DefCtx}
-  deriving Show
+  deriving (Show,Eq)
 
 --TODO: is there not a standard way to add constaints to the reader ctx?
 
@@ -150,36 +150,37 @@ lookupTCName tCName = do
 
 
 class DefnCtx ctx where 
-   getDefn :: (MonadError String m) => ctx -> Var -> m (Term, Ty)
+  getDefn' :: ctx -> Var -> Maybe (Term, Ty)
 
 
 
 instance DefnCtx DefCtx where 
-   getDefn defCtx v =
-     case Map.lookup v defCtx of
-       Just p -> pure p
-       Nothing -> throwError $ "could not find deffinition '" ++ show v ++ "' in " ++ show defCtx
+   getDefn' defCtx v = Map.lookup v defCtx
 
 
 instance DefnCtx TyEnv where 
-   getDefn (TyEnv tyCtx dataCtx defCtx) = getDefn defCtx
+   getDefn' (TyEnv tyCtx dataCtx defCtx) = getDefn' defCtx
 
 
 instance DefnCtx (TyEnv,a) where 
-   getDefn (TyEnv tyCtx dataCtx defCtx,a) = getDefn defCtx
+   getDefn' (TyEnv tyCtx dataCtx defCtx,a) = getDefn' defCtx
 
 -- TODO this should be the definition
 -- lookupDef' :: (MonadReader ctx m, DefnCtx ctx) => Var -> m (Maybe (Term, Ty))
-lookupDef' :: (MonadReader ctx m, DefnCtx ctx, MonadError String m) => Var -> m (Maybe (Term, Ty))
-lookupDef' v = (do def <- lookupDef v; pure $ Just def) `catchError` \ _ -> pure Nothing
+lookupDef' :: HasCallStack => (MonadReader ctx m, DefnCtx ctx) => Var -> m (Maybe (Term, Ty))
+lookupDef' v = do 
+  ctx <- ask
+  pure $ getDefn' ctx v
 
 
 -- TODO make these types sigs more uniform
 --lookupDef :: Var -> TcMonad (Maybe (Term, Ty))
-lookupDef :: (MonadReader ctx m, DefnCtx ctx, MonadError String m) => Var -> m (Term, Ty)
+lookupDef :: HasCallStack => (MonadReader ctx m, DefnCtx ctx, MonadError String m) => Var -> m (Term, Ty)
 lookupDef v = do
-  ctx <- ask
-  getDefn ctx v
+  ma <- lookupDef' v
+  case ma of
+    Just p -> pure p
+    Nothing -> throwError $ "could not find deffinition '" ++ show v ++ "'" -- in " ++ show defCtx
   -- (TyEnv tys datas defCtx) <- ask
   -- pure $ Map.lookup v defCtx
 
@@ -219,6 +220,9 @@ runTcMonadIo ctx ma = do
 -- TODO: generalize the typeclasses here?
 extendCtx :: Var -> Ty -> TcMonad a -> TcMonad a
 extendCtx name typ = local $ \ (TyEnv tys datas dfnCtx, p) -> (TyEnv (Map.insert name typ tys) datas dfnCtx, p) --TODO: lenses :(
+
+extendDef :: Var -> Term -> Ty -> TcMonad a -> TcMonad a
+extendDef name term typ = local $ \ (TyEnv tys datas dfnCtx, p) -> (TyEnv tys datas (Map.insert name (term, typ) dfnCtx), p) --TODO: lenses :(
 
 setRegion :: SourcePos -> SourcePos -> TcMonad a -> TcMonad a
 setRegion l r = local $ \ (e, m) -> 

@@ -1,4 +1,5 @@
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module Parser where
 import Control.Monad(ap)
@@ -196,28 +197,34 @@ pi = do
 elim :: Parser Exp
 elim = do 
   keyword "case"
-  scrut <- exp
-  motive <- (do 
+  scruts <- withInfix (mapParser exp (\x -> [x])) [(",", (++))]
+  mmotive <- (do 
     keyword "<"
-    x <- token nameParser
-    keyword ":"
-    _ <- token nameParser -- a little hacky
-    params <- rep $ token nameParser
-    keyword "=>"
-    bodTy <- exp
+    motive <- motiveParser
     keyword ">"
-    pure $ Just (bind (x, params) bodTy)
+    pure $ Just motive
     ) <|> pure Nothing
   keyword "{"
   branches <- rep $ do
     keyword "|"
-    dCName <- token $ nameParser'
-    args <- rep (token $ nameParser)
-    keyword "=>"
+    p <- rep (do p <- pat; keyword "=>"; pure p)
+    -- keyword "=>"
     bod <- exp
-    pure $ Match dCName $ bind (args) bod
+    pure $ Match $ bind p bod
   keyword "}"
-  pure $ Case scrut (An motive) branches
+  pure $ Case scruts (An mmotive) branches
+
+-- NOTE: don't love that perens are what differentiates constructors from vars
+pat :: Parser Pat
+pat = (do
+  x <- nameParser
+  pure $ PVar x)
+  <|> do
+  keyword "("
+  dCname <- token nameParser'
+  args <- rep (token $ pat) 
+  keyword ")"
+  pure $ Pat dCname args
 
 modulep :: Parser (Map TCName DataDef, Map Var (Term, Ty))
 modulep = do
@@ -283,7 +290,21 @@ telParser pa =
     pure $ TelBnd ty (u tel)) <|> 
   (NoBnd <$> pa)
   
-  
--- TODO fix bug:  (fun f x => 1) : (Nat -> Nat) to   (fun f x => 1) : Nat -> Nat
+
+motiveParser :: Parser (Tel Exp (Maybe Ty) Ty)
+motiveParser = (do
+  x <- token nameParser
+  mty <- (do 
+    keyword ":"
+    ty <- exp
+    pure $ Just ty) <|> pure Nothing
+  keyword "=>" 
+  tel <- motiveParser
+  pure $ TelBnd mty (bind x tel))
+  <|> do
+    NoBnd <$> exp
+
+
+-- TODO fix bug:  (fun f x => 1) : (Nat -> Nat) to (fun f x => 1) : Nat -> Nat
 -- TODO bake s2n into the var parser?
 -- TODO make sure there is no keyword overlap

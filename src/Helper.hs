@@ -23,6 +23,11 @@ allM :: (Traversable t, Monad m) => (a -> m Bool) -> t a -> m Bool
 allM p ca = all (True ==) <$> mapM p ca
 
 
+toExp :: Pat -> Exp
+toExp (PVar x) = V x
+toExp (Pat dCName args) = DCon dCName `apps` fmap toExp args
+-- subterm instace, toExp, fromExp, then smart constructors can use that
+
 -- | as neutral form
 -- neutral form in the sense of term rewriteing, as in https://cs.stackexchange.com/questions/69434/intuitive-explanation-of-neutral-normal-form-in-lambda-calculus/69457#69457
 asNeu :: Exp -> Maybe (Exp, [Exp])
@@ -56,6 +61,7 @@ validPos (e ::: t) = validPos e && validPos t
 validPos (Fun (unsafeUnbind -> ((s,a),bod))) = validPos bod
 validPos (e `App` t) = validPos e && validPos t
  --TODO ann
-validPos (Case s _ bs) = validPos s &&  all (\ (Match dCName (unsafeUnbind -> (p,bod))) -> validPos bod) bs -- TODO playing with unsafe fire
+-- validPos (Case s _ bs) = validPos s &&  all (\ (Match dCName (unsafeUnbind -> (p,bod))) -> validPos bod) bs -- TODO playing with unsafe fire
 validPos (Pi aTy (unsafeUnbind -> (a,bod))) = validPos aTy && validPos bod
+validPos (Case s _ bs) = error "case not done yet"
 validPos x = True

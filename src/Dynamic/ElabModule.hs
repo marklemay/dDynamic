@@ -72,7 +72,7 @@ instance (Fresh m, MonadError C.Err m, Monad m, WithSourceLoc m) => (C.WithDynDe
         case Map.lookup tConn dt of
           Nothing -> throwPrettyError $ "could not find def of type constructor '" ++ tConn ++ "'"
           Just (DataDef tel _) -> do
-            tel' <- unElabMT $ elabTelUnit tel Map.empty Map.empty 
+            tel' <- unElabMT $ elabTelUnit tel Map.empty Map.empty []
             modify (\ (ptc, pdc, vmap, deftys, pdef) -> (Map.insert tConn tel' ptc, pdc, vmap, deftys, pdef) )
             pure tel'
 
@@ -86,7 +86,7 @@ instance (Fresh m, MonadError C.Err m, Monad m, WithSourceLoc m) => (C.WithDynDe
          Just xx -> pure $ Just (tCname, xx)
          Nothing -> do
            let (Just tel) = Map.lookup dCName dcons
-           tel' <- unElabMT $ elabTelLs tel telTys Map.empty Map.empty 
+           tel' <- unElabMT $ elabTelLs tel telTys Map.empty Map.empty []
            modify (\ (ptc, pdc, vmap, deftys, pdef) -> (ptc, instertsert tCname dCName tel' pdc, vmap, deftys, pdef) )
            pure $ Just (tCname, tel')
       _ -> pure Nothing
@@ -102,7 +102,7 @@ instance (Fresh m, MonadError C.Err m, Monad m, WithSourceLoc m) => (C.WithDynDe
         case Map.lookup x defn of
           Nothing -> pure Nothing  
           Just (_,ty) -> do
-            ty' <- unElabMT $ elabTy ty Map.empty Map.empty
+            ty' <- unElabMT $ elabty ty Map.empty Map.empty []
             modify $ \ (ptc, pdc, vmap, defTy, pdef) ->  (ptc, pdc, vmap, Map.insert x' ty' defTy, pdef) 
             pure $ Just (x', ty')
 
@@ -117,7 +117,7 @@ instance (Fresh m, MonadError C.Err m, Monad m, WithSourceLoc m) => (C.WithDynDe
           Nothing -> do
             (E.TyEnv _ _ defn) <- ask
             let Just (trm,_) = Map.lookup x defn
-            def <- unElabMT $ elabCast trm ty Map.empty Map.empty
+            def <- unElabMT $ elabCast trm ty Map.empty Map.empty []
             modify $ \ (ptc, pdc, vmap, defTy, pdef) ->  (ptc, pdc, vmap, defTy, Map.insert x' def pdef)
             pure $ Just (x', def)
 
@@ -127,24 +127,32 @@ instance (Fresh m, MonadError C.Err m, Monad m, WithSourceLoc m) => (C.WithDynDe
 
 
 
-elabTelUnit ::  (Fresh m, MonadError C.Err m, C.WithDynDefs m, WithSourceLoc m) => Tel Term Ty () -> Ctx -> VMap -> m (Tel C.Term C.Ty ())
-elabTelUnit (NoBnd ()) _ _ = pure $ NoBnd ()
-elabTelUnit (TelBnd ty bndbod) ctx rename = do
-  ty' <- elabTy ty ctx rename
+elabTelUnit ::  (Fresh m, MonadError C.Err m, C.WithDynDefs m, WithSourceLoc m) => Tel Term Ty () -> Ctx -> VMap -> TyDefs -> m (Tel C.Term C.Ty ())
+elabTelUnit (NoBnd ()) _ _ _ = pure $ NoBnd ()
+elabTelUnit (TelBnd ty bndbod) ctx rename assumeDefs = do
+  ty' <- elabty ty ctx rename assumeDefs
   (x, bod) <- unbind bndbod
   x' <- fresh $ s2n $ name2String x
-  bod' <- elabTelUnit bod (Map.insert x ty' ctx) (Map.insert x x' rename)
+  bod' <- elabTelUnit bod (Map.insert x ty' ctx) (Map.insert x x' rename) assumeDefs
   pure $ TelBnd ty' $ bind x' bod'
 
--- elabTelLs :: (Fresh m, MonadError C.Err m, MonadWithDynDefs m) => Tel Term Ty [Exp] -> Tel C.Term C.Ty () -> Ctx -> VMap -> m (Tel C.Term C.Ty [C.CastExp])
-elabTelLs (NoBnd params) telltys ctx rename = do
-  params' <- elabCastTelUnit params telltys ctx rename
+--elabTelLs :: (Fresh m, MonadError C.Err m, MonadWithDynDefs m) => Tel Term Ty [Exp] -> Tel C.Term C.Ty () -> Ctx -> VMap -> m (Tel C.Term C.Ty [C.CastExp])
+elabTelLs
+  :: (Fresh m, MonadError C.Err m, WithDynDefs m, WithSourceLoc m) =>
+     Tel Term Exp [Exp]
+     -> Tel C.Term C.Ty ()
+     -> Map (Name Term) C.Exp
+     -> Map (Name Term) (Name C.Term)
+     -> TyDefs
+     -> m (Tel C.Term C.Exp [C.Exp])
+elabTelLs (NoBnd params) telltys ctx rename assumeDefs = do
+  params' <- elabCastTelUnit params telltys ctx rename assumeDefs
   pure $ NoBnd params'
-elabTelLs (TelBnd ty bndbod) telltys ctx rename = do
-  ty' <- elabTy ty ctx rename 
+elabTelLs (TelBnd ty bndbod) telltys ctx rename assumeDefs = do
+  ty' <- elabTy ty ctx rename assumeDefs
   (x, bod) <- unbind bndbod
   x' <- fresh $ s2n $ name2String x
-  bod' <- elabTelLs bod telltys (Map.insert x ty' ctx) (Map.insert x x' rename)
+  bod' <- elabTelLs bod telltys (Map.insert x ty' ctx) (Map.insert x x' rename) assumeDefs
   pure $ TelBnd ty' $ bind x' bod'
 
 

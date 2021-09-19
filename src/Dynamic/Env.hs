@@ -49,9 +49,12 @@ import Dynamic.Err
 type TyCtx = Map Var Ty
 type DataCtx = Map TCName C.DataDef
 
+type TyDefs = [(C.Var, C.Path, C.Exp)]
+-- as a list becuase order of assignments matters
+
 
 type Partialmodule = (Map String (Tel C.Term C.Ty ()), Map String (Map String (Tel C.Term C.Ty [C.Ty])), VMap, Map C.Var C.Ty, Map C.Var C.Term)
-
+-- TODO capitalization
 
 
 
@@ -60,6 +63,8 @@ data Module = Module DataCtx DefCtx VMap
 
 makeMod :: Map TCName C.DataDef -> Map C.Var C.Term -> Module
 makeMod ddefs trmdefs = Module ddefs (DefCtx trmdefs) $ Map.fromList $ fmap (\(k, _) -> (s2n $ name2String k,k)) $ Map.toList trmdefs
+
+emptyModule = Module Map.empty (DefCtx Map.empty) Map.empty
 
 -- | For toplevel term definitions
 newtype DefCtx = DefCtx (Map C.Var C.Term)
@@ -164,16 +169,6 @@ runWithModuleMT e m = runReaderT (unWithModuleMT e) m
 
 instance MonadTrans WithModuleMT where
   lift = WithModuleMT . lift
-
-
--- instance (MonadReader r m) => ( MonadReader r (WithModuleMT m)) where
---   ask = lift . ask
---   local = _
--- --   getDatadef' = lift . getDatadef' 
--- --   getConsTcon' = lift . getConsTcon'
--- --   getDefn' = lift . getDefn' 
--- --   getDefnTy' = lift . getDefnTy'
--- --   getDefnm' = lift . getDefnm'
 
 
 instance (Fresh m) => (Fresh (WithModuleMT m)) where
@@ -326,7 +321,7 @@ instance (MonadError e m) => (MonadError e (WithSourceLocMT m)) where
 --m h = FreshMT $ EC.catchError (unFreshMT m) (unFreshMT . h)
 
 -- TODO: double check
-instance (MonadReader r m) => (MonadReader r  (WithSourceLocMT m)) where
+instance (MonadReader r m) => (MonadReader r (WithSourceLocMT m)) where
   ask = lift ask
   local f ma = do
     a <- ma

@@ -14,7 +14,7 @@ import Control.Monad.Except
 import Control.Monad.Reader
 
 import Control.Monad.Identity
-import StdLib (n, s, nat, add, rep, head, stdlib)
+import StdLib (stdlib)
 
 import PreludeHelper
 import SourcePos

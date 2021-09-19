@@ -14,9 +14,9 @@ data Nat : * {
 
 add : Nat -> Nat -> Nat ;
 add x y = 
-  case x {
-   | Z   => y
-   | S p => S (add p y)
+  case x <_ => Nat> {
+   | (Z)   => y
+   | (S p) => S (add p y)
    } ;
 
 -- length indexed lists
@@ -28,47 +28,35 @@ data Vec : * -> Nat -> * {
 rep : (A : *) -> A -> (n : Nat) -> Vec A n ;
 rep A a n = 
   case n < n' : Nat => Vec A n' >{
-   | Z   => Nil A
-   | S p => Cons A a p (rep A a p)
+   | (Z)   => Nil A
+   | (S p) => Cons A a p (rep A a p)
    } ;
 
 head : (A : *) -> (n : Nat) -> Vec A (S n) -> A ;
 head A n v = 
-  case v < _ : Vec A' n' => 
-    case n' {
-      | Z   => Unit
-      | S _ => A'
-    }
-  >{
-   | Nil _        => tt
-   | Cons _ a _ _ => a
+  case v <_ => A >{
+   | (Cons _ a _ _) => a
    } ;
 
 tail : (A : *) -> (n : Nat) -> Vec A (S n) -> Vec A n ;
 tail A n v = 
-  case v < _ : Vec A' n' => 
-    case n' {
-      | Z   => Unit
-      | S pn => Vec A' pn
-    }
-  >{
-   | Nil _        => tt
-   | Cons _ _ _ v => v
+  case v <_ => Vec A n >{
+   | (Cons _ _ _ v) => v
    } ;
 
 append : (A : *) -> (n : Nat) -> Vec A n -> (m : Nat) -> Vec A m -> Vec A (add n m) ;
-append A n vn = 
-  case vn <_ : Vec A' n' => (m' : Nat) -> Vec A' m' -> Vec A' (add n' m') >{
-   | Nil _ => \ m => \ vm => vm
-   | Cons A'' a pn pvn => \ m => \ vm => Cons A'' a (add pn m) (append A'' pn pvn m vm)
+append A n vn m vm = 
+  case n, vn < n' => _ : Vec A n' => Vec A (add n' m) >{ -- multi matching allows for definitional computation
+   | (Z)   => (Nil _) => vm
+   | (S _) => (Cons _ a pn pvn) => Cons A a (add pn m) (append A pn pvn m vm)
   };
 
 
 mapVec : (A : *) -> (n : Nat) -> Vec A n -> (B : *) -> (A -> B) -> Vec B n ;
 mapVec A n v =
-  case v < _ : Vec A' n' => (B : *) -> (A' -> B) -> Vec B n' >{
-   | Nil A          => \ B => \ _ => Nil B
-   | Cons A a pn pv => \ B => \ f => Cons B (f a) pn (mapVec A pn pv B f)
+  case v < _ : Vec A n => (B : *) -> (A -> B) -> Vec B n >{
+   | (Nil A)          => \ B => \ _ => Nil B
+   | (Cons A a pn pv) => \ B => \ f => Cons B (f a) pn (mapVec A pn pv B f)
   };
 
 

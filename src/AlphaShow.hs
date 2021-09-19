@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric, DefaultSignatures, FlexibleInstances, FlexibleContexts, TypeOperators, MultiParamTypeClasses, AllowAmbiguousTypes #-}
 
-module AlphaShow (AlphaLShow, aShow, lfullshow) where -- TODO: push up to unbound generics
+module AlphaShow (AlphaLShow, aShow, lfullshow, showConst) where -- TODO: push up to unbound generics
 
 import GHC.Generics
 import Unbound.Generics.LocallyNameless

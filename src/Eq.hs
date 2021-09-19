@@ -23,7 +23,7 @@ import UnboundHelper
 import Env
 import Norm
 import Control.Monad.Reader (MonadReader)
-
+import Control.Monad
 
 
 
@@ -56,22 +56,21 @@ eq l r = do -- TODO: posible subtle bug with nonterminating functions.  Should f
     (DCon lname, DCon rname) | lname == rname -> do
       pure $ DCon lname
 
-    (Case lscrut ann bndlbranchs, Case rscrut _ bndrbranchs) | length bndlbranchs == length bndrbranchs  -> do
-      scrut <- eq lscrut rscrut
+-- what should be the equational behavior of stuck cases? stuck cases with no branches?
+    (Case lscruts ann bndlbranchs, Case rscruts _ bndrbranchs) 
+      | length lscruts == length rscruts && length bndlbranchs == length bndrbranchs -> do 
+      scruts <- mapM (\ (l,r) -> eq l r) $ zip lscruts rscruts
       
-      --TODO: order of cases will be relevent for equality!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      branchs <- mapM (\ (Match lname bndlBranch, Match rname bndrBranch) -> do
-        guard $ lname == rname
-        -- TODO this breakes typing aspect of the ctx
-        (lparams, lBranch) <- unbind bndlBranch
-        (rparams, rBranch) <- unbind bndrBranch
+      --order of cases will be relevent for equality, which is fine
+      branchs <- forM (zip bndlbranchs bndrbranchs) $  \ (Match bndlBranch, Match bndrBranch) -> do
+        mp <- unbind2 bndlBranch bndrBranch
+        case mp of
+          Nothing -> throwError $ "mismatched params, " ++ show bndlBranch ++ " =\\= " ++ show bndrBranch 
+          Just (lparams, lBranch, rparams, rBranch) -> do
+            branch <- eq lBranch rBranch
+            pure $ Match $ bind lparams branch
         
-        guard $ length lparams == length rparams
-        
-        branch <- eq lBranch $ substs (fmap (\ (lv,rv) -> (rv, V lv) ) $ zip lparams rparams) rBranch
-        pure $ Match lname $ bind lparams branch
-        ) $ zip bndlbranchs bndrbranchs
-      pure $ Case scrut ann branchs
+      pure $ Case scruts ann undefined --branchs
 
     (TCon lname, TCon rname) | lname == rname -> 
       pure $ TCon lname

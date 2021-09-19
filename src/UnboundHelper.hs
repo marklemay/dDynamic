@@ -27,6 +27,7 @@ import Data.Monoid (Any(..))
 import Control.Applicative (Alternative(empty),  Applicative(..), (<$>))
 import Unbound.Generics.LocallyNameless.Internal.Fold (foldMapOf, toListOf)
 import Unbound.Generics.LocallyNameless.Unsafe (unsafeUnbind)
+import Unbound.Generics.LocallyNameless.Bind 
 
 import Control.Monad.Except (throwError, MonadError)
 import Control.Monad (MonadPlus(..))
@@ -72,12 +73,38 @@ instance (Typeable n, Alpha a, Alpha b, Subst e a, Subst e b) => Subst e (Tel n 
 
 instance (Typeable n, AlphaLShow a, AlphaLShow b) => AlphaLShow (Tel n a b)
 
+unbinds :: (Typeable n, Alpha a, Alpha b) => (Fresh m) => Tel n a b -> m ([(Name n,a)],b)
+unbinds (NoBnd b) = pure ([], b)
+unbinds (TelBnd a bndRest) = do
+  (x, rest) <- unbind bndRest
+  (ls, b) <- unbinds rest
+  pure $ ((x,a):ls, b)
 
 -- a little unsafe
 tmap f (NoBnd b) = NoBnd $ f b
 tmap f (TelBnd a bndbod) = do
   (v, bod) <- unbind bndbod
   TelBnd a . bind v <$> tmap f bod
+
+
+tmapM af bf (NoBnd b) = do
+  b' <- bf b
+  pure $ NoBnd b'
+tmapM af bf (TelBnd a bndbod) = do
+  a' <- af a
+  (v, bod) <- unbind bndbod
+  bod' <- tmapM af bf bod
+  pure $ TelBnd a' $ bind v bod'
+
+unsafeTelMap f (NoBnd b) = NoBnd $ f b
+unsafeTelMap f (TelBnd a (B p bod)) = TelBnd a (B p $ unsafeTelMap f bod)
+
+substBindTel (NoBnd a) [] = ([], a)
+substBindTel (TelBnd ty bndRestTel) (arg:rest) = let
+  restTel = substBind bndRestTel arg
+  (tys, a) = substBindTel restTel rest
+  in (ty:tys, a)
+
 
 depth :: (Typeable n, Alpha a, Alpha b) => Tel n a b -> Integer
 depth (NoBnd _) = 0
@@ -113,13 +140,18 @@ instance (Subst b a, Ord a) => Subst b (Set a) where
   substPat ctx i withThis = Set.map (substPat ctx i withThis)
 
 
+-- TODO standard?
+tyBreak :: Ordering -> Ordering -> Ordering
+tyBreak EQ x = x
+tyBreak x _ = x
+
 -- only operate over values or there is a risk of subtle key colision
 instance (Alpha v, Ord k, Show k) => Alpha (Map k v) where
-  aeq' actx l r = error "not yet implemented"  
-    -- let
-    -- l' = sortBy acompare $ Set.toList l
-    -- r' = sortBy acompare $ Set.toList r
-    -- in aeq' actx l' r' -- TODO possible wierdness with repeated aeq elements 
+  aeq' actx l r = 
+    let
+    l' = sortBy (\ (k, v) (k', v') -> (v `acompare` v') `tyBreak` (k `compare` k')) $ Map.toList l -- TODO pretty inefficient
+    r' = sortBy (\ (k, v) (k', v') -> (v `acompare` v') `tyBreak` (k `compare` k')) $ Map.toList r
+    in (fst <$> l') == (fst <$> r') && aeq' actx (snd <$> l') (snd <$> r') 
   fvAny' actx nfn sa = 
     let -- TODO almost definitely better way to do this
     masList =  Map.toList sa

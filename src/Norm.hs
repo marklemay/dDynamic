@@ -29,9 +29,54 @@ import Control.Monad.Reader
 
 -- TODO this paremeterized norm can emulate the paremetric one?
 
+data YesNoStuck a --b
+  = Yes a
+  | No
+  | Stuck --b
+  deriving (Show)
+
+
+match :: 
+  HasCallStack => 
+  (Monad m) => 
+  (Exp -> m Exp) -> (Exp -> m Exp) -> [(Exp,Pat)] -> Exp -> m (YesNoStuck Exp)
+match critN argN []  bod = pure $ Yes bod
+match critN argN ((e, PVar x):ms) bod = do 
+  e' <- argN e
+  match critN argN ms $ subst x e' bod
+match critN argN ((e, Pat dcName pats): ms) bod = do 
+  e' <- argN e
+  case asNeu e' of 
+    Just (DCon dcName', args) | dcName' /= dcName -> pure No
+    Just (DCon dcName', args) | length args /= length pats -> error "really broke bad lengths"
+    Just (DCon _, args) -> 
+      match critN argN (zip args pats ++ ms) bod
+    _ -> pure Stuck -- TODO exposing the partial stuck state as a valid expression would allow for more definitional eqs, and possibly make the metatheory easier
+
+matches ::
+  HasCallStack => 
+  (Fresh m) => 
+  (Exp -> m Exp) -> (Exp -> m Exp) -> [Exp] -> [Match] -> m (Either ([Exp], [Match]) Exp)
+matches critN argN scrutinees [] = pure $ Left (scrutinees, [])
+
+  -- TODO inefficint since that scrutinee is recalculated every branch!
+  -- TODO can simplify much more then currently
+matches critN argN scrutinees ms@((Match bndbod):rest) = do
+  (pats, bod) <- unbind bndbod
+  if length pats /= length scrutinees
+    then pure $ Left (scrutinees, ms)
+    else do 
+    ans <- match critN argN (zip scrutinees pats) bod
+    case ans of
+      Yes e -> pure $ Right e
+      No -> matches critN argN scrutinees rest
+      Stuck -> pure $ Left (scrutinees, ms)
+
 -- | the defualt norm behavour, will always terminate with pure args, by "defualt" stops evaluation at WHNF
-norm :: HasCallStack => (Fresh m, MonadError String m)
-  => Exp -> (Exp -> m Exp) -> (Exp -> m Exp) -> m Exp
+norm :: 
+  HasCallStack => 
+  (Fresh m) => 
+  Exp -> (Exp -> m Exp) -> (Exp -> m Exp) -> m Exp
 norm (V x) critN argN = pure $ V x
   -- TODO: safely evaluate the annotation?
 norm (tm ::: ty) critN argN = critN tm
@@ -53,23 +98,25 @@ norm (Fun bndBod) critN argN = do
   -- TODO: safely evaluate the annotation?
 
 norm (DCon dCName) critN argN = pure $ DCon dCName
-norm (Case scrutinee ann branches) critN argN = do
-  scrutinee' <-  critN scrutinee
-  case asNeu scrutinee' of 
-    Just (DCon cname, args) ->
-      case lookup cname $ fmap (\ (Match name bndBod) -> (name, bndBod)) branches of
-        Just bndBod -> do 
-          (vs, bod) <- unbind bndBod
-          guardThrow (length vs == length args) "not the same len" $ critN $ substs (zip vs args) bod
-        Nothing -> throwError "constructor given was not matched"
-    _ -> Case scrutinee' ann <$> mapM (\ (Match name bndBod) -> do (vs, bod) <- unbind bndBod; bod' <- argN bod; pure $ Match name $ bind vs bod') branches
-
-norm (Pi aTy bnd) critN argN = do
-  (argName, bod) <- unbind bnd
-  bod' <- argN bod
-  Pi <$> argN aTy <*> pure (bind argName bod') -- TODO: applicative helper?
 norm (TCon tCName) critN argN = pure $ TCon tCName
--- norm (TCon tCName args) critN argN = TCon tCName <$> mapM argN args
+norm (Pi argTy bndBodTy) critN argN = do
+  argTy' <- argN argTy
+  (vars,bodTy) <- unbind bndBodTy
+  bodTy' <- argN bodTy
+  pure $ Pi argTy' $ bind vars bodTy'
+ 
+-- things are now a bit more complicated, and order matters
+-- need to take it pattern by pattern for the most lazy behavior
+-- may need to override this specifically to reconstitute CBV behavuor
+
+norm (Case scrutinees ann branches) critN argN = do
+  scrutinees' <- mapM critN scrutinees -- TODO could be tighter, only normalize the scruts that can be tested 
+  
+  ans <- matches critN argN scrutinees branches
+  case ans of
+    Right e -> critN e
+    Left (scrutinee', branches') -> 
+      Case scrutinee' ann <$> mapM (\ (Match bndBod) -> do (pat, bod) <- unbind bndBod; bod' <- argN bod; pure $ Match $ bind pat bod') branches'
 
 norm (Solve target) critN argN = pure $ Solve target -- by defualt do not evaluate Solve
 norm TyU critN argN = pure TyU
@@ -79,7 +126,10 @@ norm (Pos _ e _) critN argN = critN e
 whnf' :: (MonadError String m, DefnCtx ctx, MonadReader ctx m, Fresh m)
   => (Exp -> m Exp) -> Exp -> m Exp
 whnf' argN (V x) = do
-  {do (trm,_) <- lookupDef x; whnf' argN trm } `catchError` \ _ -> pure $ V x
+  md <- lookupDef' x
+  case md of
+    Just (trm,_) -> whnf' argN trm
+    Nothing -> pure $ V x
   -- TODO: safely evaluate the annotation?
 whnf' argN (f `App` arg) =  do
   f' <- whnf' pure f
@@ -97,8 +147,13 @@ whnf :: (MonadError String m, DefnCtx ctx, MonadReader ctx m, Fresh m)
 whnf = whnf' pure
 
 
-safeWhnf :: (Fresh m, MonadError String m)
+safeWhnf :: (Fresh m, DefnCtx ctx, MonadReader ctx m, MonadError String m)
   => Exp -> m Exp
+safeWhnf (V x) = do
+  md <- lookupDef' x
+  case md of
+    Just (trm,_) -> pure trm -- it is actually unsafe to recursively expand
+    Nothing -> pure $ V x
 safeWhnf e = norm e safeWhnf pure
 
 

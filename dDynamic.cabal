@@ -23,6 +23,7 @@ library
     , Dynamic.Elab, Dynamic.Env
     , Dynamic.Erase, Dynamic.Err, Dynamic.Helper
     , Dynamic.Temp
+    , Dynamic.Clean, Dynamic.Unification, Dynamic.Warn
     
     , Repl
     , StdLib
@@ -30,6 +31,7 @@ library
     , MonadTransformers, Ty, Eq, Norm, Ast, Helper, Env
     , ParserMonad, SourcePos
     , Parser
+    , Unification
 
     , UnboundHelper, AlphaShow 
     , PreludeHelper

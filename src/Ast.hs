@@ -55,7 +55,7 @@ data Exp =
 
   -- user defined
   | DCon DCName -- arguments would be apped
-  | Case Term (An (Bind (Var, [Var]) Ty)) [Match]
+  | Case [Term] (An (Tel Exp (Maybe Ty) Ty)) [Match]
 
   -- wierd stuff
   | Solve (An Ty) -- TODO: redundant with ty anntoation
@@ -87,18 +87,38 @@ instance Subst Exp Exp where
 
 -- from https://github.com/sweirich/pi-forall/blob/2014/full/src/Environment.hs for user defined types
   
--- | A 'Match' represents a case alternative
-data Match = Match DCName (Bind [Var] Term) deriving (Show, Generic, Typeable)
+-- | A 'Match' is a possible branch alternative in a 'Case'
+newtype Match = Match (Bind [Pat] Term) deriving (Generic, Typeable)
 
 instance Alpha Match
 instance Subst Exp Match
 instance AlphaLShow Match
+instance Show Match where
+  show = lfullshow
 
-data DataDef = DataDef (Telescope ()) (Map DCName (Telescope [Term])) deriving (Show, Generic, Typeable)
+data Pat 
+  = Pat DCName [Pat]
+  | PVar Var
+  -- TODO ppos?
+  deriving (Generic, Typeable)
+
+instance Alpha Pat
+instance Subst Exp Pat -- vacuous substitution
+instance AlphaLShow Pat
+
+
+instance Show Pat where
+  show (PVar x) = show x
+  show (Pat dCName []) = "(" ++ dCName ++ ")"
+  show (Pat dCName args) = "(" ++ dCName ++ " " ++ (concat $ intersperse " " $ show <$> args) ++ ")"
+
+instance Eq Pat where
+  (==) = aeq
+
+data DataDef = DataDef (Telescope ()) (Map DCName (Telescope [Term])) deriving (Show, Generic, Typeable, Eq)
 -- the [Ty] and [Term] should always be the same length
 instance Alpha DataDef
 instance Subst Exp DataDef
--- instance AlphaShow DataDef
 
 
 type Telescope = Tel Exp Ty
@@ -106,10 +126,14 @@ type Telescope = Tel Exp Ty
 
 erasePos (Pos _ e _) = erasePos e
 erasePos (e ::: t) = erasePos e ::: erasePos t
-erasePos (Fun (unsafeUnbind -> ((s,a),bod))) = Fun (bind (s,a) $ erasePos bod)
+erasePos (Fun (B p bod)) = Fun (B p $ erasePos bod)
 erasePos (e `App` t) = erasePos e `App` erasePos t
-erasePos (Case s ann bs) = Case (erasePos s) ann $ fmap (\ (Match dCName (unsafeUnbind -> (p,bod))) -> Match dCName $ bind p $ erasePos bod) bs -- TODO playing with unsafe fire
-erasePos (Pi aTy (unsafeUnbind -> (a,bod))) = Pi (erasePos aTy) $ bind a $ erasePos bod
+erasePos (Case s ann bs) = 
+  Case (erasePos <$> s) ann $ (\ (Match (B p bod)) -> Match (B p $ erasePos bod)) <$> bs 
+  -- TODO erase in annotation
+erasePos (Pi aTy ((B p bod))) = Pi (erasePos aTy) $ B p $ erasePos bod
+-- erasePos (V x) = V x
+-- erasePos TyU = TyU
 erasePos x = x
 
 
@@ -153,7 +177,7 @@ codeshow e =
               
               -- (Fun an bod) ->  "(Fun " ++ codeshow an ++ " "++ codeshow bod ++ ")"
               (DCon dCName) ->  "(DCon \"" ++ dCName ++ "\")"
-              (Case scrut (An (Just an)) branches) ->  "(Case " ++  codeshow scrut ++ " (ann $"++ bndcodeshow an  ++ ")  "++ "[" ++ (concat $ intersperse ", " (fmap codeshowMatch branches)) ++ "]" ++ ")"
+              -- (Case scrut (An (Just an)) branches) ->  "(Case " ++  codeshow scrut ++ " (ann $"++ bndcodeshow an  ++ ")  "++ "[" ++ (concat $ intersperse ", " (fmap codeshowMatch branches)) ++ "]" ++ ")"
               -- (Solve an) ->  "(Solve " ++  codeshow an ++ ")"
               (Pi aTy outTy) ->  "(Pi " ++ codeshow aTy  ++ " "++ bndcodeshow' outTy ++ ")"
               (TCon tCName) ->  "(TCon \"" ++ tCName  ++ "\")"
@@ -176,10 +200,10 @@ bndcodeshow' bnde = runFreshM $ do -- TODO this is buggy
   (pat, e) <- unbind bnde
   pure $ " bind " ++ show pat ++ " $ " ++ codeshow e
 
-codeshowMatch :: Match -> [Char]
-codeshowMatch (Match n bnde) = runFreshM $ do -- TODO this is buggy
-  (pat, e) <- unbind bnde
-  pure $ "Match \"" ++ n ++ "\" $ bind " ++ show pat ++ " $ " ++ codeshow e
+-- codeshowMatch :: Match -> [Char]
+-- codeshowMatch (Match n bnde) = runFreshM $ do -- TODO this is buggy
+--   (pat, e) <- unbind bnde
+--   pure $ "Match \"" ++ n ++ "\" $ bind " ++ show pat ++ " $ " ++ codeshow e
 
 
 
@@ -233,17 +257,17 @@ simpleShow b e =
     Pi aTy (unsafeUnbind-> (x, outTy)) -> paren 2 $ "(" ++ show x ++ " : " ++ simpleShow b aTy 0 ++ ")-> " ++ simpleShow b outTy 2
     Fun (unsafeUnbind-> ((f,x), out)) -> paren 2 $ "fun " ++ show f ++ " " ++ show x ++ " => " ++ simpleShow b out 2
     trm ::: ty -> paren 6 $ simpleShow b trm 7 ++ " : " ++ simpleShow b ty 6
-    Case scrut an branches -> 
-      paren 8 $  "case " ++ simpleShow b scrut 0 -- prob wrong
-        ++ case an of
-             An Nothing -> ""
-             An (Just (unsafeUnbind-> ((scrutName, args), ty))) -> 
-               "<" ++ show scrutName ++ ":_ " ++ (concat $ intersperse " " $ show <$> args) ++ " => " ++ simpleShow b ty 0 ++ ">"
-        ++ "{" ++ (concat $ intersperse " " $ 
-          fmap (\ (Match dCName (unsafeUnbind-> (args, bod))) -> 
-                  "| " ++ dCName ++ " " ++ (concat $ intersperse " " $ show <$>  args) 
-                   ++ " => " ++ simpleShow b bod 0 ) branches) 
-          ++ "}"
+    -- Case scrut an branches -> 
+    --   paren 8 $  "case " ++ simpleShow b scrut 0 -- prob wrong
+    --     ++ case an of
+    --          An Nothing -> ""
+    --          An (Just (unsafeUnbind-> ((scrutName, args), ty))) -> 
+    --            "<" ++ show scrutName ++ ":_ " ++ (concat $ intersperse " " $ show <$> args) ++ " => " ++ simpleShow b ty 0 ++ ">"
+    --     ++ "{" ++ (concat $ intersperse " " $ 
+    --       fmap (\ (Match dCName (unsafeUnbind-> (args, bod))) -> 
+    --               "| " ++ dCName ++ " " ++ (concat $ intersperse " " $ show <$>  args) 
+    --                ++ " => " ++ simpleShow b bod 0 ) branches) 
+    --       ++ "}"
         
     Pos _ e _ -> simpleShow b e
     -- (trm ::: ty) -> paren 6 $ simpleShow b trm 0 ++ " : " ++ simpleShow b ty 0
@@ -273,7 +297,7 @@ prettyShow b e =
     TyU -> \ _ -> "*" 
     Solve _ -> \ _ -> "?"
     (simpleNat -> Just n) -> \ _ -> show n
-    (simpleVec -> Just (ty, ls)) ->  \ _ -> "[" ++ (concat $ intersperse ", " $ (\arg -> prettyShow b arg 0 ) <$> ls) ++ "]<" ++ prettyShow b ty 0 ++ ">"
+    (simpleVec -> Just (ty, ls)) ->  \ _ -> "[" ++ (concat $ intersperse ", " $ ps 0 <$> ls) ++ "]<" ++ ps 0 ty ++ ">"
     TCon n -> \ _ -> n
     DCon n -> \ _ -> n
     f `App` a -> paren 8 $ prettyShow b f 8 ++ " " ++ prettyShow b a 9
@@ -282,20 +306,22 @@ prettyShow b e =
     (justLam -> Just (x,out)) -> paren 2 $ "\\ " ++ show x ++ " => " ++ prettyShow b out 2
     Fun (unsafeUnbind-> ((f,x), out)) -> paren 2 $ "fun " ++ show f ++ " " ++ show x ++ " => " ++ prettyShow b out 2
     trm ::: ty -> paren 6 $ prettyShow b trm 7 ++ " : " ++ prettyShow b ty 6
-    Case scrut an branches -> 
-      paren 8 $  "case " ++ prettyShow b scrut 0 -- prob wrong
-        ++ case an of
-             An Nothing -> ""
-             An (Just (unsafeUnbind-> ((scrutName, args), ty))) -> 
-               "<" ++ show scrutName ++ ":_ " ++ (concat $ intersperse " " $ show <$> args) ++ " => " ++ prettyShow b ty 0 ++ ">"
-        ++ "{" ++ (concat $ intersperse " " $ 
-          fmap (\ (Match dCName (unsafeUnbind-> (args, bod))) -> 
-                  "| " ++ dCName ++ " " ++ (concat $ intersperse " " $ show <$>  args) 
-                   ++ " => " ++ prettyShow b bod 0 ) branches) 
+    Case scruts an branches -> 
+      paren 8 $  "case " ++ (concat $ intersperse ", " $ ps 0 <$> scruts) --prettyShow b scrut 0 -- prob wrong
+        -- ++ case an of
+        --      An Nothing -> ""
+        --      An (Just (unsafeUnbind-> ((scrutName, args), ty))) -> 
+        --        "<" ++ show scrutName ++ ":_ " ++ (concat $ intersperse " " $ show <$> args) ++ " => " ++ prettyShow b ty 0 ++ ">"
+        ++ "{" 
+        ++ (concat $ intersperse " " $ 
+          fmap (\ (Match (unsafeUnbind-> (pats, bod))) -> 
+                  "| " ++ (concat $ intersperse " " $ show <$> pats) -- TODO pretty show pats
+                   ++ " => " ++ ps 0 bod) branches) 
           ++ "}"
-    -- Case scrut an branches ->  
     Pos _ e _ -> prettyShow b e
   where
+    ps :: Integer -> Exp -> String -- is this helper clearer or more confusing?
+    ps i e = prettyShow b e i
     paren :: Integer
               -> String
               -> Integer
