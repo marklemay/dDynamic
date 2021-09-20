@@ -9,6 +9,7 @@ import Presentation.Surface
 import Presentation.Cast
 import Parser.Fun
 import Parser.Exp
+import Elab.Fun
 
 -- import Dynamic.Main
 
@@ -39,8 +40,9 @@ allTests =
       Presentation.Surface.tests,
       Presentation.Cast.tests,
       stdLibTest,
-     Parser.Fun.tests
-    --  ,
-    --  Parser.Exp.tests
+     Parser.Fun.tests,
+    --  Parser.Exp.tests,
+    
+     Elab.Fun.tests
     ]
 

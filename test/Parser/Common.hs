@@ -42,11 +42,15 @@ fullShrink s ss = shrink
       ++ (Fun <$> underBinder shrink bndBod) -- shrink under the binder
   shrink (e1 ::: e2) = [e1, e2] ++ [e1' ::: e2' | (e1',e2') <- s (e1, e2)]
   shrink (f `App` a) = [f, a] ++ [f' `App` a' | (f',a') <- s (f,a)]
-  -- shrink (Case scrut (An ann) branches) = 
-  --   [scrut]++  fmap (snd . unsafeUnbind) (maybeToList  ann)
-  --    ++ fmap (\ (Match _ (unsafeUnbind-> (_, bod))) -> bod) branches
-  --    ++ [Case scrut' (An ann') branches' | (scrut', ann', branches') <- ss (scrut, ann, branches) ]
+  shrink (Case scruts (An ann) branches) = 
+    scruts ++ -- fmap (snd . unsafeUnbind) (maybeToList  ann) ++
+    -- [scrut]++  fmap (snd . unsafeUnbind) (maybeToList  ann)
+    --  ++ fmap (\ (Match _ (unsafeUnbind-> (_, bod))) -> bod) branches
+    --  ++ [Case scrut' (An ann') branches' | (scrut', ann', branches') <- ss (scrut, ann, branches) ]
+    undefined
   shrink _ = []
+
+
 
 
 -- TODO: underBinder, underBinderM

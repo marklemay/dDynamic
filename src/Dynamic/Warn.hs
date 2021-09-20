@@ -37,25 +37,12 @@ import Data.Monoid (Any (..))
 import Data.Typeable (Typeable)
 import GHC.Generics (Generic)
 import Unbound.Generics.LocallyNameless
-import Unbound.Generics.LocallyNameless.Alpha
-import Unbound.Generics.LocallyNameless.Bind
-import Unbound.Generics.LocallyNameless.Embed
-import Unbound.Generics.LocallyNameless.Ignore
 import Unbound.Generics.LocallyNameless.Internal.Fold (foldMapOf, toListOf)
-import Unbound.Generics.LocallyNameless.Name
-import Unbound.Generics.LocallyNameless.Rebind
-import Unbound.Generics.LocallyNameless.Rec
-import Unbound.Generics.LocallyNameless.Shift
-import Unbound.Generics.LocallyNameless.Subst
 import Control.Monad.Except
 import Unbound.Generics.LocallyNameless.Unsafe (unsafeUnbind)
 
-import Data.Foldable
 import UnboundHelper
 import Control.Monad.Reader (ReaderT, MonadReader(ask))
-import Control.Monad.State
-import Control.Monad.Identity
-import Control.Monad.Writer
 import Helper
 import AlphaShow
 import Control.Applicative

@@ -12,8 +12,8 @@ import Debug.Trace (trace)
 import Control.Monad.Except (throwError, MonadError)
 
 -- todo a = trace ("optimistically assume " ++ show a) $ pure a
--- logg a = trace ("-- " ++ show a) $ pure a
-logg a = pure a
+logg a = trace ("-- " ++ show a) $ pure a
+-- logg a = pure a
 -- did the haskell upgrade break trace?
 
 

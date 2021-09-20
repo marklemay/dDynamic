@@ -13,7 +13,7 @@
 
 module Dynamic.Norm where
 
-import GHC.Stack
+import GHC.Stack ( HasCallStack )
 
 
 import Control.Applicative (Applicative (..), (<$>))
@@ -326,15 +326,44 @@ whnfann (Case s m b l (An (Just ty))) = do
   pure $ Case s m b l (An (Just ty'))
 whnfann x = pure x -- everything else already in whnf
 
-
-
-cbvCheck :: (MonadReader Info m, MonadError Err m, Fresh m, WithDynDefs m) => Term -> m Exp
--- TODO MonadReader Info m probly better as an exception
-cbvCheck (Same l info r) | sameCon l r == Just False = do
+cbvCheckSame :: (MonadReader Info m, MonadError Err m, Fresh m, WithDynDefs m) => Term -> m Exp
+cbvCheckSame (Same l info r) | sameCon l r == Just False = do
   info <- ask 
   throwInfoError (show (e l) ++ "=/=" ++ show (e r)) info
-  -- error "throw info error"
-  -- runWithSourceLocMT (throwPrettyError $ "because " ++ show o ++ ", " ++ show (e l) ++ "=/=" ++ show (e r)) $ Just src
+cbvCheckSame (App f a ann) = do
+  f' <- cbvCheckSame f
+  a' <- cbvCheckSame a
+  -- TODO check that a is a value!
+  norm cbvCheckSame pure $ App f' a' ann --TODO some redundant computation... but the definition is at least tight
+cbvCheckSame (TConF tCName args an) = do
+  args' <- mapM cbvCheckSame args
+  pure $ TConF tCName args an
+cbvCheckSame (DConF dCName args an) = do
+  args' <- mapM cbvCheckSame args
+  pure $ DConF dCName args an
+cbvCheckSame (Case scruts anTel branches sr ann) = do
+  scruts' <- mapM cbvCheckSame scruts
+  norm cbvCheckSame pure $ Case scruts' anTel branches sr ann
+
+-- possible with cong subst
+-- cbvCheckSame (e@(C u info uTy w t)) = do 
+--   -- error $ "should have been erased, " ++ show e
+--   logg $ "should have been erased, " ++ show e
+--   norm cbvCheckSame pure e
+-- cbvCheckSame (e@(Csym _ _ _ _)) = do
+--   -- error $ "should have been erased, " ++ show e
+--   logg $ "should have been erased, " ++ show e
+--   norm cbvCheckSame pure e
+cbvCheckSame e = norm cbvCheckSame pure e
+
+cbvCheck :: HasCallStack =>
+  (MonadError Err m, Fresh m, WithDynDefs m) => 
+  Term -> m Exp
+cbvCheck (e@(Same l info r)) = do
+  error $ "shouldmn't encounter unerased Same, " ++ show e
+  -- logg $ "shouldmn't encounter unerased Same, " ++ show e
+  -- norm cbvCheck pure e
+
 cbvCheck (App f a ann) = do
   f' <- cbvCheck f
   a' <- cbvCheck a
@@ -342,10 +371,10 @@ cbvCheck (App f a ann) = do
   norm cbvCheck pure $ App f' a' ann --TODO some redundant computation... but the definition is at least tight
 cbvCheck (C u info uTy w t) = do
   u' <- cbvCheck u
-  w' <- local (\ _ -> info) $ cbvCheck w
+  w' <- runReaderT (cbvCheckSame w) info 
   uTy' <- cbvCheck uTy
   t' <- cbvCheck t
-  pure $ C u' info uTy' w' t'
+  norm cbvCheck pure $ C u' info uTy' w' t'
 cbvCheck (TConF tCName args an) = do
   args' <- mapM cbvCheck args
   pure $ TConF tCName args an

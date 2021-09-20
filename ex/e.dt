@@ -1,0 +1,31 @@
+
+data B: * {
+  | t : B
+  | f : B
+};
+
+
+data Bs : B -> * {
+  | s : (x : B) -> Bs x
+};
+
+fn : (Bs t) -> Bs t;
+fn x = 
+ case x < _ => Bs t > {
+ | (s x) => (s x)
+ };
+
+ex1 : Bs t ;
+ex1 = fn (s t) ;
+
+ex2 : Bs t ;
+ex2 = fn (s f) ;
+
+
+ex3 : Bs t;
+ex3 = 
+ case (s f) < _ : Bs t => Bs t > {
+ | (s x) => (s x)
+ };
+
+-- (C (C (DConF "f" ) _ (TConF "B" ) _ (C (TConF "B" ) _ * _ *)) _ (C (TConF "B" ) _ * _ *) _ (C (TConF "B" ) _ * _ *))

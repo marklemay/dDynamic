@@ -32,6 +32,7 @@ library
     , ParserMonad, SourcePos
     , Parser
     , Unification
+    , Erase
 
     , UnboundHelper, AlphaShow 
     , PreludeHelper

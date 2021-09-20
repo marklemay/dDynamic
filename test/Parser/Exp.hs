@@ -138,20 +138,27 @@ module Parser.Exp where
 --   bod <- arbitrarySizedExpr bodSize
 --   pure $ Match dCon $ bind pat bod
   
+-- arbitrarySizedTel :: Int -> Int -> Int ->  Gen (Tel Exp (Maybe Ty) Ty)
+-- arbitrarySizedTel i tuples 0 = do
+--   e <- arbitrarySizedExpr (i `div` (tuples+1))
+--   pure $ NoBnd e
+-- arbitrarySizedTel i tuples j = do
+--   x <- vars
+--   e <- arbitrarySizedExpr (i `div` (tuples+1))
+--   rest <- arbitrarySizedTel i tuples (j-1)
+--   elements [TelBnd Nothing $ bind x rest, TelBnd (Just e) $ bind x rest]
 
--- arbitrarySizedMotive :: Int -> Gen (An (Bind (Var,[Var]) Ty)) 
--- arbitrarySizedMotive i = do
---   scrutName <- vars
---   (patSize, bodSize) <- splitSize2 i
---   pat <- vectorOf patSize vars
---   bod <- arbitrarySizedExpr bodSize
---   elements [noAn, ann $ bind (scrutName, pat) bod]
 
--- arbitrarySizedCase :: Int -> Gen Exp
--- arbitrarySizedCase i = do
+-- arbitrarySizedMotive :: Int -> Int -> Gen (An (Tel Exp (Maybe Ty) Ty)) 
+-- arbitrarySizedMotive i tuples = do
+--   bod <- arbitrarySizedTel i tuples tuples
+--   elements [noAn, ann bod]
+
+-- arbitrarySizedCase :: Int -> Int -> Gen Exp
+-- arbitrarySizedCase i tuples = do
 --   n <- chooseInt (2, i) 
 --   scrut <- arbitrarySizedExpr (i `div` n)
---   motive <- arbitrarySizedMotive (i `div` n)
+--   motive <- arbitrarySizedMotive (i `div` n) tuples
 --   branches <- vectorOf (n-2) $ arbitrarySizedMatch (i `div` n)
 --   pure $ Case scrut motive branches
 
@@ -172,7 +179,8 @@ module Parser.Exp where
 --   rest <- arbitrarySizedExpr (i - 1)
 --   e1 <- arbitrarySizedExpr ((i `div` 2) - 1)
 --   e2 <- arbitrarySizedExpr (i `div` 2)
---   cas <- arbitrarySizedCase i
+--   tuples <- elements [0,1,2,3]
+--   cas <- arbitrarySizedCase i tuples
 --   elements [
 --    e1 ::: e2,
 --    e1 `App` e2, Pi e1 $ bind var e2, Fun $ bind (var2, var) rest,
@@ -191,7 +199,7 @@ module Parser.Exp where
 -- instance (Arbitrary Match) where
 --   arbitrary = sized arbitrarySizedMatch
 
---   shrink (Match dCName bndBod) = Match dCName <$> shrink bndBod
+--   shrink (Match bndBod) = Match <$> shrink bndBod
 
 -- instance (Alpha p, Alpha b, Arbitrary p, Arbitrary b) => Arbitrary (Bind p b) where
 --   arbitrary = bind <$> arbitrary <*>  arbitrary
