@@ -168,18 +168,18 @@ norm crit simp (Same l obs r) = do
     (TyU, TyU) -> pure TyU
 
     (TConF tCNamel argsl _, TConF tCNamer argsr _) | tCNamel == tCNamer && length argsl == length argsr -> do
-      args <- mapM (\ (i, ll, rr) -> simp (Same ll (Index i obs) rr)) $ zip3 [0..] argsl argsr
+      args <- mapM (\ (i, ll, rr) -> simp (Same ll (obsmap (Index i) obs) rr)) $ zip3 [0..] argsl argsr
       pure $ TConF tCNamel args noAn
 
     (DConF dCNamel argsl _, DConF dCNamer argsr _)  | dCNamel == dCNamer && length argsl == length argsr  -> do
-      args <- mapM (\ (i, ll, rr) -> simp (Same ll (Index i obs) rr)) $ zip3 [0..] argsl argsr
+      args <- mapM (\ (i, ll, rr) -> simp (Same ll (obsmap (Index i) obs) rr)) $ zip3 [0..] argsl argsr
       pure $ DConF dCNamel args noAn
 
     (Pi aTyl bndbodTyl, Pi aTyr bndbodTyr) -> do
       (argnamel, bodl) <- unbind bndbodTyl --TODO unbind2 ?
       (argnamer, bodr) <- unbind bndbodTyr
-      aTy <- simp (Same aTyl (Aty obs) aTyr)
-      bodTy <- simp (Same bodl (Bty (v argnamel) obs) $ subst argnamer (v argnamel) bodr)
+      aTy <- simp (Same aTyl (obsmap Aty obs) aTyr)
+      bodTy <- simp (Same bodl (obsmap (Bty (v argnamel)) obs) $ subst argnamer (v argnamel) bodr)
 
       pure $ Pi aTy $ bind argnamel bodTy -- TODO rename or swap would be better
     
@@ -189,7 +189,7 @@ norm crit simp (Same l obs r) = do
       -- logg ""
       -- logg bodl
       -- logg bodr
-      bod <- simp (Same bodl (AppW (v argnamel) obs) $ subst slefr (v selfl) $ subst argnamer (v argnamel) bodr)
+      bod <- simp (Same bodl (obsmap (AppW (v argnamel)) obs) $ subst slefr (v selfl) $ subst argnamer (v argnamel) bodr)
       -- logg bod
       -- logg ""
       pure $ Fun (bind (selfl, argnamel) bod) noAn
@@ -326,44 +326,12 @@ whnfann (Case s m b l (An (Just ty))) = do
   pure $ Case s m b l (An (Just ty'))
 whnfann x = pure x -- everything else already in whnf
 
-cbvCheckSame :: (MonadReader Info m, MonadError Err m, Fresh m, WithDynDefs m) => Term -> m Exp
-cbvCheckSame (Same l info r) | sameCon l r == Just False = do
-  info <- ask 
-  throwInfoError (show (e l) ++ "=/=" ++ show (e r)) info
-cbvCheckSame (App f a ann) = do
-  f' <- cbvCheckSame f
-  a' <- cbvCheckSame a
-  -- TODO check that a is a value!
-  norm cbvCheckSame pure $ App f' a' ann --TODO some redundant computation... but the definition is at least tight
-cbvCheckSame (TConF tCName args an) = do
-  args' <- mapM cbvCheckSame args
-  pure $ TConF tCName args an
-cbvCheckSame (DConF dCName args an) = do
-  args' <- mapM cbvCheckSame args
-  pure $ DConF dCName args an
-cbvCheckSame (Case scruts anTel branches sr ann) = do
-  scruts' <- mapM cbvCheckSame scruts
-  norm cbvCheckSame pure $ Case scruts' anTel branches sr ann
-
--- possible with cong subst
--- cbvCheckSame (e@(C u info uTy w t)) = do 
---   -- error $ "should have been erased, " ++ show e
---   logg $ "should have been erased, " ++ show e
---   norm cbvCheckSame pure e
--- cbvCheckSame (e@(Csym _ _ _ _)) = do
---   -- error $ "should have been erased, " ++ show e
---   logg $ "should have been erased, " ++ show e
---   norm cbvCheckSame pure e
-cbvCheckSame e = norm cbvCheckSame pure e
 
 cbvCheck :: HasCallStack =>
   (MonadError Err m, Fresh m, WithDynDefs m) => 
   Term -> m Exp
-cbvCheck (e@(Same l info r)) = do
-  error $ "shouldmn't encounter unerased Same, " ++ show e
-  -- logg $ "shouldmn't encounter unerased Same, " ++ show e
-  -- norm cbvCheck pure e
-
+cbvCheck (Same l info r) | sameCon l r == Just False = do
+  throwInfoError (show (e l) ++ "=/=" ++ show (e r)) info
 cbvCheck (App f a ann) = do
   f' <- cbvCheck f
   a' <- cbvCheck a
@@ -371,7 +339,7 @@ cbvCheck (App f a ann) = do
   norm cbvCheck pure $ App f' a' ann --TODO some redundant computation... but the definition is at least tight
 cbvCheck (C u info uTy w t) = do
   u' <- cbvCheck u
-  w' <- runReaderT (cbvCheckSame w) info 
+  w' <- cbvCheck w 
   uTy' <- cbvCheck uTy
   t' <- cbvCheck t
   norm cbvCheck pure $ C u' info uTy' w' t'

@@ -262,7 +262,7 @@ data Exp
     -- TODO better name?
     -- TODO Info -> Srcloc?
 
-  | Same Exp Obs Exp
+  | Same Exp Info Exp
 
   | Tag String -- debugging tag
   deriving

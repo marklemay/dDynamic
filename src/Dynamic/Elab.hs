@@ -254,7 +254,7 @@ elabCast e ty ctx rename assumeDefs = do
     Just r -> do
       let info@(C.Info _ obs _ _ _) = (C.initInfo r ety ty)
       -- logg $ show ety ++ " =?= " ++ show ty
-      pure $ C.C e' info ety (C.Same ety obs ty) ty
+      pure $ C.C e' info ety (C.Same ety (C.initInfo r ety ty) ty) ty
     _ -> throwPrettyError "no source range when needed" 
 
 elabty :: (Fresh m, MonadError C.Err m, WithDynDefs m, WithSourceLoc m) => Exp -> Ctx -> VMap -> TyDefs -> m C.Exp

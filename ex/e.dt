@@ -1,3 +1,4 @@
+-- absolute minimal example for testing
 
 data B: * {
   | t : B
@@ -21,11 +22,8 @@ ex1 = fn (s t) ;
 ex2 : Bs t ;
 ex2 = fn (s f) ;
 
-
 ex3 : Bs t;
 ex3 = 
  case (s f) < _ : Bs t => Bs t > {
  | (s x) => (s x)
  };
-
--- (C (C (DConF "f" ) _ (TConF "B" ) _ (C (TConF "B" ) _ * _ *)) _ (C (TConF "B" ) _ * _ *) _ (C (TConF "B" ) _ * _ *))

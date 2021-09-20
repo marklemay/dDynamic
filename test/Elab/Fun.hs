@@ -125,8 +125,6 @@ sameok e = do
 
 
 
-
-
 tests :: TestTree
 tests =
   testGroup "elab the functional fragment"
