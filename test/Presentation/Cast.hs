@@ -457,9 +457,9 @@ tests = testGroup "Cast Language examples works as expected"
 
         Dynamic.Erase.e eTy @?= Dynamic.Erase.e expectedTy''
 
-        -- let Left (Msg s _) = runC (cbvCheck e'') modul Nothing
+        let Left (Msg s _) = runC (cbvCheck e'') modul Nothing
 
-        -- assertBool "message not empty" $ not (null s)
+        assertBool "message not empty" $ not (null s)
         ,
 
       testCase "badFun" $ do
