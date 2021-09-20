@@ -119,7 +119,7 @@ mapInjDcon (Step info (DConF dCNameW argW _) d (DConF dCNamel argl _ ) (DConF dC
 mapInjDcon (Sym p) i = Sym $ mapInjDcon p i 
 mapInjDcon (Trans l r) i = Trans (mapInjDcon l i) (mapInjDcon r i)
 mapInjDcon (Debug s) i = Debug $ s ++ "." ++ show i
-mapInjDcon p i = InjTcon p i
+mapInjDcon p i = InjDcon p i
 
 
 
