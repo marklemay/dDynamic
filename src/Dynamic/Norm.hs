@@ -101,7 +101,13 @@ matches critN argN scrutinees ms@((Match bndbod):rest) = do
     else do 
     ans <- match critN argN (zip scrutinees pats) --TODO need a monadically safe zip with HasCallStack and a good error message
     case ans of
-      Yes (es, ps) ->
+      Yes (es, ps) -> do
+        logg $ "matched on"
+        logg $ pats
+        logg $ scrutinees
+        logg $ ps
+        logg $ es
+        logg $ ""
         pure $ Right $ substs (Map.toList ps) $ substs (Map.toList es) $ bod
       No -> matches critN argN scrutinees rest
       Stuck -> pure $ Left (scrutinees, ms)
@@ -351,6 +357,11 @@ cbvCheck (DConF dCName args an) = do
   pure $ DConF dCName args an
 cbvCheck (Case scruts anTel branches sr ann) = do
   scruts' <- mapM cbvCheck scruts
+  
+  logg $ "scruts"
+  loggg $ lfullshow scruts
+  -- logg $ scruts
+  -- logg $ scruts'
   norm cbvCheck pure $ Case scruts' anTel branches sr ann
 cbvCheck e = norm cbvCheck pure e
 

@@ -1,0 +1,47 @@
+
+
+data Unit : * {
+  | tt  : Unit
+};
+
+data Bool : * {
+  | true  : Bool
+  | false : Bool
+};
+
+data Nat : * {
+  | Z : Nat
+  | S : Nat -> Nat
+};
+
+-- length indexed lists
+data Vec : Nat -> * {
+  | Nil  : Vec 0
+  | Cons : Unit -> (n : Nat) -> Vec (S n)
+};
+
+
+h : Vec 2 -> Unit ;
+h v = 
+  case v <_ => Unit >{
+   | (Cons a _) => a
+   } ;
+
+
+s : Vec 1 ;
+s = Cons tt 0 ;
+
+be : Unit ;
+be = h s ;
+
+-- TODO make cbv checknig more aggressive
+
+-- 
+-- [(C (C 
+--  (DConF "Cons" (DConF "tt" ) ) 0) 
+--  _ (TConF "Vec" (C (App (DConF "S" ) (C (C (DConF "Z" ) _ (TConF "Nat" ) _ (C (TConF "Nat" ) _ * _ *)) _ (C (TConF "Nat" ) _ * _ *) _ (C (TConF "Nat" ) _ * _ *)) _) _ (TConF "Nat" ) _ (C (TConF "Nat" ) _ * _ *))) 
+
+--  (TConF "Vec" (C (DConF "S" (C (DConF "Z" ) _ (TConF "Nat" ) _ (TConF "Nat" ))) _ (TConF "Nat" ) _ (TConF "Nat" )))) _ 
+--  (TConF "Vec" (C (DConF "S" (C (DConF "Z" ) _ (TConF "Nat" ) _ (TConF "Nat" ))) _ (TConF "Nat" ) _ (TConF "Nat" ))) _ 
+--  (TConF "Vec" (C (DConF "S" (C (DConF "S" (C (DConF "Z" ) _ (TConF "Nat" ) _ (TConF "Nat" ))) _ (TConF "Nat" ) _ (TConF "Nat" ))) _ (TConF "Nat" ) _ (TConF "Nat" ))))]
+-- TODO get the raw scrutinee and cbv

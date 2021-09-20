@@ -16,6 +16,7 @@ logg a = trace ("-- " ++ show a) $ pure a
 -- logg a = pure a
 -- did the haskell upgrade break trace?
 
+loggg a = trace ("-- " ++  a) $ pure a
 
 -- from: https://github.com/BU-CS320/Summer-2019/blob/master/assignments/HW4/src/HelpShow.hs
 parenthesize :: Integer -- ^ the precedence level of outer expression
