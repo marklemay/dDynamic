@@ -63,13 +63,13 @@ tests = testGroup "Cast Language examples works as expected"
 
         Dynamic.Erase.e eTy @?= Dynamic.Erase.e expectedTy''
 
-        -- en <- runCIo modul $ cbvCheck e''
+        en <- runCIo modul $ cbvCheck e''
 
-        -- expecteden <- parseIo exp "5"
-        -- let expecteden' = undermodule expecteden modul
-        -- expecteden'' <- runCIo modul $ elabInf expecteden' Map.empty Map.empty []
+        expecteden <- parseIo exp "5"
+        let expecteden' = undermodule expecteden modul
+        expecteden'' <- runCIo modul $ elabInf expecteden' Map.empty Map.empty []
 
-        -- Dynamic.Erase.e en @?= Dynamic.Erase.e expecteden''
+        Dynamic.Erase.e en @?= Dynamic.Erase.e expecteden''
         ,
       testCase "rep" $ do
         Ok (ddefs,trmdefs) <- loadFile file1
@@ -86,13 +86,13 @@ tests = testGroup "Cast Language examples works as expected"
 
         Dynamic.Erase.e eTy @?= Dynamic.Erase.e expectedTy''
 
-        -- en <- runCIo modul $ cbvCheck e''
+        en <- runCIo modul $ cbvCheck e''
 
-        -- expecteden <- parseIo exp "[true,true,true]<Bool>"
-        -- let expecteden' = undermodule expecteden modul
-        -- expecteden'' <- runCIo modul $ elabInf expecteden' Map.empty Map.empty []
+        expecteden <- parseIo exp "[true,true,true]<Bool>"
+        let expecteden' = undermodule expecteden modul
+        expecteden'' <- runCIo modul $ elabInf expecteden' Map.empty Map.empty []
 
-        -- Dynamic.Erase.e en @?= Dynamic.Erase.e expecteden''
+        Dynamic.Erase.e en @?= Dynamic.Erase.e expecteden''
         ,
 
       testCase "head" $ do
@@ -110,13 +110,13 @@ tests = testGroup "Cast Language examples works as expected"
 
         Dynamic.Erase.e eTy @?= Dynamic.Erase.e expectedTy''
 
-        -- en <- runCIo modul $ cbvCheck e''
+        en <- runCIo modul $ cbvCheck e''
 
-        -- expecteden <- parseIo exp "false"
-        -- let expecteden' = undermodule expecteden modul
-        -- expecteden'' <- runCIo modul $ elabInf expecteden' Map.empty Map.empty []
+        expecteden <- parseIo exp "false"
+        let expecteden' = undermodule expecteden modul
+        expecteden'' <- runCIo modul $ elabInf expecteden' Map.empty Map.empty []
 
-        -- Dynamic.Erase.e en @?= Dynamic.Erase.e expecteden''
+        Dynamic.Erase.e en @?= Dynamic.Erase.e expecteden''
         ,
 
     --  testCase "append" $ do

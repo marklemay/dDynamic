@@ -160,6 +160,7 @@ instance Show Info where
 
 obsmap :: (Obs -> Obs) -> Info -> Info
 obsmap f (Info sr obs ctx l r) = Info sr (f obs) ctx l r
+obsmap f x = x
 
 initInfo :: SourceRange -> Exp -> Exp -> Info
 initInfo src l r = let

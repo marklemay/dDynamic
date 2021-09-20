@@ -338,6 +338,8 @@ cbvCheck :: HasCallStack =>
   Term -> m Exp
 cbvCheck (Same l info r) | sameCon l r == Just False = do
   throwInfoError (show (e l) ++ "=/=" ++ show (e r)) info
+cbvCheck (e@(Same l info r)) = do
+  norm cbvCheck cbvCheck e -- probly aslight overcorrection
 cbvCheck (App f a ann) = do
   f' <- cbvCheck f
   a' <- cbvCheck a
@@ -358,11 +360,16 @@ cbvCheck (DConF dCName args an) = do
 cbvCheck (Case scruts anTel branches sr ann) = do
   scruts' <- mapM cbvCheck scruts
   
-  logg $ "scruts"
-  loggg $ lfullshow scruts
+  -- logg $ "scruts"
+  -- loggg $ lfullshow scruts
   -- logg $ scruts
   -- logg $ scruts'
   norm cbvCheck pure $ Case scruts' anTel branches sr ann
+cbvCheck (e@(Fun _ _)) = pure e -- TODO should probly still simplify for readability
+cbvCheck (Pi aTy bodTy) = do
+  aTy' <- cbvCheck aTy
+  pure $ Pi aTy' bodTy -- TODO should probly still simplify for readability
+
 cbvCheck e = norm cbvCheck pure e
 
 

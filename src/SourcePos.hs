@@ -27,6 +27,7 @@ instance Eq SourcePos where
 instance Ord SourcePos where
   compare = acompare
 
+debugSR = SourceRange (Just "debug") (SourcePos "" 0 0) (SourcePos "" 0 1)
 
 data SourceRange = SourceRange {source :: Maybe String, start::SourcePos, end::SourcePos}
   deriving (
