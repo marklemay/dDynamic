@@ -7,48 +7,27 @@ data Nat : * {
   | S : Nat -> Nat
 };
 
-data Su : Unit -> * {
-  | mksU  : Su tt
-};
 
 
 -- length indexed lists
 data Vec : Nat -> * {
   | Nil  : Vec 0
-  | Cons : Unit -> (n : Nat) -> Vec n -> Vec (S n)
+  | Cons : (n : Nat) -> Vec n -> Vec (S n)
 };
+
+id' : (n : Nat) -> Vec n -> Vec n ;
+id' _ vn = vn ;
 
 id : (n : Nat) -> Vec n -> Vec n ;
 id n vn = 
   case n, vn < n' => _ : Vec n' => Vec n' >{
    | (Z)   => (Nil) => Nil
-   | (S _) => (Cons a pn pvn) => Cons a pn (id pn pvn)
+   | (S _) => (Cons pn pvn) => Cons pn (id' pn pvn)
   };
 
 s : Vec 1 ;
-s = Cons tt 0 Nil ;
+s = Cons 0 Nil ;
 
 ex : Vec 1 ;
 ex = id 1 s ;
 
--- ok
-id' : (n : Nat) -> Vec n -> Vec n ;
-id' n vn = 
-  case vn <_ => Vec n >{
-   | (Nil) => Nil
-   | (Cons a pn pvn) => Cons a pn (id' pn pvn)
-  };
-
-ex' : Vec 1 ;
-ex' = id' 1 s ;
-
-
--- ok
-idu : (n : Unit) -> Su n -> Su n ;
-idu n vn = 
-  case n, vn < n' => _ : Su n' => Su n' >{
-   | (tt)   => (mksU) => mksU
-  };
-
-exu : Su tt ;
-exu = idu tt (idu tt mksU) ;

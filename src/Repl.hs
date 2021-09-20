@@ -63,7 +63,9 @@ import qualified Dynamic.Helper as C
 import qualified Dynamic.Erase as C
 -- import qualified Dynamic.Clean as C
 -- import qualified Dynamic.Warn as C
-import PreludeHelper (logg)
+-- import qualified Dynamic.Clean as C
+-- import qualified Dynamic.Warn as C
+import PreludeHelper (logg, loggg)
 
 --TODO clean this up
 type Module = (Map TCName DataDef, Map Var (Term, Ty))
@@ -318,7 +320,12 @@ allInfoCastExp curState (inpStr, exp, ddefs, trmdefs) = do
       let exp''' = exp''
       -- logg $ lfullshow exp'''
 
-      C.cbvCheck exp'''
+      out <- C.cbvCheck exp'''
+      
+      logg ""
+      loggg $ lfullshow out
+
+      pure out
       ) 
     mod
     (Just $ SourceRange (Just inpStr) (SourcePos "" 0 0) (endPos "" inpStr)) of
