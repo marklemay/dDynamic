@@ -96,32 +96,6 @@ rev p = Sym p
 -- rev (Step i d l r) = Step i (not d) r l
 -- rev (Refl e) = Refl e
 
-mapInjTcon :: Path -> Integer -> Path
-mapInjTcon Refl _ = Refl
-mapInjTcon (Step info (TConF tCNameW argW _) d (TConF tCNamel argl _) (TConF tCNamer argr _)) i 
-  | tCNamel == tCNamer && tCNamel == tCNameW 
-    && length argl == length argr && length argl == length argW 
-    && fromIntegral i < length argl 
-  = Step (obsmap (Index i) info) (argW !! fromIntegral i) d (argl !! fromIntegral i) (argr !! fromIntegral i)
-  -- NOTE: obsmap (Index i) is unneeded as that will already havebeen tracked in argW
-mapInjTcon (Sym p) i = Sym $ mapInjTcon p i 
-mapInjTcon (Trans l r) i = Trans (mapInjTcon l i) (mapInjTcon r i)
-mapInjTcon (Debug s) i = Debug $ s ++ "." ++ show i
-mapInjTcon p i = InjTcon p i
-
-mapInjDcon Refl _ = Refl
-mapInjDcon (Step info (DConF dCNameW argW _) d (DConF dCNamel argl _ ) (DConF dCNamer argr _)) i 
-  | dCNamel == dCNamer && dCNamel == dCNameW 
-    && length argl == length argr && length argl == length argW 
-    && fromIntegral i < length argl 
-  = Step (obsmap (Index i) info) (argW !! fromIntegral i) d (argl !! fromIntegral i) (argr !! fromIntegral i)
--- mapInjDcon (Step info d (InjDcon dCNamel argl _) (InjDcon dCNamer argr _)) i = Step (obsmap (Index i) info) d
-mapInjDcon (Sym p) i = Sym $ mapInjDcon p i 
-mapInjDcon (Trans l r) i = Trans (mapInjDcon l i) (mapInjDcon r i)
-mapInjDcon (Debug s) i = Debug $ s ++ "." ++ show i
-mapInjDcon p i = InjDcon p i
-
-
 
 -- TODO degenerate into list
 data Obs = 
@@ -257,7 +231,7 @@ data Exp
 
   | Csym Term Path (Bind Var Ty) -- typed
      (An Ty)
-     -- Ty Info Ty 
+     -- Ty Info Ty, TODO this is not getting set right now
   -- calue form of the above
   | C Term Info Ty Ty Ty -- typedbottom untyped typedTop
     -- TODO better name?

@@ -58,6 +58,9 @@ withPath (C u info tu why ty) = let (e,p) = withPath u in (e, Trans p $ Step inf
 --TODO could include Csym here
 withPath e  = (e, Refl)
 
+
+
+
 match :: 
   HasCallStack => 
   (Monad m) => 
@@ -112,6 +115,50 @@ matches critN argN scrutinees ms@((Match bndbod):rest) = do
       No -> matches critN argN scrutinees rest
       Stuck -> pure $ Left (scrutinees, ms)
 
+mapInjTcon :: HasCallStack => (Fresh m, WithDynDefs m) => (Exp -> m Exp) -> Path -> Integer -> m Path
+mapInjTcon _ Refl _ = pure Refl
+mapInjTcon crit (Step info w d l r) i = do
+  w' <- crit w
+  l' <- crit l
+  r' <- crit r
+  case (w', l', r') of
+   ((TConF tCNameW argW _), (TConF tCNamel argl _), (TConF tCNamer argr _)) 
+     | tCNamel == tCNamer && tCNamel == tCNameW 
+       && length argl == length argr && length argl == length argW 
+       && fromIntegral i < length argl --TODO: might break in partially applied situtations?
+     -> pure $ Step (obsmap (Index i) info) (argW !! fromIntegral i) d (argl !! fromIntegral i) (argr !! fromIntegral i)
+   _ -> pure $ InjTcon (Step info w' d l' r') i
+mapInjTcon crit (Sym p) i = Sym <$> mapInjTcon crit p i 
+mapInjTcon crit (Trans l r) i = do
+  l' <- mapInjTcon crit l i
+  r' <- mapInjTcon crit r i
+  pure $ Trans l' r'
+mapInjTcon _ (Debug s) i = pure $ Debug $ s ++ "." ++ show i
+mapInjTcon _ p i = pure $ InjTcon p i
+
+
+mapInjDcon :: HasCallStack => (Fresh m, WithDynDefs m) => (Exp -> m Exp) -> Path -> Integer -> m Path
+mapInjDcon _ Refl _ = pure Refl
+mapInjDcon crit (Step info w d l r) i = do
+  w' <- crit w
+  l' <- crit l
+  r' <- crit r
+  case (w', l', r') of
+   (withPath -> (DConF tCNameW argW _, _), withPath -> (DConF tCNamel argl _, _), withPath -> (DConF tCNamer argr _, _)) 
+       --throwing away the path info, TODO this is likely a little buggy
+     | tCNamel == tCNamer && tCNamel == tCNameW 
+       && length argl == length argr && length argl == length argW 
+       && fromIntegral i < length argl --TODO: might break in partially applied situtations?
+     -> pure $ Step (obsmap (Index i) info) (argW !! fromIntegral i) d (argl !! fromIntegral i) (argr !! fromIntegral i)
+   _ -> pure $ InjTcon (Step info w' d l' r') i
+mapInjDcon crit (Sym p) i = Sym <$> mapInjDcon crit p i 
+mapInjDcon crit (Trans l r) i = do
+  l' <- mapInjDcon crit l i
+  r' <- mapInjDcon crit r i
+  pure $ Trans l' r'
+mapInjDcon _ (Debug s) i = pure $ Debug $ s ++ "." ++ show i
+mapInjDcon _ p i = pure $ InjDcon p i
+
 
 -- TODO add simp?
 normPath :: HasCallStack => (Fresh m, WithDynDefs m) => (Exp -> m Exp) -> Path -> m [Path]
@@ -131,10 +178,10 @@ normPath crit  (Sym p) = do
   pure $ fmap rev $ reverse ps
 normPath crit  (InjTcon p i) = do
   ps <- normPath crit  p
-  pure $ fmap (\ pp -> mapInjTcon pp i) ps
+  mapM (\ pp -> mapInjTcon crit pp i) ps
 normPath crit  (InjDcon p i) = do
   ps <- normPath crit  p
-  pure $ fmap (\ pp -> mapInjDcon pp i) ps
+  mapM (\ pp -> mapInjDcon crit pp i) ps
 
 norm :: HasCallStack => (Fresh m, WithDynDefs m) => (Exp -> m Exp) -> (Exp  -> m Exp) -> Exp -> m Exp
 norm crit simp (V x ann) = do -- expand module deffinitions,, TODO can facrtor this out like in the prevous attempt
@@ -144,8 +191,11 @@ norm crit simp (V x ann) = do -- expand module deffinitions,, TODO can facrtor t
      Nothing -> pure $ V x ann
 
 norm crit simp (Csym trm path bndty ann) = do
+  -- logg "Csym"
   paths <- normPath crit path
   casts <- forM paths $ \ p -> do
+    -- logg "path"
+    -- logg p
     case p of
       Step info w d l r -> do
         (x, ty) <- unbind bndty
@@ -215,6 +265,7 @@ norm crit simp (C trm info uty why ty) = do
 
 
 norm crit simp (App f a an) = do
+  -- logg "App"
   f' <- crit f
   case f' of
     Fun bndbod _ -> do
@@ -370,7 +421,9 @@ cbvCheck (Pi aTy bodTy) = do
   aTy' <- cbvCheck aTy
   pure $ Pi aTy' bodTy -- TODO should probly still simplify for readability
 
-cbvCheck e = norm cbvCheck pure e
+cbvCheck e = do
+  -- logg "norm cbvCheck pure e"
+  norm cbvCheck pure e
 
 
 

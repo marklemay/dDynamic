@@ -321,9 +321,9 @@ allInfoCastExp curState (inpStr, exp, ddefs, trmdefs) = do
       -- logg $ lfullshow exp'''
 
       out <- C.cbvCheck exp'''
-      
-      logg ""
-      loggg $ lfullshow out
+
+      -- logg ""
+      -- loggg $ lfullshow out
 
       pure out
       ) 
