@@ -38,6 +38,7 @@ import  Dynamic.Erase
 import Parser
 import ParserMonad
 
+-- TODO use the functions from the repl
 -- TODO present the parsing error better
 file1 = "ex/a.dt"
 file2 = "ex/b.dt"
@@ -119,29 +120,30 @@ tests = testGroup "Cast Language examples works as expected"
         Dynamic.Erase.e en @?= Dynamic.Erase.e expecteden''
         ,
 
-    --  testCase "append" $ do
-    --     Ok (ddefs,trmdefs) <- loadFile file1
-    --     let modul = makeMod ddefs trmdefs
-    --     e <- parseIo exp "append Nat 2 [1,2]<Nat> 3 [7,8,9]<Nat>" 
-    --     let e' = undermodule e modul
-    --     e'' <- runCIo modul $ elabInf e' Map.empty Map.empty []
 
-    --     let Just eTy = tyInf e''
-    --     eTy' <- runCIo modul $ cbvCheck eTy
+     testCase "append" $ do
+        Ok (ddefs,trmdefs) <- loadFile file1
+        let modul = makeMod ddefs trmdefs
+        e <- parseIo exp "append Nat 2 [1,2]<Nat> 3 [7,8,9]<Nat>" 
+        let e' = undermodule e modul
+        e'' <- runCIo modul $ elabInf e' Map.empty Map.empty []
 
-    --     expectedTy <- parseIo exp "Vec Nat 5"
-    --     let expectedTy' = undermodule expectedTy modul
-    --     expectedTy'' <- runCIo modul $ elabInf expectedTy' Map.empty Map.empty []
+        let Just eTy = tyInf e''
+        eTy' <- runCIo modul $ cbvCheck eTy
 
-    --     Dynamic.Erase.e eTy' @?= Dynamic.Erase.e expectedTy'' --TODO more direct test of eqaality
+        expectedTy <- parseIo exp "Vec Nat 5"
+        let expectedTy' = undermodule expectedTy modul
+        expectedTy'' <- runCIo modul $ elabInf expectedTy' Map.empty Map.empty []
 
-    --     en <- runCIo modul $ cbvCheck e''
+        Dynamic.Erase.e eTy' @?= Dynamic.Erase.e expectedTy'' --TODO more direct test of eqaality
 
-    --     expecteden <- parseIo exp "[1,2,7,8,9]<Nat>"
-    --     let expecteden' = undermodule expecteden modul
-    --     expecteden'' <- runCIo modul $ elabInf expecteden' Map.empty Map.empty []
+        en <- runCIo modul $ cbvCheck e''
 
-    --     Dynamic.Erase.e en @?= Dynamic.Erase.e expecteden'',
+        expecteden <- parseIo exp "[1,2,7,8,9]<Nat>"
+        let expecteden' = undermodule expecteden modul
+        expecteden'' <- runCIo modul $ elabInf expecteden' Map.empty Map.empty []
+
+        Dynamic.Erase.e en @?= Dynamic.Erase.e expecteden'',
 
      testCase "okFun" $ do
         Ok (ddefs,trmdefs) <- loadFile file1
@@ -335,53 +337,53 @@ tests = testGroup "Cast Language examples works as expected"
         ,
 
 
-    --  testCase "append" $ do
-    --     Ok (ddefs,trmdefs) <- loadFile file3
-    --     let modul = makeMod ddefs trmdefs
-    --     e <- parseIo exp "append Nat 2 [1,2]<Nat> 3 [7,8,9]<Nat>" 
-    --     let e' = undermodule e modul
-    --     e'' <- runCIo modul $ elabInf e' Map.empty Map.empty []
+     testCase "append" $ do
+        Ok (ddefs,trmdefs) <- loadFile file3
+        let modul = makeMod ddefs trmdefs
+        e <- parseIo exp "append Nat 2 [1,2]<Nat> 3 [7,8,9]<Nat>" 
+        let e' = undermodule e modul
+        e'' <- runCIo modul $ elabInf e' Map.empty Map.empty []
 
-    --     let Just eTy = tyInf e''
-    --     eTy' <- runCIo modul $ cbvCheck eTy
+        let Just eTy = tyInf e''
+        eTy' <- runCIo modul $ cbvCheck eTy
 
-    --     expectedTy <- parseIo exp "Vec Nat 5"
-    --     let expectedTy' = undermodule expectedTy modul
-    --     expectedTy'' <- runCIo modul $ elabInf expectedTy' Map.empty Map.empty []
+        expectedTy <- parseIo exp "Vec Nat 5"
+        let expectedTy' = undermodule expectedTy modul
+        expectedTy'' <- runCIo modul $ elabInf expectedTy' Map.empty Map.empty []
 
-    --     Dynamic.Erase.e eTy' @?= Dynamic.Erase.e expectedTy'' --TODO more direct test of eqaality
+        Dynamic.Erase.e eTy' @?= Dynamic.Erase.e expectedTy'' --TODO more direct test of eqaality
 
-    --     en <- runCIo modul $ cbvCheck e''
+        en <- runCIo modul $ cbvCheck e''
 
-    --     expecteden <- parseIo exp "[1,2,7,8,9]<Nat>"
-    --     let expecteden' = undermodule expecteden modul
-    --     expecteden'' <- runCIo modul $ elabInf expecteden' Map.empty Map.empty []
+        expecteden <- parseIo exp "[1,2,7,8,9]<Nat>"
+        let expecteden' = undermodule expecteden modul
+        expecteden'' <- runCIo modul $ elabInf expecteden' Map.empty Map.empty []
 
-    --     Dynamic.Erase.e en @?= Dynamic.Erase.e expecteden'',
+        Dynamic.Erase.e en @?= Dynamic.Erase.e expecteden'',
 
-    --  testCase "revapp" $ do
-    --     Ok (ddefs,trmdefs) <- loadFile file3
-    --     let modul = makeMod ddefs trmdefs
-    --     e <- parseIo exp "revapp Nat 2 [1,2]<Nat> 3 [7,8,9]<Nat>" 
-    --     let e' = undermodule e modul
-    --     e'' <- runCIo modul $ elabInf e' Map.empty Map.empty []
+     testCase "revapp" $ do
+        Ok (ddefs,trmdefs) <- loadFile file3
+        let modul = makeMod ddefs trmdefs
+        e <- parseIo exp "revapp Nat 2 [1,2]<Nat> 3 [7,8,9]<Nat>" 
+        let e' = undermodule e modul
+        e'' <- runCIo modul $ elabInf e' Map.empty Map.empty []
 
-    --     let Just eTy = tyInf e''
-    --     eTy' <- runCIo modul $ cbvCheck eTy
+        let Just eTy = tyInf e''
+        eTy' <- runCIo modul $ cbvCheck eTy
 
-    --     expectedTy <- parseIo exp "Vec Nat 5"
-    --     let expectedTy' = undermodule expectedTy modul
-    --     expectedTy'' <- runCIo modul $ elabInf expectedTy' Map.empty Map.empty []
+        expectedTy <- parseIo exp "Vec Nat 5"
+        let expectedTy' = undermodule expectedTy modul
+        expectedTy'' <- runCIo modul $ elabInf expectedTy' Map.empty Map.empty []
 
-    --     Dynamic.Erase.e eTy' @?= Dynamic.Erase.e expectedTy'' --TODO more direct test of eqaality
+        Dynamic.Erase.e eTy' @?= Dynamic.Erase.e expectedTy'' --TODO more direct test of eqaality
 
-    --     en <- runCIo modul $ cbvCheck e''
+        en <- runCIo modul $ cbvCheck e''
 
-    --     expecteden <- parseIo exp "[2,1,7,8,9]<Nat>"
-    --     let expecteden' = undermodule expecteden modul
-    --     expecteden'' <- runCIo modul $ elabInf expecteden' Map.empty Map.empty []
+        expecteden <- parseIo exp "[2,1,7,8,9]<Nat>"
+        let expecteden' = undermodule expecteden modul
+        expecteden'' <- runCIo modul $ elabInf expecteden' Map.empty Map.empty []
 
-    --     Dynamic.Erase.e en @?= Dynamic.Erase.e expecteden'',
+        Dynamic.Erase.e en @?= Dynamic.Erase.e expecteden'',
 
      testCase "okFun" $ do
         Ok (ddefs,trmdefs) <- loadFile file3

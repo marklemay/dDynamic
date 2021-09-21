@@ -61,10 +61,8 @@ import qualified Dynamic.ElabModule as C
 import qualified Dynamic.Env as C
 import qualified Dynamic.Helper as C
 import qualified Dynamic.Erase as C
--- import qualified Dynamic.Clean as C
--- import qualified Dynamic.Warn as C
--- import qualified Dynamic.Clean as C
--- import qualified Dynamic.Warn as C
+import qualified Dynamic.Clean as C
+import qualified Dynamic.Warn as C
 import PreludeHelper (logg, loggg)
 
 --TODO clean this up
@@ -104,23 +102,23 @@ loadFile path = do
           -- -- putStrLn $ show m
           -- pure $ Ok (ddefs,trmdefs)
 
-          pure $ Ok (ddefs,trmdefs)
+          -- pure $ Ok (ddefs,trmdefs)
 
-          -- let mod = C.makeMod ddefs trmdefs
-          -- case C.runC (C.clModule mod) mod sr of
-          --   Right mod'@ (C.Module ddefs' (C.DefCtx trmdefs') _ ) -> do
-          --     putStrLn "cleaned"
-          --     putStrLn "warnings, "
+          let mod = C.makeMod ddefs trmdefs
+          case C.runC (C.clModule mod) mod sr of
+            Right mod'@ (C.Module ddefs' (C.DefCtx trmdefs') _ ) -> do
+              putStrLn "cleaned"
+              -- putStrLn "warnings, "
 
-          --     let Right warnings = C.runC (C.warningsModule mod') mod' sr
+              -- let Right warnings = C.runC (C.warningsModule mod') mod' sr
 
-          --     forM warnings $ \ (C.Info range _ _ _ _, l, r) -> do
-          --       putStrLn ""
-          --       putStrLn $ show (C.e l) ++ " =?= "++ show (C.e r) 
-          --       putStrLn $ show l ++ " =?= "++ show r
-          --       putStrLn $ unlines $ prettyRange range
+              -- forM warnings $ \ (C.Info range _ _ _ _, l, r) -> do
+              --   putStrLn ""
+              --   putStrLn $ show (C.e l) ++ " =?= "++ show (C.e r) 
+              --   putStrLn $ show l ++ " =?= "++ show r
+              --   putStrLn $ unlines $ prettyRange range
 
-          --     pure $ Ok (ddefs',trmdefs')
+              pure $ Ok (ddefs',trmdefs')
     Left ls -> pure $ ParseError ls
 
 
@@ -316,9 +314,9 @@ allInfoCastExp curState (inpStr, exp, ddefs, trmdefs) = do
   case C.runC (do 
       exp'' <- C.elabInf exp' Map.empty Map.empty []
       -- logg $ lfullshow exp'' -- dbug
-      -- exp''' <- C.cl exp'' -- shouldn't need to be cleaned for CBV, but undebuggable otherwise
+      exp''' <- C.cl exp'' -- shouldn't need to be cleaned for CBV, but undebuggable otherwise
       let exp''' = exp''
-      -- logg $ lfullshow exp'''
+      logg $ lfullshow exp'''
 
       out <- C.cbvCheck exp'''
 

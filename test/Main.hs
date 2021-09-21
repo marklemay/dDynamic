@@ -7,6 +7,7 @@ import Test.Tasty.HUnit (assertEqual, assertBool, testCase)
 import StdLibTest
 import Presentation.Surface
 import Presentation.Cast
+import Presentation.CastUncleaned
 import Parser.Fun
 import Parser.Exp
 import Elab.Fun
@@ -37,8 +38,10 @@ allTests =
   testGroup
     "allTests"
     [
+      -- operations we might want to show off live
       Presentation.Surface.tests,
       Presentation.Cast.tests,
+      Presentation.CastUncleaned.tests,
       stdLibTest,
      Parser.Fun.tests,
     --  Parser.Exp.tests,

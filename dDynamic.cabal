@@ -73,7 +73,7 @@ test-suite test
     test
   main-is: Main.hs
   other-modules: Parser.Exp, Parser.Fun, Parser.Common, StdLibTest
-    , Presentation.Surface, Presentation.Cast
+    , Presentation.Surface, Presentation.CastUncleaned, Presentation.Cast
     -- Dynamic.DynamicTest, Dynamic.CCIntegrationTest
   build-depends:
       containers, mtl, base

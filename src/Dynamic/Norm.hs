@@ -383,7 +383,7 @@ whnfann (Case s m b l (An (Just ty))) = do
   pure $ Case s m b l (An (Just ty'))
 whnfann x = pure x -- everything else already in whnf
 
-
+-- TODO this name isn't great
 cbvCheck :: HasCallStack =>
   (MonadError Err m, Fresh m, WithDynDefs m) => 
   Term -> m Exp
@@ -401,7 +401,10 @@ cbvCheck (C u info uTy w t) = do
   w' <- cbvCheck w 
   uTy' <- cbvCheck uTy
   t' <- cbvCheck t
-  norm cbvCheck pure $ C u' info uTy' w' t'
+  pure u'
+  -- if uTy' `aeq` t' -- can lose out on some error messages, but fine
+  --   then pure u'
+  --   else pure $ C u' info uTy' w' t'
 cbvCheck (TConF tCName args an) = do
   args' <- mapM cbvCheck args
   pure $ TConF tCName args an
