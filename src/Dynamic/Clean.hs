@@ -127,15 +127,15 @@ clean (C u info l wht r) eq = do
       -- logg "clean"
 
       wht' <- whnf wht -- ieadlly do more, but better than nothing
-      if wht' /= wht
-        then do
-          logg "clean,"
-          -- logg $ e wht
-          -- logg $ e wht'
-          loggg $ lfullshow wht
-          loggg $ lfullshow wht'
-          pure ()
-        else pure ()
+      -- if wht' /= wht
+      --   then do
+      --     logg "clean,"
+      --     -- logg $ e wht
+      --     -- logg $ e wht'
+      --     loggg $ lfullshow wht
+      --     loggg $ lfullshow wht'
+      --     pure ()
+      --   else pure ()
 
 
   -- wht' <- norm pure pure wht -- ieadlly do more, but better than nothing

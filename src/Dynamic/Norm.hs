@@ -184,14 +184,17 @@ normPath crit  (InjDcon p i) = do
   ps <- normPath crit  p
   mapM (\ pp -> mapInjDcon crit pp i) ps
 
-norm :: HasCallStack => (Fresh m, WithDynDefs m) => (Exp -> m Exp) -> (Exp  -> m Exp) -> Exp -> m Exp
-norm crit simp (V x ann) = do -- expand module deffinitions,, TODO can facrtor this out like in the prevous attempt
+-- norm :: HasCallStack => (Fresh m, WithDynDefs m) => (Exp -> m Exp) -> (Exp  -> m Exp) -> Exp -> m Exp
+norm :: (WithDynDefs m, Fresh m) =>
+  (Term -> m Exp)
+  -> (Exp -> m Term) -> (Exp -> Info -> Exp -> m Exp) -> Exp -> m Exp
+norm crit simp check (V x ann) = do -- expand module deffinitions,, TODO can facrtor this out like in the prevous attempt
    me <- getDefnm' x
    case me of
      Just e -> crit e
      Nothing -> pure $ V x ann
 
-norm crit simp (Csym trm path bndty ann) = do
+norm crit simp check (Csym trm path bndty ann) = do
   -- logg "Csym"
   paths <- normPath crit path
   casts <- forM paths $ \ p -> do
@@ -201,10 +204,10 @@ norm crit simp (Csym trm path bndty ann) = do
       Step info w d l r -> do
         (x, ty) <- unbind bndty
         ety <- eraseCast ty
-        why <- norm crit simp $ subst x w ety
+        why <- norm crit simp check $ subst x w ety
 
-        lty <- norm crit simp $ substBind bndty l
-        rty <- norm crit simp $ substBind bndty r
+        lty <- norm crit simp check $ substBind bndty l
+        rty <- norm crit simp check $ substBind bndty r
         
         pure $ \ under -> C under info lty why rty
       compositepath -> pure $ \ under -> Csym under compositepath bndty (An $ substBind bndty <$> snd <$> endpoints compositepath)
@@ -215,28 +218,30 @@ norm crit simp (Csym trm path bndty ann) = do
   trm' <- crit trm
   pure $ foldl (\ e c -> c e) trm' casts
 
-norm crit simp (Same (under -> Just l) obs r) = crit (Same l obs r)
-norm crit simp (Same l obs (under -> Just r)) = crit (Same l obs r)
+norm crit simp check (Same (under -> Just l) obs r) = crit (Same l obs r)
+norm crit simp check (Same l obs (under -> Just r)) = crit (Same l obs r)
 
-norm crit simp (Same l obs r) = do
+norm crit simp check (Same l obs r) = do
   l' <- crit l
   r' <- crit r 
+  -- loggg $ lfullshow l'
+  -- loggg $ lfullshow r'
   case (l', r') of
     (TyU, TyU) -> pure TyU
 
     (TConF tCNamel argsl _, TConF tCNamer argsr _) | tCNamel == tCNamer && length argsl == length argsr -> do
-      args <- mapM (\ (i, ll, rr) -> simp (Same ll (obsmap (Index i) obs) rr)) $ zip3 [0..] argsl argsr
+      args <- mapM (\ (i, ll, rr) -> check ll (obsmap (Index i) obs) rr) $ zip3 [0..] argsl argsr
       pure $ TConF tCNamel args noAn
 
     (DConF dCNamel argsl _, DConF dCNamer argsr _)  | dCNamel == dCNamer && length argsl == length argsr  -> do
-      args <- mapM (\ (i, ll, rr) -> simp (Same ll (obsmap (Index i) obs) rr)) $ zip3 [0..] argsl argsr
+      args <- mapM (\ (i, ll, rr) -> check ll (obsmap (Index i) obs) rr) $ zip3 [0..] argsl argsr
       pure $ DConF dCNamel args noAn
 
     (Pi aTyl bndbodTyl, Pi aTyr bndbodTyr) -> do
       (argnamel, bodl) <- unbind bndbodTyl --TODO unbind2 ?
       (argnamer, bodr) <- unbind bndbodTyr
-      aTy <- simp (Same aTyl (obsmap Aty obs) aTyr)
-      bodTy <- simp (Same bodl (obsmap (Bty (v argnamel)) obs) $ subst argnamer (v argnamel) bodr)
+      aTy <- check aTyl (obsmap Aty obs) aTyr
+      bodTy <- check bodl (obsmap (Bty (v argnamel)) obs) $ subst argnamer (v argnamel) bodr
 
       pure $ Pi aTy $ bind argnamel bodTy -- TODO rename or swap would be better
     
@@ -246,15 +251,15 @@ norm crit simp (Same l obs r) = do
       -- logg ""
       -- logg bodl
       -- logg bodr
-      bod <- simp (Same bodl (obsmap (AppW (v argnamel)) obs) $ subst slefr (v selfl) $ subst argnamer (v argnamel) bodr)
+      bod <- check bodl (obsmap (AppW (v argnamel)) obs) $ subst slefr (v selfl) $ subst argnamer (v argnamel) bodr
       -- logg bod
       -- logg ""
       pure $ Fun (bind (selfl, argnamel) bod) noAn
 
-    _ -> pure $ Same l' obs r'
+    _ -> check l' obs r'
 
 
-norm crit simp (C trm info uty why ty) = do
+norm crit simp check (C trm info uty why ty) = do
   uty' <- crit uty
   why' <- crit why 
   ty' <- crit ty
@@ -265,7 +270,7 @@ norm crit simp (C trm info uty why ty) = do
       pure $ C trm' info uty' why' ty'
 
 
-norm crit simp (App f a an) = do
+norm crit simp check (App f a an) = do
   -- logg "App"
   f' <- crit f
   case f' of
@@ -314,7 +319,7 @@ norm crit simp (App f a an) = do
       pure $ App f' a' an
 
 
-norm crit simp (Case scrutinees ann branches l outTy) = do
+norm crit simp check (Case scrutinees ann branches l outTy) = do
   scrutinees' <- mapM crit scrutinees -- TODO could be tighter, only normalize the scruts that can be tested 
   
   ans <- matches crit simp scrutinees branches
@@ -325,29 +330,29 @@ norm crit simp (Case scrutinees ann branches l outTy) = do
       branches'' <- mapM (\ (Match bndBod) -> do (pat, bod') <- unbind bndBod; pure $ Match $ bind pat bod') branches' -- TODO simp
       pure $ Case scrutinee' ann branches'' l outTy
 
-norm crit simp (DConF dCName params an) = do
+norm crit simp check (DConF dCName params an) = do
   params' <- mapM simp params
   -- logg "TODO simp ty ann" 
   pure $ DConF dCName params an
-norm crit simp (TConF dCName params an) = do
+norm crit simp check (TConF dCName params an) = do
   params' <- mapM simp params
   -- logg "TODO simp ann" 
   pure $ TConF dCName params an
-norm crit simp (Pi aty bndBodTy) = do
+norm crit simp check (Pi aty bndBodTy) = do
   aty' <- simp aty
   (aName, bodTy) <- unbind bndBodTy
   bodTy' <- simp bodTy
   pure $ Pi aty' $ bind aName bodTy'
   
-norm crit simp (Fun bndBod ann) = do
+norm crit simp check (Fun bndBod ann) = do
   -- logg "TODO simp ann" 
   ((fname,aName), bod) <- unbind bndBod
   bod' <- simp bod
   pure $ Fun (bind (fname,aName) bod') ann
 
 
-norm crit simp TyU = pure TyU
-norm crit simp e = do logg $ "not done yet" ++ show e ; pure e
+norm crit simp check TyU = pure TyU
+norm crit simp check e = do logg $ "not done yet" ++ show e ; pure e
 
 normClean (C u info botTy whyTy topTy) = do
   botTy' <- normClean botTy -- TODO this should be a safe cleaning call-by-value
@@ -365,10 +370,10 @@ normClean (Csym (u @ (tyInf -> Just botTy)) p inThis (An (Just topTy))) = do
     else do
       u' <- normClean u
       pure $ Csym u' p inThis (An (Just topTy'))
-normClean e = norm normClean normClean e
+normClean e = norm normClean normClean noCheck e
 
 whnf :: (Fresh m, WithDynDefs m) => Exp -> m Exp
-whnf = norm whnf pure
+whnf = norm whnf pure noCheck
 
 
 whnfann :: (Fresh m, WithDynDefs m) => Exp -> m Exp
@@ -389,13 +394,13 @@ cbvCheck :: HasCallStack =>
   Term -> m Exp
 cbvCheck (Same l info r) | sameCon l r == Just False = do
   throwInfoError (show (e l) ++ "=/=" ++ show (e r)) info
-cbvCheck (e@(Same l info r)) = do
-  norm cbvCheck cbvCheck e -- probly aslight overcorrection
+-- cbvCheck (e@(Same l info r)) = do
+--   norm cbvCheck cbvCheck e -- probly aslight overcorrection
 cbvCheck (App f a ann) = do
   f' <- cbvCheck f
   a' <- cbvCheck a
   -- TODO check that a is a value!
-  norm cbvCheck pure $ App f' a' ann --TODO some redundant computation... but the definition is at least tight
+  norm cbvCheck pure check $ App f' a' ann --TODO some redundant computation... but the definition is at least tight
 cbvCheck (C u info uTy w t) = do
   u' <- cbvCheck u
   w' <- cbvCheck w 
@@ -417,20 +422,21 @@ cbvCheck (Case scruts anTel branches sr ann) = do
   -- loggg $ lfullshow scruts
   -- logg $ scruts
   -- logg $ scruts'
-  norm cbvCheck pure $ Case scruts' anTel branches sr ann
+  norm cbvCheck pure check $ Case scruts' anTel branches sr ann
 cbvCheck (e@(Fun _ _)) = pure e -- TODO should probly still simplify for readability
 cbvCheck (Pi aTy bodTy) = do
   aTy' <- cbvCheck aTy
   pure $ Pi aTy' bodTy -- TODO should probly still simplify for readability
 
-cbvCheck e = do
-  -- logg "norm cbvCheck pure e"
-  norm cbvCheck pure e
+cbvCheck e = norm cbvCheck pure check e
 
 
+check :: MonadError Err m => Exp -> Info -> Exp -> m Exp
+check l info r | sameCon l r == Just False = do
+  throwInfoError (show (e l) ++ "=!=" ++ show (e r)) info
+check l info r = pure $ Same l info r
 
-
-
+noCheck l info r = pure $ Same l info r
 
 
 

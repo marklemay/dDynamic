@@ -244,7 +244,7 @@ tyInfer (Case scrutinees (An (Just bndoutTy)) branches) = do
       (env', eqs', unsat')  <- fOUni 20 eqs
 
 --   logg $ "insert " ++ show x ++ ":" ++ show ty
-      logg $ "eqs' " ++ show eqs' ++ ", unsat' " ++ show unsat'
+      -- logg $ "eqs' " ++ show eqs' ++ ", unsat' " ++ show unsat'
       local 
         (\(_,s) -> (env',s)) $ do
 
