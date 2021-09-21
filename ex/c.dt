@@ -27,7 +27,7 @@ badd x y =
    | (Z)   => y
    | (S (Z)) => 0 -- incorrect exactly when x = 1
    | (S (S (Z))) => S (S y)
-   | (S p) => S (add p y)
+   | (S p) => S (add p y) -- TODO clean up
    } ;
 
 -- length indexed lists

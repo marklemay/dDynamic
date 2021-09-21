@@ -105,15 +105,16 @@ matches critN argN scrutinees ms@((Match bndbod):rest) = do
     ans <- match critN argN (zip scrutinees pats) --TODO need a monadically safe zip with HasCallStack and a good error message
     case ans of
       Yes (es, ps) -> do
-        logg $ "matched on"
-        logg $ pats
-        logg $ scrutinees
-        logg $ ps
-        logg $ es
-        logg $ ""
+        -- logg $ "matched on"
+        -- logg $ pats
+        -- logg $ scrutinees
+        -- logg $ ps
+        -- logg $ es
+        -- logg $ ""
         pure $ Right $ substs (Map.toList ps) $ substs (Map.toList es) $ bod
       No -> matches critN argN scrutinees rest
       Stuck -> pure $ Left (scrutinees, ms)
+
 
 mapInjTcon :: HasCallStack => (Fresh m, WithDynDefs m) => (Exp -> m Exp) -> Path -> Integer -> m Path
 mapInjTcon _ Refl _ = pure Refl
@@ -257,8 +258,8 @@ norm crit simp (C trm info uty why ty) = do
   uty' <- crit uty
   why' <- crit why 
   ty' <- crit ty
-  case (uty', ty') of
-    (TyU, TyU) -> crit trm -- TODO can be blocked by why' ?
+  case (uty', why', ty') of
+    (TyU, TyU, TyU) -> crit trm -- TODO can be blocked by why' ?
     _ -> do 
       trm' <- simp trm
       pure $ C trm' info uty' why' ty'
@@ -348,7 +349,6 @@ norm crit simp (Fun bndBod ann) = do
 norm crit simp TyU = pure TyU
 norm crit simp e = do logg $ "not done yet" ++ show e ; pure e
 
-
 normClean (C u info botTy whyTy topTy) = do
   botTy' <- normClean botTy -- TODO this should be a safe cleaning call-by-value
   topTy' <- normClean topTy -- TODO this should be a safe cleaning call-by-value
@@ -365,7 +365,7 @@ normClean (Csym (u @ (tyInf -> Just botTy)) p inThis (An (Just topTy))) = do
     else do
       u' <- normClean u
       pure $ Csym u' p inThis (An (Just topTy'))
-normClean  e = norm normClean normClean e
+normClean e = norm normClean normClean e
 
 whnf :: (Fresh m, WithDynDefs m) => Exp -> m Exp
 whnf = norm whnf pure
@@ -401,10 +401,9 @@ cbvCheck (C u info uTy w t) = do
   w' <- cbvCheck w 
   uTy' <- cbvCheck uTy
   t' <- cbvCheck t
-  pure u'
-  -- if uTy' `aeq` t' -- can lose out on some error messages, but fine
-  --   then pure u'
-  --   else pure $ C u' info uTy' w' t'
+  if uTy' `aeq` t' -- can lose out on some error messages, but fine
+    then pure u'
+    else pure $ C u' info uTy' w' t'
 cbvCheck (TConF tCName args an) = do
   args' <- mapM cbvCheck args
   pure $ TConF tCName args an
@@ -427,6 +426,11 @@ cbvCheck (Pi aTy bodTy) = do
 cbvCheck e = do
   -- logg "norm cbvCheck pure e"
   norm cbvCheck pure e
+
+
+
+
+
 
 
 

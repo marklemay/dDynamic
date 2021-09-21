@@ -1,0 +1,31 @@
+
+
+data Unit : * {
+  | tt  : Unit
+};
+
+data Nat : * {
+  | Z : Nat
+  | S : Nat -> Nat
+};
+
+
+-- length indexed lists
+data Vec : Nat -> * {
+  | Nil  : Vec 0
+  | Cons : Unit -> (n : Nat) -> Vec n -> Vec (S n)
+};
+
+
+head : Vec 1 -> Unit ;
+head v = 
+  case v <_ => Unit >{
+   | (Cons a _ _) => a
+   } ;
+
+
+
+af : Unit ;
+af = head Nil ;
+-- make sure cbv still works
+-- truns out this will only work once coverage is implemented

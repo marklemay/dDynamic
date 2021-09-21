@@ -29,7 +29,7 @@ import  Dynamic.Ast
 import  Dynamic.Norm
 import  Dynamic.Err
 import  Dynamic.Elab
-import  Dynamic.ElabModule
+import Dynamic.ElabModule ( elabmodule )
 import  Dynamic.Env
 import  Dynamic.Helper
 import  Dynamic.Erase
@@ -40,7 +40,7 @@ import Repl (ReplRes(Ok, TypeError, ParseError), pmstd)
 import SourcePos
 import Env (TyEnv(TyEnv))
 
--- tests that avoid "cleaning", need to be small since uncleaned terms are very inefficient
+-- tests that avoid "cleaning", everything sould still work, but might be far slower
 
 -- TODO present the parsing error better
 file1 = "ex/a.dt"
@@ -53,32 +53,21 @@ loadFile path = do
   -- print s
   case pmstd path s of
     Right m@(ddefs,trmdefs) -> do
-      putStrLn "parsed"
       -- TODO easier to debug if the entire std lib is loaded first, will give incorrect source ranges!
       case elabmodule (TyEnv 
         Map.empty 
         ddefs
         trmdefs) sr of
         Left e -> do 
-
-          putStrLn ""
-          putStrLn ""
-          putStrLn $ prettyErr e
-          putStrLn ""
-          putStrLn ""
-          putStrLn ""
-
           pure $ TypeError e
 
         Right ((ddefs,trmdefs),_) -> do 
-          putStrLn "elaborated" -- TODO after this point the programmer no longer needs to be blocked, 
-          -- -- putStrLn $ show m
           pure $ Ok (ddefs,trmdefs)
 
     Left ls -> pure $ ParseError ls
 
 
-tests = testGroup "Cast Language examples works as expected"
+tests = testGroup "Cast Language examples works as expected (without clean)"
   [
     testGroup file1 [
       testCase "add" $ do

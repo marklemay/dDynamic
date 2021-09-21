@@ -41,14 +41,14 @@ spanMaybe p xs@(x:xs') = case p x of
 -- unsolved, stuck, constriant -> expanded env, constraints, unsat
 unifypat' :: HasCallStack => [(Pat,Ty)] -> [(Pat,Ty)] -> [(Exp, Exp, Ty)] -> TcMonad (TyEnv, [(Exp, Exp, Ty)], [(Exp, Exp)]) 
 unifypat' ((PVar x, ty):rest) stuck eqs = do
-  logg $ "insert " ++ show x ++ ":" ++ show ty
-  logg $ "rest " ++ show rest ++ ", stuck " ++ show stuck ++ ", eqs " ++ show eqs ++ ", "  
+  -- logg $ "insert " ++ show x ++ ":" ++ show ty
+  -- logg $ "rest " ++ show rest ++ ", stuck " ++ show stuck ++ ", eqs " ++ show eqs ++ ", "  
   local 
     (\(TyEnv tyCtx dataCtx defCtx,s) -> (TyEnv (Map.insert x ty tyCtx) dataCtx defCtx,s))
     $ unifypat' rest stuck eqs
 unifypat' ((Pat dCName args, asNeu -> Just (TCon tCName, tyargs)):rest) stuck eqs = do 
-  logg $ "split on " ++ dCName ++ "... :" ++ tCName++ "..."
-  logg $ "rest " ++ show rest ++ ", stuck " ++ show stuck ++ ", eqs " ++ show eqs ++ ", "
+  -- logg $ "split on " ++ dCName ++ "... :" ++ tCName++ "..."
+  -- logg $ "rest " ++ show rest ++ ", stuck " ++ show stuck ++ ", eqs " ++ show eqs ++ ", "
   DataDef paramtys constructors <- lookupDataDef tCName
   case Map.lookup dCName constructors of
     Nothing  -> throwprettyError $ "dataconstructor and type constructor incompatible, " ++ dCName ++ " ... : " ++ tCName ++ "..."
@@ -58,8 +58,8 @@ unifypat' ((Pat dCName args, asNeu -> Just (TCon tCName, tyargs)):rest) stuck eq
       unifypat' pats stuck (egs' ++ eqs)
 
 unifypat' (p:rest) stuck eqs = do -- otherwise the pattern is stuck
-  logg $ "is stuck " ++ show p
-  logg $ "rest " ++ show rest ++ ", stuck " ++ show stuck ++ ", eqs " ++ show eqs ++ ", "  
+  -- logg $ "is stuck " ++ show p
+  -- logg $ "rest " ++ show rest ++ ", stuck " ++ show stuck ++ ", eqs " ++ show eqs ++ ", "  
   unifypat' rest (p:stuck) eqs
 
 unifypat' [] [] eqs = do
@@ -67,15 +67,15 @@ unifypat' [] [] eqs = do
   pure (ctx, eqs,[])
 
 unifypat' [] stuck eqs = do --try to unify and get unstuck
-  logg $ "try and unstick, unify " ++ show eqs
-  logg $ "stuck  " ++ show stuck
+  -- logg $ "try and unstick, unify " ++ show eqs
+  -- logg $ "stuck  " ++ show stuck
 
   (env', eqs', unsat) <- fOUni' eqs [] []
-  logg $ show env'
+  -- logg $ show env'
   local (\ (_,pos) -> (env',pos)) $ do
   -- (env,pos) <- ask
     stuck' <- mapM (\(p,ty) -> do ty' <- safeWhnf ty; pure (p,ty') ) stuck
-    logg $ "stuck' " ++ show stuck'
+    -- logg $ "stuck' " ++ show stuck'
     if stuck' == stuck -- quite inefficient, possibly unsafe
       then pure (env', eqs', unsat)
       else do
@@ -99,12 +99,12 @@ removePat (pat@(Pat dCName args):rest) sub@(Pat dCName' _) | dCName /= dCName' =
 removePat (Pat dCName args:rest) sub@(Pat dCName' args') -- possible overlap
   | dCName == dCName' && length args == length args' = do
     
-    logg $ "removePatsPar " ++ show args ++ " " ++ show args' 
+    -- logg $ "removePatsPar " ++ show args ++ " " ++ show args' 
     argss <- removePatsPar args args'
-    logg $ "removePat " ++ show rest ++ " " ++ show sub 
+    -- logg $ "removePat " ++ show rest ++ " " ++ show sub 
     rest' <- removePat rest sub
     let out = ((Pat dCName) <$> argss) ++ rest'
-    logg $ "out = " ++ show out
+    -- logg $ "out = " ++ show out
     pure out
 removePat ((PVar _):rest) sub@(Pat dCName args) = do -- overlap. ( since var covers everythin, we can skip over the rest?)
     (tCName,_) <- lookupDCName dCName
@@ -112,9 +112,9 @@ removePat ((PVar _):rest) sub@(Pat dCName args) = do -- overlap. ( since var cov
     splits <- forM cons $ \ (dCName', tel) -> do
       args' <- fillFresh tel
       pure $ Pat dCName' args'
-    logg $ "splits = " ++ show splits
-    -- removePat (splits ++ rest) sub
-    logg $ "removePat " ++ show splits ++ " " ++ show sub
+    -- logg $ "splits = " ++ show splits
+    -- -- removePat (splits ++ rest) sub
+    -- logg $ "removePat " ++ show splits ++ " " ++ show sub
     removePat splits sub
 removePat [] _ = pure []
 removePat a@(Pat dCName args:rest) sub@(Pat dCName' args') -- possible overlap
@@ -122,7 +122,7 @@ removePat a@(Pat dCName args:rest) sub@(Pat dCName' args') -- possible overlap
 
 removePatsPar :: [Pat] -> [Pat] -> TcMonad [[Pat]]
 removePatsPar h s | length h == length s = do
-  logg $ "removePatsPar " ++ show h ++ " " ++ show s
+  -- logg $ "removePatsPar " ++ show h ++ " " ++ show s
   (ans, _) <- removePatsPar' $ zip h s
   pure ans
 removePatsPar _ _ = error "unequal len"
@@ -131,14 +131,14 @@ removePatsPar _ _ = error "unequal len"
 removePatsPar' :: [(Pat,Pat)] -> TcMonad ([[Pat]], [[Pat]])
 removePatsPar' ((h,s):rest) = do
   (restAns,restHirez) <- removePatsPar' rest
-  logg $ "removePat " ++ show [h] ++ " " ++ show s
+  -- logg $ "removePat " ++ show [h] ++ " " ++ show s
   some <- removePat [h] s
-  logg $ "some = " ++ show some
+  -- logg $ "some = " ++ show some
   
-  logg $ "restHirez = " ++ show (restHirez)
-  logg $ "combo some restHirez = " ++ show (combo some restHirez)
+  -- logg $ "restHirez = " ++ show (restHirez)
+  -- logg $ "combo some restHirez = " ++ show (combo some restHirez)
 
-  logg $ "combo some restHirez ++ (fmap (s:) restAns)  = " ++ show (combo some restHirez ++ (fmap (s:) restAns) )
+  -- logg $ "combo some restHirez ++ (fmap (s:) restAns)  = " ++ show (combo some restHirez ++ (fmap (s:) restAns) )
 
   pure (combo some restHirez ++ (fmap (s:) restAns), combo (s:some) restHirez)
 removePatsPar' [] = pure ([],[[]]) -- TODO right?
@@ -231,7 +231,7 @@ tyInfer (Case scrutinees (An (Just bndoutTy)) branches) = do
     -- logg $ "branch, " ++ show bndP
     -- logg "unsafe hack for now"
     (pats, bod) <- unbind bndP
-    logg $ "branch, " ++ show pats 
+    -- logg $ "branch, " ++ show pats 
     let (patconstraints, expectedBranchTy) = expandUntypedPat pats tel []
     (env, eqs, unsat) <- unifypat' patconstraints [] []
     -- several optionas are possible,

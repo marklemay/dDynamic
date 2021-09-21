@@ -64,6 +64,8 @@ import qualified Dynamic.Erase as C
 import qualified Dynamic.Clean as C
 import qualified Dynamic.Warn as C
 import PreludeHelper (logg, loggg)
+import Dynamic.Warn (consolidate)
+import qualified AlphaShow as C
 
 --TODO clean this up
 type Module = (Map TCName DataDef, Map Var (Term, Ty))
@@ -72,6 +74,29 @@ type Module = (Map TCName DataDef, Map Var (Term, Ty))
 -- runFile path = 
 --   do program <- readFile path
 --      return $ exec program
+
+
+prettyWarn :: Map SourceRange (C.Ty,C.Ty, Map C.Obs (C.Exp,C.Exp)) -> IO ()
+prettyWarn ms | Map.null ms = putStrLn "no warnings!"
+prettyWarn ms = do
+  putStrLn "warnings, "
+  forM_ (Map.toList ms) $ \ (src, (lt, rt, obs)) -> do
+    putStrLn ""
+    putStrLn $ unlines $ prettyRange src
+    putStrLn $ show (C.e lt) ++ " =?= "++ show (C.e rt)
+    putStrLn ""
+    -- putStrLn $ "since, "
+    
+    forM_ (Map.toList obs) $ \ (o, (l, r)) -> do
+      case o of
+        C.Base -> pure () -- no explaination needed
+        _ -> do
+          putStrLn $ "  " ++C.prettyobs o
+          putStrLn $ "  " ++ show (C.e l) ++ " =?= "++ show (C.e r)
+          -- putStrLn $ (C.lfullshow l)
+          -- putStrLn $ (C.lfullshow r)
+          putStrLn ""
+
 
 
 loadFile path = do
@@ -108,15 +133,11 @@ loadFile path = do
           case C.runC (C.clModule mod) mod sr of
             Right mod'@ (C.Module ddefs' (C.DefCtx trmdefs') _ ) -> do
               putStrLn "cleaned"
-              -- putStrLn "warnings, "
 
-              -- let Right warnings = C.runC (C.warningsModule mod') mod' sr
+              let Right warnings = C.runC (C.warningsModule mod') mod' sr
+              let warn = consolidate warnings
 
-              -- forM warnings $ \ (C.Info range _ _ _ _, l, r) -> do
-              --   putStrLn ""
-              --   putStrLn $ show (C.e l) ++ " =?= "++ show (C.e r) 
-              --   putStrLn $ show l ++ " =?= "++ show r
-              --   putStrLn $ unlines $ prettyRange range
+              prettyWarn warn
 
               pure $ Ok (ddefs',trmdefs')
     Left ls -> pure $ ParseError ls
@@ -314,14 +335,19 @@ allInfoCastExp curState (inpStr, exp, ddefs, trmdefs) = do
   case C.runC (do 
       exp'' <- C.elabInf exp' Map.empty Map.empty []
       -- logg $ lfullshow exp'' -- dbug
+
+      logg "in,"
+      loggg $ lfullshow exp''
+
       exp''' <- C.cl exp'' -- shouldn't need to be cleaned for CBV, but undebuggable otherwise
-      let exp''' = exp''
-      logg $ lfullshow exp'''
+      -- let exp''' = exp''
+      logg "cleaned,"
+      loggg $ lfullshow exp'''
 
       out <- C.cbvCheck exp'''
 
-      -- logg ""
-      -- loggg $ lfullshow out
+      logg "out,"
+      loggg $ lfullshow out
 
       pure out
       ) 

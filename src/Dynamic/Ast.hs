@@ -114,6 +114,12 @@ instance AlphaLShow Obs
 instance Show Obs where
   show = lfullshow
 
+instance Eq Obs where
+  (==) = aeq
+  
+instance Ord Obs where
+  compare = acompare
+
 
 data Info = Info SourceRange Obs (Map String Exp) (Ignore Exp) (Ignore Exp) -- TODO remove some (most?) of these parameters, somthing is cuasing a self reference that atleast makes show dificult
   | Dummy

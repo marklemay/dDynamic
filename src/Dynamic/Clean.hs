@@ -22,6 +22,7 @@ import  Env
 import  Dynamic.Ast
 import  Dynamic.Norm
 import  Dynamic.Err
+import  Dynamic.Erase
 -- import  Dynamic.Temp
 -- import qualified Dynamic.Env as C --TODO clean
 import Dynamic.Env
@@ -60,6 +61,7 @@ import Control.Monad.Writer
 import Helper
 import AlphaShow
 import Control.Applicative
+import PreludeHelper
 
 
 
@@ -71,9 +73,11 @@ clModule m = cleanModule m eq
 
 --TODO can save intermediate nonterminations
 -- | remove unneeded cast tys
-clean :: 
-  HasCallStack => 
-  Fresh m => 
+-- clean :: 
+--   HasCallStack => 
+--   Fresh m => 
+--   Term -> (Term -> Term -> m Bool) -> m Term
+clean :: (Fresh m, WithDynDefs m) =>
   Term -> (Term -> Term -> m Bool) -> m Term
 clean (Fun bndbod an) eq = do
   (p, bod) <- unbind bndbod
@@ -112,19 +116,42 @@ clean (C u info l wht r) eq = do
   u' <- clean u eq
   l' <- clean l eq
   r' <- clean r eq
+  -- TODO these don't actually seem to do that well
+  -- l' <- normClean l
+  -- r' <- normClean r
+
   b <- l' `eq` r'
-  pure $ case b of
-    True -> u'
-    False -> C u' info l' wht r'
+  case b of
+    True -> pure $ u'
+    False -> do
+      -- logg "clean"
+
+      wht' <- whnf wht -- ieadlly do more, but better than nothing
+      if wht' /= wht
+        then do
+          logg "clean,"
+          -- logg $ e wht
+          -- logg $ e wht'
+          loggg $ lfullshow wht
+          loggg $ lfullshow wht'
+          pure ()
+        else pure ()
+
+
+  -- wht' <- norm pure pure wht -- ieadlly do more, but better than nothing
+      -- wht' <- normClean wht -- ok to be wild over the untyped fragment
+      -- wht' <- pure wht
+      pure $ C u' info l' wht' r'
+
 clean const _ = pure const
 
 
-cleanModule :: 
-  HasCallStack => 
-  Fresh m => 
-  Module -> 
-  (Term -> Term -> m Bool) -> 
-    m Module
+-- cleanModule :: 
+--   HasCallStack => 
+--   Fresh m => 
+--   Module -> 
+--   (Term -> Term -> m Bool) -> 
+--     m Module
 cleanModule (Module ddefs (DefCtx trmdefs) vMap) eq = do
   trmdefs' <- forM trmdefs $ \ def -> clean def eq
   ddefs' <- forM ddefs $ \ e -> cleanDataDef e eq
@@ -144,12 +171,12 @@ cleanModule (Module ddefs (DefCtx trmdefs) vMap) eq = do
 --   ddefs' <- forM ddefs $ \ e -> cleanDataDef e eq
 --   pure (ddefs', trmdefs')
 
-cleanDataDef :: 
-  HasCallStack => 
-  Fresh m => 
-  DataDef -> 
-  (Term -> Term -> m Bool) -> 
-    m DataDef
+-- cleanDataDef :: 
+--   HasCallStack => 
+--   Fresh m => 
+--   DataDef -> 
+--   (Term -> Term -> m Bool) -> 
+--     m DataDef
 cleanDataDef (DataDef tConTel dataCons) eq = do
   tConTel' <- tmapM (\ty -> clean ty eq) pure tConTel
   dataCons' <- forM dataCons $ tmapM (\ty -> clean ty eq) (mapM (\ ty -> clean ty eq))
