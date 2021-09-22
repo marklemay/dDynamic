@@ -26,6 +26,5 @@ head v =
 
 
 af : Unit ;
-af = head Nil ;
+af = head (Cons tt 1 (Cons tt 0 Nil)) ;
 -- make sure cbv still works
--- truns out this will only work once coverage is implemented

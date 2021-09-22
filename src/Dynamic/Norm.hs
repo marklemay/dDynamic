@@ -354,6 +354,7 @@ norm crit simp check (Fun bndBod ann) = do
 norm crit simp check TyU = pure TyU
 norm crit simp check e = do logg $ "not done yet" ++ show e ; pure e
 
+normClean :: (WithDynDefs m, Fresh m) => Ty -> m Term
 normClean (C u info botTy whyTy topTy) = do
   botTy' <- normClean botTy -- TODO this should be a safe cleaning call-by-value
   topTy' <- normClean topTy -- TODO this should be a safe cleaning call-by-value
@@ -370,7 +371,13 @@ normClean (Csym (u @ (tyInf -> Just botTy)) p inThis (An (Just topTy))) = do
     else do
       u' <- normClean u
       pure $ Csym u' p inThis (An (Just topTy'))
-normClean e = norm normClean normClean noCheck e
+normClean (TConF tCName args an) = do
+  args' <- mapM normClean args
+  pure $ TConF tCName args an
+normClean (DConF dCName args an) = do
+  args' <- mapM normClean args
+  pure $ DConF dCName args an
+normClean e = norm normClean normClean differ e
 
 whnf :: (Fresh m, WithDynDefs m) => Exp -> m Exp
 whnf = norm whnf pure noCheck
@@ -388,53 +395,91 @@ whnfann (Case s m b l (An (Just ty))) = do
   pure $ Case s m b l (An (Just ty'))
 whnfann x = pure x -- everything else already in whnf
 
--- TODO this name isn't great
-cbvCheck :: HasCallStack =>
-  (MonadError Err m, Fresh m, WithDynDefs m) => 
-  Term -> m Exp
-cbvCheck (Same l info r) | sameCon l r == Just False = do
-  throwInfoError (show (e l) ++ "=/=" ++ show (e r)) info
--- cbvCheck (e@(Same l info r)) = do
---   norm cbvCheck cbvCheck e -- probly aslight overcorrection
-cbvCheck (App f a ann) = do
-  f' <- cbvCheck f
-  a' <- cbvCheck a
-  -- TODO check that a is a value!
-  norm cbvCheck pure check $ App f' a' ann --TODO some redundant computation... but the definition is at least tight
-cbvCheck (C u info uTy w t) = do
-  u' <- cbvCheck u
-  w' <- cbvCheck w 
-  uTy' <- cbvCheck uTy
-  t' <- cbvCheck t
+
+
+cbv check (App f a ann) = do
+  f' <- cbv check  f
+  a' <- cbv check  a
+  norm (cbv check) pure check $ App f' a' ann
+cbv check  (C u info uTy w t) = do
+  u' <- (cbv check) u
+  w' <- (cbv check) w 
+  uTy' <- (cbv check) uTy
+  t' <- (cbv check) t
   if uTy' `aeq` t' -- can lose out on some error messages, but fine
     then pure u'
     else pure $ C u' info uTy' w' t'
-cbvCheck (TConF tCName args an) = do
-  args' <- mapM cbvCheck args
+cbv check (TConF tCName args an) = do
+  args' <- mapM (cbv check) args
   pure $ TConF tCName args an
-cbvCheck (DConF dCName args an) = do
-  args' <- mapM cbvCheck args
+cbv check (DConF dCName args an) = do
+  args' <- mapM (cbv check) args
   pure $ DConF dCName args an
-cbvCheck (Case scruts anTel branches sr ann) = do
-  scruts' <- mapM cbvCheck scruts
+cbv check (Case scruts anTel branches sr ann) = do
+  scruts' <- mapM (cbv check) scruts
   
   -- logg $ "scruts"
   -- loggg $ lfullshow scruts
   -- logg $ scruts
   -- logg $ scruts'
-  norm cbvCheck pure check $ Case scruts' anTel branches sr ann
-cbvCheck (e@(Fun _ _)) = pure e -- TODO should probly still simplify for readability
-cbvCheck (Pi aTy bodTy) = do
-  aTy' <- cbvCheck aTy
+  norm (cbv check) pure check $ Case scruts' anTel branches sr ann
+cbv check (e@(Fun _ _)) = pure e -- TODO should probly still simplify for readability
+cbv check (Pi aTy bodTy) = do
+  aTy' <- (cbv check) aTy
   pure $ Pi aTy' bodTy -- TODO should probly still simplify for readability
 
-cbvCheck e = norm cbvCheck pure check e
+cbv check e = norm (cbv check) pure check e
 
 
-check :: MonadError Err m => Exp -> Info -> Exp -> m Exp
-check l info r | sameCon l r == Just False = do
+
+cbvCheck e = cbv checkcbv e
+
+cbvDiffer :: (WithDynDefs m, Fresh m) => Term -> m Exp
+cbvDiffer e = cbv differ e
+
+checkcbv :: MonadError Err m => Exp -> Info -> Exp -> m Exp
+checkcbv l info r | sameCon l r == Just False = do
   throwInfoError (show (e l) ++ "=!=" ++ show (e r)) info
-check l info r = pure $ Same l info r
+  
+-- this seems pretty hacky
+checkcbv TyU info TyU = pure TyU
+checkcbv (TConF tCNamel argsl _) obs (TConF tCNamer argsr _) 
+  | tCNamel == tCNamer && length argsl == length argsr = do
+      args <- mapM (\ (i, ll, rr) -> checkcbv ll (obsmap (Index i) obs) rr) $ zip3 [0..] argsl argsr
+      pure $ TConF tCNamel args noAn
+
+checkcbv (DConF dCNamel argsl _) obs (DConF dCNamer argsr _) 
+  | dCNamel == dCNamer && length argsl == length argsr = do
+      args <- mapM (\ (i, ll, rr) -> checkcbv ll (obsmap (Index i) obs) rr) $ zip3 [0..] argsl argsr
+      pure $ DConF dCNamel args noAn
+
+checkcbv (under -> Just l) obs r = checkcbv l obs r
+checkcbv l obs (under -> Just r) = checkcbv l obs r
+checkcbv l info r = pure $ Same l info r
+
+differ TyU info TyU = pure TyU
+differ (TConF tCNamel argsl _) obs (TConF tCNamer argsr _) 
+  | tCNamel == tCNamer && length argsl == length argsr = do
+      args <- mapM (\ (i, ll, rr) -> differ ll (obsmap (Index i) obs) rr) $ zip3 [0..] argsl argsr
+      pure $ TConF tCNamel args noAn
+
+differ (DConF dCNamel argsl _) obs (DConF dCNamer argsr _) 
+  | dCNamel == dCNamer && length argsl == length argsr = do
+      args <- mapM (\ (i, ll, rr) -> differ ll (obsmap (Index i) obs) rr) $ zip3 [0..] argsl argsr
+      pure $ DConF dCNamel args noAn
+
+differ (under -> Just l) obs r = differ l obs r
+differ l obs (under -> Just r) = differ l obs r
+differ l obs r = do
+  l' <- normClean l
+  r' <- normClean r
+  pure $ Same l' obs r' -- a hacky mess
+-- differ l obs r = pure $ Same l obs r 
+
+-- check :: MonadError Err m => Exp -> Info -> Exp -> m Exp
+-- check l info r | sameCon l r == Just False = do
+--   throwInfoError (show (e l) ++ "=!=" ++ show (e r)) info
+-- check l info r = pure $ Same l info r
 
 noCheck l info r = pure $ Same l info r
 

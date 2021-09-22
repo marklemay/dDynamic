@@ -126,7 +126,7 @@ clean (C u info l wht r) eq = do
     False -> do
       -- logg "clean"
 
-      wht' <- whnf wht -- ieadlly do more, but better than nothing
+      -- wht' <- whnf wht -- ieadlly do more, but better than nothing
       -- if wht' /= wht
       --   then do
       --     logg "clean,"
@@ -139,7 +139,9 @@ clean (C u info l wht r) eq = do
 
 
   -- wht' <- norm pure pure wht -- ieadlly do more, but better than nothing
-      -- wht' <- normClean wht -- ok to be wild over the untyped fragment
+      -- wht' <- cbvDiffer wht -- ok to be wild over the untyped fragment
+
+      wht' <- normClean wht 
       -- wht' <- pure wht
       pure $ C u' info l' wht' r'
 
