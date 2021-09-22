@@ -1,36 +1,37 @@
-data bool : * {
-  | true  : bool
-  | false : bool
+data Bool : * {
+  | true  : Bool
+  | false : Bool
 };
 
-data nat : * {
-  | O : nat
-  | S : nat -> nat
+data Nat : * {
+| Z : Nat
+| S : Nat -> Nat
 };
 
-data eq : (A : *) -> A -> A -> * {
-  | refl : (A : *) -> (a : A) -> eq A a a
+
+data Id : (A : *) -> A -> A -> * {
+| refl  : (A : *) -> (a : A) -> Id A a a
 };
 
 graph : *;
-graph = nat -> nat -> bool;
+graph = Nat -> Nat -> Bool;
 
-data path : graph -> nat -> nat -> * {
+data path : graph -> Nat -> Nat -> * {
   | edge : 
-    (g : graph) -> 
-    (u : nat) -> 
-    (v : nat) -> 
-    eq bool (g u v) true ->
+    (g : (Nat -> Nat -> Bool)) -> 
+    (u : Nat) -> 
+    (v : Nat) -> 
+    Id Bool (g u v) true ->
     path g u v
   | step :
-    (g : graph) -> 
-    (u : nat) -> 
-    (v : nat) -> 
-    (w : nat) -> 
-    eq bool (g u v) true ->
+    (g : (Nat -> Nat -> Bool)) -> 
+    (u : Nat) -> 
+    (v : Nat) -> 
+    (w : Nat) -> 
+    Id Bool (g u v) true ->
     path g v w ->
     path g u w
 };
 
-empty : graph;
-empty = \x => \y => false;
+empty : Nat -> Nat -> Bool;
+empty x y = false;
