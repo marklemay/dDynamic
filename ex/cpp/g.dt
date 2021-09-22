@@ -1,0 +1,36 @@
+data bool : * {
+  | true  : bool
+  | false : bool
+};
+
+data nat : * {
+  | O : nat
+  | S : nat -> nat
+};
+
+data eq : (A : *) -> A -> A -> * {
+  | refl : (A : *) -> (a : A) -> eq A a a
+};
+
+graph : *;
+graph = nat -> nat -> bool;
+
+data path : graph -> nat -> nat -> * {
+  | edge : 
+    (g : graph) -> 
+    (u : nat) -> 
+    (v : nat) -> 
+    eq bool (g u v) true ->
+    path g u v
+  | step :
+    (g : graph) -> 
+    (u : nat) -> 
+    (v : nat) -> 
+    (w : nat) -> 
+    eq bool (g u v) true ->
+    path g v w ->
+    path g u w
+};
+
+empty : graph;
+empty = \x => \y => false;
