@@ -1,0 +1,59 @@
+
+data Unit : * {
+  | tt  : Unit
+};
+
+data Bool : * {
+| True : Bool
+| False : Bool
+};
+
+data Nat : * {
+| Z : Nat
+| S : Nat -> Nat
+};
+-- Syntactic sugar expands decimal numbers
+-- into their unary representation.
+ 
+data Vec : (A : *) -> Nat -> * {
+| Nil  : (A : *) -> Vec A Z
+| Cons : (A : *) -> A -> (x : Nat)
+         -> Vec A x -> Vec A (S x)
+};
+ 
+data Id : (A : *) -> A -> A -> * {
+| refl  : (A : *) -> (a : A) -> Id A a a
+};
+
+-- eliminator style
+head' : (A : *) -> (n : Nat) ->
+ Vec A (S n) ->
+ A ;
+head' A n v =
+ case A, (S n), v <
+   A' => n' => _ : Vec A' n' =>
+     case n' < _ => *> {
+       | (Z  ) => Unit
+       | (S _) => A'
+     }
+ >{
+  | _ => (Z)   => (Nil _       ) => tt
+  | _ => (S _) => (Cons _ a _ _) => a
+  } ;
+
+-- pattern match style
+head : (A : *) -> (n : Nat) ->
+ Vec A (S n) ->
+ A ;
+head A n v =
+ case v < _ => A > {
+  | (Cons _ a _ _) => a
+  } ;
+
+
+-- usage
+ex' : Nat ;
+ex' = head' Nat 2 [1,2,3]<Nat> ;
+
+ex : Nat ;
+ex = head Nat 2 [1,2,3]<Nat> ;

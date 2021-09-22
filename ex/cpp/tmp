@@ -1,0 +1,111 @@
+| tapp : (ctx : Ctx) -> 
+  (arg : Ty) -> (bod : Ty) ->
+  term ctx (forall bod) ->
+
+
+
+
+
+
+append_assoc : 
+-- (A : *) ->
+-- (x : Nat) -> (y : Nat) -> (z : Nat) ->
+-- (vx : Vec A x) ->
+-- (vy : Vec A y) ->
+-- (vz : Vec A z) ->
+-- Eq (Vec A (add x (add y z))
+--     (append A x vx (add y z) (append A y vy z vz))
+--     (append A (add x y) (append A x vx y vy) z vz);
+ * ;
+append_assoc = --A x y z = --vx vy vz =
+ ? ;
+ case x, vx
+   < x' => vx' : Vec A x' =>
+     Eq (Vec A (x' + (y+z)))
+         (append A x' vx' (y + z) (append A y vy z vz))
+         (append A (x' + y) (append A x' vx' y vy) z vz)> {
+   | (0) => (Nil _) =>
+       refl (Vec A (y+z)) (append A y vy z vz)
+   | (S px) => (Cons _ a _ ls) =>
+         cong
+         (Vec A (x' + (y+z)))
+         (append A px ls (y + z) (append A y vy z vz))
+         (append A (px + y) (append A px ls y vy) z vz)
+         (\ c => Cons A a (x' + (y+z)) c)
+         (append-assoc A ls y z)
+ };
+
+
+
+appendAssoc : (A : *) ->
+ (x : Nat) -> (y : Nat) -> (z : Nat) ->
+ (vx : Vec A x) ->
+ (vy : Vec A y) ->
+ (vz : Vec A z) ->
+ Id (Vec A (add x (add y z)))
+  (append A x vx (add y z) (append A y vy z vz))
+  (append A (add x y) (append A x vx y vy) z vz);
+appendAssoc A x y z vx vy vz =
+ case x, vx
+   < x' => vx' : Vec A x' =>
+      Id (Vec A (add x' (add y z)))
+        (append A x' vx' (add y z) (append A y vy z vz))
+        (append A (add x' y) (append A x' vx' y vy) z vz)> {
+  | (Z) => (Nil _) =>
+       refl (Vec A (add y z)) (append A y vy z vz)
+  }
+ ;
+
+
+
+appendAssoc : (A : *) ->
+ (x : Nat) -> (y : Nat) -> (z : Nat) ->
+ (vx : Vec A x) ->
+ (vy : Vec A y) ->
+ (vz : Vec A z) ->
+ Id (Vec A (add x (add y z)))
+  (append A x vx (add y z) (append A y vy z vz))
+  (append A (add x y) (append A x vx y vy) z vz);
+appendAssoc A x y z vx vy vz =
+ case x, vx
+   < x' => vx' : Vec A x' =>
+      Id (Vec A (add x' (add y z)))
+        (append A x' vx' (add y z) (append A y vy z vz))
+        (append A (add x' y) (append A x' vx' y vy) z vz)> {
+  | (Z) => (Nil _) =>
+       refl (Vec A (add y z)) (append A y vy z vz)
+  | (S px) => (Cons _ a _ ls) =>
+      cong
+      (Vec A (add px (add y z)))
+      (append A px ls (add y z) (append A y vy z vz))
+      (append A (add px y) (append A px ls y vy) z vz)
+      
+      (Vec A (S (add px (add y z))))
+      (\ c => Cons A a (add px (add y z)) c)
+      (appendAssoc A px y z ls vy vz)
+  };
+
+
+cong : (A : *) ->
+ (x : A) -> (y : A) -> 
+ (C : (A -> *)) ->
+ C x ->
+ Id A x y -> 
+ C y ;
+cong A x y C Cx eq = 
+  case eq <_ => C y> {
+  | (refl _ _) => Cx
+  } ;
+
+
+
+-- this will load faster and be cleaner in the write up
+congVec : (A : *) ->
+ (x : A) -> (y : A) -> 
+ (B : *) -> (f : A -> B) -> 
+ Id A x y -> 
+ Id B (f x) (f y) ;
+cong A x y B f eq = 
+  case eq <_ => Id B (f x) (f y) > {
+  | (refl _ a) => (refl B (f a))
+  } ;

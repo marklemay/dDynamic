@@ -1,0 +1,87 @@
+-- NOTE will take a LONG time to "clean" this file
+-- a bug cuases more warnings then strictly needed
+
+data Unit : * {
+  | tt  : Unit
+};
+
+data Bool : * {
+| True : Bool
+| False : Bool
+};
+
+data Nat : * {
+| Z : Nat
+| S : Nat -> Nat
+};
+-- Syntactic sugar expands decimal numbers
+-- into their unary representation.
+
+
+add : Nat -> Nat -> Nat ;
+add x y = 
+  case x <_ => Nat> {
+   | (Z)   => y
+   | (S p) => S (add p y)
+   } ;
+
+
+data Vec : (A : *) -> Nat -> * {
+| Nil  : (A : *) -> Vec A Z
+| Cons : (A : *) -> A -> (x : Nat)
+         -> Vec A x -> Vec A (S x)
+};
+
+append : (A : *) -> (n : Nat) -> Vec A n -> (m : Nat) -> Vec A m -> Vec A (add n m) ;
+append A n vn m vm = 
+  case vn < _ => Vec A (add n m) >{ -- multi matching allows for definitional computation
+   | (Nil _) => vm
+   | (Cons _ a pn pvn) => Cons A a (add pn m) (append A pn pvn m vm)
+  };
+
+data Id : (A : *) -> A -> A -> * {
+| refl  : (A : *) -> (a : A) -> Id A a a
+};
+
+
+cong : (A : *) ->
+ (x : A) -> (y : A) -> 
+ (B : *) -> (f : A -> B) -> 
+ Id A x y -> 
+ Id B (f x) (f y) ;
+cong A x y B f eq = 
+  case eq <_ => Id B (f x) (f y) > {
+  | (refl _ a) => (refl B (f a))
+  } ;
+
+
+appendAssoc : (A : *) ->
+ (x : Nat) -> (y : Nat) -> (z : Nat) ->
+ (vx : Vec A x) ->
+ (vy : Vec A y) ->
+ (vz : Vec A z) ->
+ Id (Vec A (add x (add y z)))
+  (append A x vx (add y z) (append A y vy z vz))
+  (append A (add x y) (append A x vx y vy) z vz);
+appendAssoc A x y z vx vy vz =
+ case vx
+   < vx' : Vec A x =>
+      Id (Vec A (add x (add y z)))
+        (append A x vx' (add y z) (append A y vy z vz))
+        (append A (add x y) (append A x vx' y vy) z vz)> {
+  | (Nil _) =>
+       refl (Vec A (add y z)) (append A y vy z vz)
+  | (Cons _ a px ls) =>
+      cong
+      (Vec A (add px (add y z)))
+      (append A px ls (add y z) (append A y vy z vz))
+      (append A (add px y) (append A px ls y vy) z vz)
+      (Vec A (S (add px (add y z))))
+      (\ c => Cons A a (add px (add y z)) c)
+      (appendAssoc A px y z ls vy vz)
+  };
+
+
+-- usage
+e1 : Vec Nat 4 ;
+e1 = append Nat 2 [1,2]<Nat> 2 [8,9]<Nat> ;
