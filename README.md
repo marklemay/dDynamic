@@ -1,7 +1,7 @@
 # dDynamic
 [![Haskell CI](https://github.com/marklemay/dDynamic/actions/workflows/haskell.yml/badge.svg)](https://github.com/marklemay/dDynamic/actions/workflows/haskell.yml)
 
-a minimal dependently typed langugage were deffintional equality can be resolved dynamically at runtime.
+a minimal dependently typed langugage where deffintional equality can be resolved dynamically at runtime.
 
 The project is tested in the following environments:
 - GHC 8.10.4 and cabal 3.4.0.0
