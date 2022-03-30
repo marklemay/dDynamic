@@ -21,9 +21,12 @@ library
     , Dynamic.ElabModule
     
     , Dynamic.Elab, Dynamic.Env
-    , Dynamic.Erase, Dynamic.Err, Dynamic.Helper
-    , Dynamic.Temp
-    , Dynamic.Clean, Dynamic.Unification, Dynamic.Warn
+    , Dynamic.Erasure
+    , Dynamic.Err, Dynamic.Helper
+    -- , Dynamic.Temp
+    -- , Dynamic.Clean
+    , Dynamic.Unification
+    -- , Dynamic.Warn
     
     , Repl
     , StdLib
@@ -37,7 +40,9 @@ library
     , UnboundHelper, AlphaShow 
     , PreludeHelper
 
-  ghc-options:        -fwarn-incomplete-patterns -fwarn-incomplete-uni-patterns
+  ghc-options:        -fwarn-incomplete-patterns -fwarn-incomplete-uni-patterns -interactive-print=PreludeHelper.dPrinter
+  -- (pPrintStringOpt CheckColorTty defaultOutputOptionsDarkBg {outputOptionsCompact = True})
+  -- -interactive-print=Text.Pretty.Simple.pPrint
 
   build-depends:
       containers, mtl,  base 
@@ -45,6 +50,7 @@ library
     , logict
     , raw-strings-qq
     , haskeline
+    , pretty-simple
 
   hs-source-dirs:     src
   default-language:   Haskell2010
@@ -59,6 +65,7 @@ executable repl
     , logict
     , raw-strings-qq  
     , haskeline
+    , pretty-simple
   hs-source-dirs:     src
   build-depends:
     dDynamic
@@ -82,3 +89,4 @@ test-suite test
     , tasty >= 1.3.1, tasty-hunit, tasty-quickcheck
     , QuickCheck
     , dDynamic
+    , pretty-simple

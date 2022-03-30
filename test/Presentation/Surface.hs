@@ -1,4 +1,4 @@
-module Presentation.Surface (tests) where
+module Presentation.Surface where -- (tests) where
 
 import Prelude hiding (head,exp)
 
@@ -44,99 +44,99 @@ file2 = "ex/b.dt"
 file3 = "ex/c.dt"
 
 
-tests = testGroup "Surface Language example works as expected"
-  [ testCase "add" $ do
-    Ok (ddefs,trmdefs) <- loadSurfaceFile file1
-    let modul = TyEnv Map.empty ddefs trmdefs
-    e <- parseIo exp "add 2 3"
-    let e' = undermodule e ddefs
-    (_,eTy) <- runTcMonadIo modul $ tyInfer e'
+-- tests = testGroup "Surface Language example works as expected"
+--   [ testCase "add" $ do
+--     Ok (ddefs,trmdefs) <- loadSurfaceFile file1
+--     let modul = TyEnv Map.empty ddefs trmdefs
+--     e <- parseIo exp "add 2 3"
+--     let e' = undermodule e ddefs
+--     (_,eTy) <- runTcMonadIo modul $ tyInfer e'
 
-    expectedTy <- parseIo exp "Nat"
-    let expectedTy' = undermodule expectedTy ddefs
-    expectedTy' @?= eTy
+--     expectedTy <- parseIo exp "Nat"
+--     let expectedTy' = undermodule expectedTy ddefs
+--     expectedTy' @?= eTy
 
-    en <- runTcMonadIo modul $ cbv e'
+--     en <- runTcMonadIo modul $ cbv e'
 
-    expecteden <- parseIo exp "5"
-    let expecteden' = undermodule expecteden ddefs
-    expecteden' @?= en,
+--     expecteden <- parseIo exp "5"
+--     let expecteden' = undermodule expecteden ddefs
+--     expecteden' @?= en,
 
-  testCase "rep" $ do
-    Ok (ddefs,trmdefs) <- loadSurfaceFile file1
-    let modul = TyEnv Map.empty ddefs trmdefs
-    e <- parseIo exp "rep Bool true 3"
-    let e' = undermodule e ddefs
-    (_,eTy) <- runTcMonadIo modul $ tyInfer e'
+--   testCase "rep" $ do
+--     Ok (ddefs,trmdefs) <- loadSurfaceFile file1
+--     let modul = TyEnv Map.empty ddefs trmdefs
+--     e <- parseIo exp "rep Bool true 3"
+--     let e' = undermodule e ddefs
+--     (_,eTy) <- runTcMonadIo modul $ tyInfer e'
 
-    expectedTy <- parseIo exp "Vec Bool 3"
-    let expectedTy' = undermodule expectedTy ddefs
-    expectedTy' @?= eTy
+--     expectedTy <- parseIo exp "Vec Bool 3"
+--     let expectedTy' = undermodule expectedTy ddefs
+--     expectedTy' @?= eTy
 
-    en <- runTcMonadIo modul $ cbv e'
+--     en <- runTcMonadIo modul $ cbv e'
 
-    expecteden <- parseIo exp "[true,true,true]<Bool>"
-    let expecteden' = undermodule expecteden ddefs
-    expecteden' @?= en,
+--     expecteden <- parseIo exp "[true,true,true]<Bool>"
+--     let expecteden' = undermodule expecteden ddefs
+--     expecteden' @?= en,
 
-  testCase "head" $ do
-    Ok (ddefs,trmdefs) <- loadSurfaceFile file1
-    let modul = TyEnv Map.empty ddefs trmdefs
-    e <- parseIo exp "head Bool 2 [false,true,false]<Bool>" 
-    let e' = undermodule e ddefs
-    (_,eTy) <- runTcMonadIo modul $ tyInfer e'
+--   testCase "head" $ do
+--     Ok (ddefs,trmdefs) <- loadSurfaceFile file1
+--     let modul = TyEnv Map.empty ddefs trmdefs
+--     e <- parseIo exp "head Bool 2 [false,true,false]<Bool>" 
+--     let e' = undermodule e ddefs
+--     (_,eTy) <- runTcMonadIo modul $ tyInfer e'
 
-    expectedTy <- parseIo exp "Bool"
-    let expectedTy' = undermodule expectedTy ddefs
-    expectedTy' @?= eTy
+--     expectedTy <- parseIo exp "Bool"
+--     let expectedTy' = undermodule expectedTy ddefs
+--     expectedTy' @?= eTy
 
-    en <- runTcMonadIo modul $ cbv e'
+--     en <- runTcMonadIo modul $ cbv e'
 
-    expecteden <- parseIo exp "false"
-    let expecteden' = undermodule expecteden ddefs
-    expecteden' @?= en,
+--     expecteden <- parseIo exp "false"
+--     let expecteden' = undermodule expecteden ddefs
+--     expecteden' @?= en,
 
-  testCase "append" $ do
-    Ok (ddefs,trmdefs) <- loadSurfaceFile file1
-    let modul = TyEnv Map.empty ddefs trmdefs
-    e <- parseIo exp "append Nat 2 [1,2]<Nat> 3 [7,8,9]<Nat>" 
-    let e' = undermodule e ddefs
-    (_,eTy) <- runTcMonadIo modul $ tyInfer e'
-    eTy' <- runTcMonadIo modul $ cbv eTy
+--   testCase "append" $ do
+--     Ok (ddefs,trmdefs) <- loadSurfaceFile file1
+--     let modul = TyEnv Map.empty ddefs trmdefs
+--     e <- parseIo exp "append Nat 2 [1,2]<Nat> 3 [7,8,9]<Nat>" 
+--     let e' = undermodule e ddefs
+--     (_,eTy) <- runTcMonadIo modul $ tyInfer e'
+--     eTy' <- runTcMonadIo modul $ cbv eTy
 
-    expectedTy <- parseIo exp "Vec Nat 5"
-    let expectedTy' = undermodule expectedTy ddefs
-    expectedTy' @?= eTy' --TODO all of these should be testing against equality directly!
+--     expectedTy <- parseIo exp "Vec Nat 5"
+--     let expectedTy' = undermodule expectedTy ddefs
+--     expectedTy' @?= eTy' --TODO all of these should be testing against equality directly!
 
-    en <- runTcMonadIo modul $ cbv e'
+--     en <- runTcMonadIo modul $ cbv e'
 
-    expecteden <- parseIo exp "[1,2,7,8,9]<Nat>"
-    let expecteden' = undermodule expecteden ddefs
-    expecteden' @?= en,
+--     expecteden <- parseIo exp "[1,2,7,8,9]<Nat>"
+--     let expecteden' = undermodule expecteden ddefs
+--     expecteden' @?= en,
 
 
-  testCase "okFun" $ do
-    Ok (ddefs,trmdefs) <- loadSurfaceFile file1
-    let modul = TyEnv Map.empty ddefs trmdefs
-    e <- parseIo exp "okFun 3" 
-    let e' = undermodule e ddefs
-    (_,eTy) <- runTcMonadIo modul $ tyInfer e'
+--   testCase "okFun" $ do
+--     Ok (ddefs,trmdefs) <- loadSurfaceFile file1
+--     let modul = TyEnv Map.empty ddefs trmdefs
+--     e <- parseIo exp "okFun 3" 
+--     let e' = undermodule e ddefs
+--     (_,eTy) <- runTcMonadIo modul $ tyInfer e'
 
-    expectedTy <- parseIo exp "Bool"
-    let expectedTy' = undermodule expectedTy ddefs
-    expectedTy' @?= eTy
+--     expectedTy <- parseIo exp "Bool"
+--     let expectedTy' = undermodule expectedTy ddefs
+--     expectedTy' @?= eTy
 
-    en <- runTcMonadIo modul $ cbv e'
+--     en <- runTcMonadIo modul $ cbv e'
 
-    expecteden <- parseIo exp "true"
-    let expecteden' = undermodule expecteden ddefs
-    expecteden' @?= en,
+--     expecteden <- parseIo exp "true"
+--     let expecteden' = undermodule expecteden ddefs
+--     expecteden' @?= en,
 
-  testCase (file2 ++ " gives 'good' error") $ do
-    SurfaceTypeError e <- loadSurfaceFile file2
-    assertBool "message contains carrot" $ elem '^' e,
+--   testCase (file2 ++ " gives 'good' error") $ do
+--     SurfaceTypeError e <- loadSurfaceFile file2
+--     assertBool "message contains carrot" $ elem '^' e,
 
-  testCase (file3 ++ " gives 'good' error") $ do
-    SurfaceTypeError e <- loadSurfaceFile file3
-    assertBool "message contains carrot" $ elem '^' e
-  ]
+--   testCase (file3 ++ " gives 'good' error") $ do
+--     SurfaceTypeError e <- loadSurfaceFile file3
+--     assertBool "message contains carrot" $ elem '^' e
+--   ]

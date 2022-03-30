@@ -34,14 +34,23 @@ type DataCtx = Map TCName DataDef
 -- TODO: work better with source pos
 
 -- For toplevel term definitions
-type DefCtx = Map Var (Term, Ty)
+type DefCtx = Map RefName (Term, Ty)
 
+type Module = (Map TCName DataDef, DefCtx)
 
 -- TODO clean up the notion of module, undermodule
 
 -- | rempaps all the unbound vars that match dataconstructors and typeconstructors 
-undermodule :: (Subst Exp a) => a -> DataCtx -> a
-undermodule e (Map.toList-> ls) = undermodule' e ls
+undermodule :: (Subst Exp a) => a -> DataCtx -> Map RefName (Term, Ty) -> a
+undermodule e datals (Map.keys-> refs)  = underData (underRef e refs) datals 
+
+
+underRef :: (Subst Exp a) => a -> [RefName] -> a
+underRef e (refls)  = substs (fmap (\ r -> (s2n r, Ref r)) refls) e
+
+
+underData :: (Subst Exp a) => a -> DataCtx -> a
+underData e (Map.toList-> datals) = undermodule' e datals
 
 undermodule' :: (Subst Exp a) => a -> [(TCName, DataDef)] -> a
 undermodule' e [] = e
@@ -59,6 +68,7 @@ underConstructors' e (dCname : rest) = subst (s2n dCname) (DCon dCname) $ underC
 data TyEnv = TyEnv {tyCtx :: TyCtx, dataCtx :: DataCtx, defCtx :: DefCtx}
   deriving (Show,Eq)
 
+empTyEnv = TyEnv Map.empty Map.empty Map.empty 
 --TODO: is there not a standard way to add constaints to the reader ctx?
 
 
@@ -77,19 +87,19 @@ instance TypingCtx TyCtx where
       Just ty -> pure ty
       Nothing -> throwError $ "could not find " ++ show v ++ " in " ++ show tyCtx
 
-instance TypingCtx DefCtx where
-  getVarTy defCtx v = 
-    case Map.lookup v defCtx of
-      Just (_,ty) -> pure ty
-      Nothing -> throwError $ "could not find " ++ show v ++ " in " ++ show defCtx
+-- instance TypingCtx DefCtx where
+--   getVarTy defCtx v = 
+--     case Map.lookup v defCtx of
+--       Just (_,ty) -> pure ty
+--       Nothing -> throwError $ "could not find " ++ show v ++ " in " ++ show defCtx
 
 instance TypingCtx TyEnv where
-  getVarTy (TyEnv tyCtx dataCtx defCtx) v =
-     getVarTy tyCtx v `catchError` \ _ -> getVarTy defCtx v
+  getVarTy (TyEnv{tyCtx=tyCtx}) v =
+     getVarTy tyCtx v 
 
 instance TypingCtx (TyEnv,a) where -- on the hacky side
-  getVarTy (TyEnv tyCtx dataCtx defCtx,_) v =
-     getVarTy tyCtx v `catchError` \ _ -> getVarTy defCtx v
+  getVarTy (TyEnv{tyCtx=tyCtx},_) v =
+     getVarTy tyCtx v
 
 
 lookupTy :: (MonadReader ctx m, TypingCtx ctx, MonadError String m)
@@ -150,7 +160,7 @@ lookupTCName tCName = do
 
 
 class DefnCtx ctx where 
-  getDefn' :: ctx -> Var -> Maybe (Term, Ty)
+  getDefn' :: ctx -> RefName -> Maybe (Term, Ty)
 
 
 
@@ -167,7 +177,7 @@ instance DefnCtx (TyEnv,a) where
 
 -- TODO this should be the definition
 -- lookupDef' :: (MonadReader ctx m, DefnCtx ctx) => Var -> m (Maybe (Term, Ty))
-lookupDef' :: HasCallStack => (MonadReader ctx m, DefnCtx ctx) => Var -> m (Maybe (Term, Ty))
+lookupDef' :: HasCallStack => (MonadReader ctx m, DefnCtx ctx) => RefName -> m (Maybe (Term, Ty))
 lookupDef' v = do 
   ctx <- ask
   pure $ getDefn' ctx v
@@ -175,7 +185,7 @@ lookupDef' v = do
 
 -- TODO make these types sigs more uniform
 --lookupDef :: Var -> TcMonad (Maybe (Term, Ty))
-lookupDef :: HasCallStack => (MonadReader ctx m, DefnCtx ctx, MonadError String m) => Var -> m (Term, Ty)
+lookupDef :: HasCallStack => (MonadReader ctx m, DefnCtx ctx, MonadError String m) => RefName -> m (Term, Ty)
 lookupDef v = do
   ma <- lookupDef' v
   case ma of
@@ -221,8 +231,8 @@ runTcMonadIo ctx ma = do
 extendCtx :: Var -> Ty -> TcMonad a -> TcMonad a
 extendCtx name typ = local $ \ (TyEnv tys datas dfnCtx, p) -> (TyEnv (Map.insert name typ tys) datas dfnCtx, p) --TODO: lenses :(
 
-extendDef :: Var -> Term -> Ty -> TcMonad a -> TcMonad a
-extendDef name term typ = local $ \ (TyEnv tys datas dfnCtx, p) -> (TyEnv tys datas (Map.insert name (term, typ) dfnCtx), p) --TODO: lenses :(
+-- extendDef :: Var -> Term -> Ty -> TcMonad a -> TcMonad a
+-- extendDef name term typ = local $ \ (TyEnv tys datas dfnCtx, p) -> (TyEnv tys datas (Map.insert name (term, typ) dfnCtx), p) --TODO: lenses :(
 
 setRegion :: SourcePos -> SourcePos -> TcMonad a -> TcMonad a
 setRegion l r = local $ \ (e, m) -> 

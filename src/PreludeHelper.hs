@@ -7,16 +7,29 @@ import Control.Monad (guard)
 import Data.Monoid (Any(..))
 import Control.Applicative (Alternative(empty),  Applicative(..), (<$>))
 
-import Debug.Trace (trace)
+-- import Debug.Trace (trace)
 
 import Control.Monad.Except (throwError, MonadError)
 
+import Debug.Pretty.Simple
+import Text.Pretty.Simple
+
+-- import Text.Pretty.Simple
+
+dPrinter a = pPrintStringOpt CheckColorTty defaultOutputOptionsDarkBg {outputOptionsCompact = True} $ show a
+dTrace s a = pTraceOpt CheckColorTty defaultOutputOptionsDarkBg {outputOptionsCompact = True} s a
+
 -- todo a = trace ("optimistically assume " ++ show a) $ pure a
-logg a = trace ("-- " ++ show a) $ pure a
--- logg a = pure a
+-- logg a = trace ("-- " ++ show a) $ pure a
+-- logg a = dTrace ("-- " ++ show a) $ pure a
+-- logg a = dTrace ("-- " ++ show a) $ pure a
+logg a = pure a
 -- did the haskell upgrade break trace?
 
-loggg a = trace ("-- " ++  a) $ pure a
+loggg a = pure a
+-- loggg a = trace ("-- " ++  a) $ pure a
+-- loggg a = pTrace ("-- " ++  a) $ pure a
+-- loggg a = dTrace ("-- " ++  a) $ pure a
 
 -- from: https://github.com/BU-CS320/Summer-2019/blob/master/assignments/HW4/src/HelpShow.hs
 parenthesize :: Integer -- ^ the precedence level of outer expression

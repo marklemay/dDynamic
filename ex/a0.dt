@@ -32,24 +32,12 @@ rep A a n =
    | (S p) => Cons A a p (rep A a p)
    } ;
 
-head : (A : *) -> (n : Nat) -> Vec A (S n) -> A ;
-head A n v = 
-  case v <_ => A >{
-   | (Cons _ a _ _) => a
-   } ;
-
-tail : (A : *) -> (n : Nat) -> Vec A (S n) -> Vec A n ;
-tail A n v = 
-  case v <_ => Vec A n >{
-   | (Cons _ _ _ v) => v
-   } ;
-
 append : (A : *) -> (n : Nat) -> Vec A n -> (m : Nat) -> Vec A m -> Vec A (add n m) ;
 append A n vn m vm = 
   case n, vn < n' => _ : Vec A n' => Vec A (add n' m) >{ -- multi matching allows for definitional computation
    | (Z)   => (Nil _) => vm
-   | (S _) => (Cons _ a pn pvn) => Cons A a (add pn m) (append A pn pvn m vm)
   };
+
 
 
 mapVec : (A : *) -> (n : Nat) -> Vec A n -> (B : *) -> (A -> B) -> Vec B n ;
@@ -59,6 +47,23 @@ mapVec A n v =
    | (S _) =>  (Cons A a pn pv) => \ B => \ f => Cons B (f a) pn (mapVec A pn pv B f)
   };
 
+-- more examples
 
-okFun : Nat -> Bool ;
-okFun x = head Bool x (rep Bool true (add 1 x)) ;
+ex0 : Vec Bool 1 ;
+ex0 = rep Bool true 1 ;
+
+ex01 : Vec Bool 1 ;
+ex01 = mapVec Bool 1 ex0 Bool not ;
+
+ex1 : Vec Bool 5 ;
+ex1 = rep Bool true 5 ;
+
+ex2 : Vec Bool 5 ;
+ex2 = mapVec Bool 5 ex1 Bool not ;
+
+not : Bool -> Bool ;
+not x = 
+  case x < _ => Bool >{
+   | (true)  => false
+   | (false) => true
+  } ;

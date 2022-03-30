@@ -22,7 +22,7 @@ supports commands for
 
 for example
 ```
-dt-surface> :ls ex/ex1.dt
+dt-surface> :l ex/ex1.dt
 parsed
 typechecked
 loaded

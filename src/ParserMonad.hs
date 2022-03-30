@@ -11,11 +11,19 @@ import Data.Char
 
 import PreludeHelper
 
+
+
+-- Path
+data ParseError = ParseError {message::String,range::SourceRange}
+  deriving Show
+
 -- the type of a parser
 newtype Parser a = Parser (SourcePos -> String -> Either (String, SourcePos, SourcePos) (a, SourcePos, String))
 
--- a helper function to pull out the function bit (same as book)
 
+
+
+-- a helper function to pull out the function bit (same as book)
 parse :: Parser a
   -> String
   -> Either (String, SourcePos, SourcePos) (a, SourcePos, String)
@@ -34,13 +42,12 @@ parseIo pa s = do
       pure a
 
 
-prettyParse :: String -> String -> Parser b -> Either [String] b
+
+prettyParse :: Path -> String -> Parser a -> Either ParseError a
 prettyParse path str p =
   case runParse (untillEnd p) (SourcePos path 0 0) str of
     Right (a,_,"") -> Right a
-    Left (msg, s, s')  -> Left $ [
-       msg
-      , show s] ++ prettyRange' str s s'
+    Left (msg, s, s')  -> Left $ ParseError{message=msg,range=SourceRange{source=Just str,start=s,end=s'}} 
     Right (a,_,rest) -> do
       logg $ "warning excess string: " ++ rest -- TODO print haskell stacktrace
       pure a

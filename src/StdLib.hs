@@ -19,7 +19,6 @@ import Helper
 import Env
 
 
-add = s2n "add"
 sym = s2n "sym"
 trans = s2n "trans"
 cong = s2n "cong"
@@ -64,69 +63,281 @@ stdlib = TyEnv Map.empty
       ("Z", NoBnd []),
       ("S", TelBnd nat $ u $ NoBnd [])]),
     ("Id", DataDef (TelBnd TyU $ bind a $ TelBnd (V a) $ u $ TelBnd (V a) $ u $ NoBnd ()) $ Map.fromList [
-      ("Refl", TelBnd TyU $ bind a $ TelBnd (V a) $ bind x $ NoBnd [V a, V x, V x])]),
+      ("Refl", TelBnd TyU $ bind a $ TelBnd (V a) $ bind x $ NoBnd [V a, V x, V x])])
+    ,
     ("Vec", DataDef (TelBnd TyU $ u $ TelBnd nat $ u $ NoBnd ()) $ Map.fromList [-- length indexed vector, good for examples
       ("Nil", TelBnd TyU $ bind aTy $ NoBnd [V aTy, n 0]),
-      ("Cons", TelBnd TyU $ bind aTy $ TelBnd (V aTy) $ u $ TelBnd nat $ bind x $ TelBnd (tcon "Vec" [V aTy, V x]) $ u $ NoBnd [V aTy, s $ V x])]),
+      ("Cons", TelBnd TyU $ bind aTy $ TelBnd (V aTy) $ u $ TelBnd nat $ bind x $ TelBnd (tcon "Vec" [V aTy, V x]) $ u $ NoBnd [V aTy, s $ V x])])
+      ,
     ("Sigma", DataDef (TelBnd TyU $ bind aTy $ TelBnd (V aTy --> TyU) $ u $ NoBnd ()) $ Map.fromList [
-      ("Tuple", TelBnd TyU $ bind aTy $ TelBnd (V aTy --> TyU) $ bind p $ TelBnd (V aTy) $ bind a $ TelBnd (V p `App` V a) $ u $ NoBnd [V aTy, V p])]),
+      ("Tuple", 
+      TelBnd TyU $ bind aTy $ 
+      TelBnd (V aTy --> TyU) $ bind p $ 
+      TelBnd (V aTy) $ bind a $
+      TelBnd (V p `App` V a) $ u $
+      NoBnd [V aTy, V p])])
+      ,
   -- Singletons
     ("Sing", DataDef (TelBnd TyU $ bind a $ TelBnd (V a) $ u $ NoBnd $ ()) $ Map.fromList [
-      ("mkSing", TelBnd TyU $ bind a $ TelBnd (V a) $ bind x $ NoBnd [V a,V x])]),
+      ("mkSing", TelBnd TyU $ bind a $ TelBnd (V a) $ bind x $ NoBnd [V a,V x])])
+      ,
     ("SB", DataDef (TelBnd bool $ u $ NoBnd ()) $ Map.fromList [
       ("mkSB", TelBnd bool $ bind x $ NoBnd [V x])])
    ])
   (Map.fromList [
-    -- (add, (let x = s2n "x"
-    --            y = s2n "y"
-    --            x' = s2n "x'"
-    --        in lam x $ lam y $ 
-    --             Case (V x) (ann $ bind (unnamed, []) nat) [ -- TODO let the weak inference handle this
-    --               Match "Z" $ bind []   $ V y,
-    --               Match "S" $ bind [x'] $ s $ V add `App` V x' `App` V y],
-    --        nat --> (nat --> nat) )),
-    -- (sym, (lam aTy $ lam x $ lam y $ lam xy $ 
-    --          Case (V xy) (ann $ bind (unnamed, [aTy, x,y]) $ tcon "Id" [V aTy, V y, V x])
-    --            [Match "Refl" $ bind [aTy,a] $ DCon "Refl" `App` V aTy `App` V a],
-    --        Pi TyU $ bind aTy $ Pi (V aTy) $ bind x $ Pi (V aTy) $ bind y $ tcon "Id" [V aTy, V x, V y] --> tcon "Id" [V aTy, V y, V x] )),
-    -- (trans, (lam aTy $ lam x $ lam y $ lam xy $
-    --            Case (V xy) (ann $ bind (unnamed, [aTy,a,a']) $  (Pi (V aTy) $ bind z $ tcon "Id" [V aTy, V a', V z] --> tcon "Id" [V aTy, V a, V z]))
-    --              [Match "Refl" $ bind [aTy,a] $ lam (unnamed) $ lam az $ V az],
-    --        Pi TyU $ bind aTy $ Pi (V aTy) $ bind x $Pi (V aTy) $ bind y $ tcon "Id" [V aTy, V x, V y] --> (Pi (V aTy) $ bind z $ tcon "Id" [V aTy, V y, V z] -->  tcon "Id" [V aTy, V x, V z]))),
-    -- (cong, (lam inty $ lam outty $ lam x $ lam y $ lam xy $
-    --           Case (V xy) (ann $ bind (unnamed, [inty, x,y]) $ Pi (V inty --> V outty) $ bind f $ tcon "Id" [V outty, V f `App` V x, V f `App` V y])
-    --             [Match "Refl" $ bind [unnamed, a] $  lam f $ DCon "Refl" `App`  V outty `App` (V f `App` V a) ],
-    --        Pi TyU $ bind inty $ Pi TyU $ bind outty $ Pi (V inty) $ bind x $ Pi (V inty) $ bind y $ (tcon "Id" [V inty, V x, V y]) --> ( Pi (V inty --> V outty) $ bind f $ tcon "Id" [V outty, V f `App` V x, V f `App` V y]))),
-    -- (head, (
-    --     lam outty $ lam x $ lam y $ Case (V y) (An $ Just $ bind (unnamed, [aTy', y]) $ 
-    --       Case (V y) (An $ Just $ bind (unnamed,[]) TyU) [
-    --       Match "Z" $ bind [] unit,
-    --       Match "S" $ bind [unnamed] $ V aTy'
-    --       ]
-        
-    --     ) [-- TODO seems like this should be inferable without the annotation
-    --       Match "Nil" $ bind [aTy] tt,
-    --       Match "Cons" $ bind [aTy,a,x,xx] $ V a
-    --     ]
-    --     ,
-    --        Pi TyU $ bind outty $ Pi nat $ bind x $ Pi (tcon "Vec" [V outty, s $ V x]) $ u $ V outty)),
-    -- (rep, (lam aTy $ lam a $ lam x $ 
-    --           Case (V x) (ann $ bind (x, []) $ tcon "Vec" [V aTy, V x])
-    --             [Match "Z" $ bind []  $ DCon "Nil" `App` V aTy,
-    --              Match "S" $ bind [y] $  DCon "Cons" `App` V aTy `App` V a `App` V y `App` (V rep `App` V aTy `App` V a `App` V y )],
-    --        Pi TyU $ bind aTy $ V aTy --> (Pi nat $ bind x $ tcon "Vec" [V aTy, V x]) )),
+    ("add", (let 
+               x = s2n "x"
+               y = s2n "y"
+               x' = s2n "x'"
+           in lam x $ lam y $ 
+                Case [V x] (ann $ TelBnd (Nothing) $ u $ NoBnd nat) [ -- TODO let the weak inference handle this
+                  Match $ bind  [Pat "Z" []] $ V y,
+                  Match  $ bind  [Pat "S" [PVar x']] $ s $ (Ref "add") `App` V x' `App` V y],
+           nat --> (nat --> nat) ))
+    ,
+  --  ("sym1", 
+  --   let 
+  --              x = s2n "x"
+  --              y = s2n "y"
+               
+  --              xm = s2n "xm"
+  --              ym = s2n "ym"
 
-    -- (pair, (lam inty $ lam outty $ lam x $ lam y $
-    --           DCon "Tuple" `App`  V inty `App` lam (s2n "_") (V outty) `App` V x `App` V y,
-    --        Pi TyU $ bind inty $ Pi TyU $ bind outty $ V inty -->  (V outty -->  tcon "Sigma" [V inty , lam (s2n "_") $ V outty]))),
-    -- (first, (lam aTy $ lam p $ lam xy $
-    --             Case (V xy) (ann $ bind (s2n "_", [aTy, p]) $ V aTy)
-    --             [Match "Tuple" $ bind [s2n "_",s2n "_",a, s2n "_"] $ V a],
-    --        Pi TyU $ bind aTy $ Pi (V aTy --> TyU) $ bind p $ tcon "Sigma" [V aTy, V p] --> V aTy)),
-    -- (second, (lam aTy $ lam p $ lam xy $ 
-    --             Case (V xy) (ann $ bind (xy, [aTy, p]) $ V p `App` (V first `App` V aTy `App` V p `App` V xy))
-    --             [Match "Tuple" $ bind [s2n "_",s2n "_",s2n "_", b] $ V b],
-    --        Pi TyU $ bind aTy $ Pi (V aTy --> TyU) $ bind p $ Pi (tcon "Sigma" [V aTy, V p]) $ bind xy $ (V p `App` (V first `App` V aTy `App` V p `App` V xy)) ))
+  --              xb = s2n "xb"
+  --              yb = s2n "yb"
+  --              ab = s2n "ab"
+
+  --              xt = s2n "xt"
+  --              yt = s2n "yt"
+  --          in 
+  --   (
+  --     -- lam aTy $ 
+  --   lam x $  lam xy $ 
+  --            Case [V xy] (ann $ 
+  --              TelBnd (Just (TyU)) $ bind xm $
+  --              TelBnd (Just $ tcon "Sing" [TyU, V xm]) $ u $ NoBnd $ TyU
+  --            )
+  --              [
+  --                Match $ bind [PVar xb, Pat "mkSing" [PVar aTy, PVar ab]] $ DCon "Refl" `App` V aTy `App` V ab
+  --              ],
+  --         --  Pi TyU $ bind aTy $ 
+  --          Pi TyU $ bind xt $ 
+  --         --  Pi (V aTy) $ bind xt $ 
+  --          tcon "Sing" [TyU, V xt] -->
+  --            TyU ))
+
+    --   ("sym2", 
+    -- let 
+    --            x = s2n "x"
+    --            y = s2n "y"
+               
+    --            xm = s2n "xm"
+    --            ym = s2n "ym"
+
+    --            xb = s2n "xb"
+    --            yb = s2n "yb"
+    --            ab = s2n "ab"
+
+    --            xt = s2n "xt"
+    --            yt = s2n "yt"
+    --        in 
+    -- (lam aTy $ 
+    -- -- lam x $ 
+    -- lam y $ lam xy $ 
+    --          Case [V y, V xy] (ann $ 
+    --           --  TelBnd (Just (V aTy)) $ bind xm $ 
+    --            TelBnd (Just (V aTy)) $ bind ym $ 
+    --            TelBnd (Just $ tcon "Sing" [V aTy, V ym]) $ u $ NoBnd $ tcon "Sing" [V aTy,  V ym]
+    --          )
+    --            [
+    --              Match $ bind [PVar yb, Pat "mkSing" [PVar aTy, PVar ab]] $ DCon "mkSing" `App` V aTy `App` V ab
+    --            ],
+    --        Pi TyU $ bind aTy $ 
+    --       --  Pi (V aTy) $ bind xt $ 
+    --        Pi (V aTy) $ bind yt $ 
+    --        tcon "Sing" [V aTy, V yt] -->
+    --          tcon "Sing" [V aTy, V yt] ))
+
+    ("sym", 
+    let 
+               x = s2n "x"
+               y = s2n "y"
+               
+               xm = s2n "xm"
+               ym = s2n "ym"
+
+               xb = s2n "xb"
+               yb = s2n "yb"
+               ab = s2n "ab"
+
+               xt = s2n "xt"
+               yt = s2n "yt"
+           in 
+    (lam aTy $ lam x $ lam y $ lam xy $ 
+             Case [V x, V y, V xy] (ann $ 
+               TelBnd (Just (V aTy)) $ bind xm $ TelBnd (Just (V aTy)) $ bind ym $ 
+               TelBnd (Just $ tcon "Id" [V aTy, V xm, V ym]) $ u $ NoBnd $ tcon "Id" [V aTy, V ym, V xm]
+             )
+               [
+                 Match $ bind [PVar xb, PVar yb, Pat "Refl" [PVar aTy, PVar ab]] $ DCon "Refl" `App` V aTy `App` V ab
+               ],
+           Pi TyU $ bind aTy $ 
+           Pi (V aTy) $ bind xt $ 
+           Pi (V aTy) $ bind yt $ 
+           tcon "Id" [V aTy, V xt, V yt] -->
+             tcon "Id" [V aTy, V yt, V xt] ))
+    ,
+    ("trans", 
+        let 
+               x = s2n "x"
+               y = s2n "y"
+               z = s2n "z"
+               xy = s2n "xy"
+               yz = s2n "yz"
+               
+               xm = s2n "xm"
+               ym = s2n "ym"
+               zm = s2n "zm"
+
+               xb = s2n "xb"
+               yb = s2n "yb"
+               zb = s2n "zb"
+               aTyb = s2n "aTyb"
+               aTyb' = s2n "aTyb1'"
+               ab = s2n "ab"
+               ab' = s2n "ab'"
+
+               xt = s2n "xt"
+               yt = s2n "yt"
+           in 
+    (lam aTy $ lam x $ lam y $ lam z $ lam xy $ lam yz $
+               Case [V x, V y, V z, V xy, V yz] (ann $ 
+               TelBnd (Just (V aTy)) $ bind xm $ TelBnd (Just (V aTy)) $ bind ym $ TelBnd (Just (V aTy)) $ bind zm $ 
+                 TelBnd (Just $ tcon "Id" [V aTy, V xm, V ym]) $ u $
+                 TelBnd (Just $ tcon "Id" [V aTy, V ym, V zm]) $ u $
+                  NoBnd $ tcon "Id" [V aTy, V xm, V zm]
+               )
+                 [Match $ bind [PVar xb, PVar yb,  PVar zb, Pat "Refl" [PVar aTyb, PVar ab], Pat "Refl" [PVar aTyb', PVar ab']] $
+                   DCon "Refl" `App` V aTyb `App` V ab],
+           Pi TyU $ bind aTy $ Pi (V aTy) $ bind x $Pi (V aTy) $ bind y $ Pi (V aTy) $ bind z $ tcon "Id" [V aTy, V x, V y] --> (tcon "Id" [V aTy, V y, V z] -->  tcon "Id" [V aTy, V x, V z])))
+    ,
+  
+    ("cong", 
+            let 
+               x = s2n "x"
+               y = s2n "y"
+               z = s2n "z"
+               xy = s2n "xy"
+               yz = s2n "yz"
+               
+               xm = s2n "xm"
+               ym = s2n "ym"
+               zm = s2n "zm"
+
+               xb = s2n "xb"
+               yb = s2n "yb"
+               zb = s2n "zb"
+               aTyb = s2n "aTyb"
+               aTyb' = s2n "aTyb1'"
+               ab = s2n "ab"
+               ab' = s2n "ab'"
+
+               xt = s2n "xt"
+               yt = s2n "yt"
+           in 
+    (lam inty $ 
+    lam outty $ 
+    lam x $ 
+    lam y $ 
+    lam xy $ 
+    lam f $
+              Case [V x, V y, V xy] (ann $
+               TelBnd (Just (V inty)) $ bind xm $
+               TelBnd (Just (V inty)) $ bind ym $ 
+                 TelBnd (Just $ tcon "Id" [V inty, V xm, V ym]) $ u $
+                 NoBnd $ tcon "Id" [V outty, V f `App` V xm, V f `App` V ym]
+              ) [
+                Match $ bind [PVar xb, PVar yb, Pat "Refl" [PVar aTyb, PVar ab]] $
+                   DCon "Refl" `App`  V outty `App` (V f `App` V ab)
+                   ] ,
+           Pi TyU $ bind inty $
+           Pi TyU $ bind outty $
+           Pi (V inty) $ bind x $
+           Pi (V inty) $ bind y $
+           (tcon "Id" [V inty, V x, V y]) --> ( Pi (V inty --> V outty) $ bind f $ tcon "Id" [V outty, V f `App` V x, V f `App` V y]
+           )))
+    ,
+    ("head", 
+            let 
+               x = s2n "x"
+               v = s2n "v"
+           in (
+        lam outty $ lam x $ lam v $ 
+        Case [V v] (ann $ -- TODO seems like this should be inferable without the annotation
+        TelBnd (Just (tcon "Vec" [V outty, s $ V x])) $ u $
+        NoBnd $ V outty
+        ) 
+        [
+          Match $ bind [Pat "Cons" [PVar aTy,PVar a,PVar x,PVar xx]] $  V a
+        ]
+        ,
+           Pi TyU $ bind outty $ Pi nat $ bind x $ Pi (tcon "Vec" [V outty, s $ V x]) $ u $ V outty))
+           ,
+    ("rep", 
+                let 
+               x = s2n "x"
+               y = s2n "y"
+               z = s2n "z"
+               xy = s2n "xy"
+               yz = s2n "yz"
+               
+               xm = s2n "xm"
+               ym = s2n "ym"
+               zm = s2n "zm"
+
+               xb = s2n "xb"
+               yb = s2n "yb"
+               zb = s2n "zb"
+               aTyb = s2n "aTyb"
+               aTyb' = s2n "aTyb1'"
+               ab = s2n "ab"
+               ab' = s2n "ab'"
+
+               xt = s2n "xt"
+               yt = s2n "yt"
+           in 
+    (lam aTy $ lam a $ lam x $ 
+              Case [V x] (ann $ TelBnd (Just nat) $ bind xm $ NoBnd $ tcon "Vec" [V aTy, V xm])
+                [
+                  Match $ bind [Pat "Z" []] $ DCon "Nil" `App` V aTy
+                ,
+                 Match $ bind [Pat "S" [PVar y]] $ DCon "Cons" `App` V aTy `App` V a `App` V y `App` (Ref "rep" `App` V aTy `App` V a `App` V y )
+                 ],
+           Pi TyU $ bind aTy $ V aTy --> (Pi nat $ bind x $ tcon "Vec" [V aTy, V x]) ))
+    ,
+    ("pair", (lam inty $ lam outty $ lam x $ lam y $
+              DCon "Tuple" `App`  V inty `App` lam (s2n "_") (V outty) `App` V x `App` V y,
+           Pi TyU $ bind inty $ Pi TyU $ bind outty $ V inty -->  (V outty -->  tcon "Sigma" [V inty , lam (s2n "_") $ V outty])))
+    ,
+    ("first", (lam aTy $ lam p $ lam xy $
+                Case [V xy] (ann $ TelBnd Nothing $ u $ NoBnd $ V aTy)
+                 [Match $ bind [Pat "Tuple" [PVar $ s2n "_",PVar $ s2n "_",PVar a, PVar $ s2n "_"]] $ V a],
+           Pi TyU $ bind aTy $ Pi (V aTy --> TyU) $ bind p $ tcon "Sigma" [V aTy, V p] --> V aTy))
+
+           -- second will not go through without warnings, unless equality without a MUCH omre clever (needs to remember the source of the branch vars from the case, sort of an eta thing)
+    -- ,
+    -- ("second", (lam aTy $ lam p $ lam xy $ 
+    --             Case [V xy] (ann $ 
+    --             TelBnd (Just (tcon "Sigma" [V aTy, V p])) -- Nothing 
+    --               $ u $ NoBnd $ V p `App` (Ref "first" `App` V aTy `App` V p `App` V xy
+    --             ))
+    --              [
+    --                Match $ bind [Pat "Tuple" [PVar $ s2n "_aTy",PVar $ s2n "_p", PVar $ s2n "_a",PVar b]] $ V b
+    --                ],
+    --        Pi TyU $ bind aTy $
+    --        Pi (V aTy --> TyU) $ bind p $
+    --        Pi (tcon "Sigma" [V aTy, V p]) $ bind xy $
+    --        (V p `App` (Ref "first" `App` V aTy `App` V p `App` V xy)) ))
    ])
 
 

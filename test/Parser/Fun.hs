@@ -54,7 +54,7 @@ showParses :: (Exp -> String) -> Exp -> Property
 showParses sho e = 
   let se = sho e
   in case prettyParse "" se exp of -- trace se $ 
-    Left er -> counterexample (unlines er) False
+    Left er -> counterexample (show er) False
     Right ee -> 
        counterexample (
        "did not parse valid position ranges. printed, " ++ se++

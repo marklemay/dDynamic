@@ -1,0 +1,117 @@
+
+data Nat : * {
+| Z : Nat
+| S : Nat -> Nat
+};
+
+eq : Nat -> Nat -> Nat;
+eq 
+
+-- ailias for Type vars
+tVar : *;
+tVar = Nat;
+
+-- ailias for vars
+Var : *;
+Var = Nat;
+
+
+-- extend a context
+ext : Ctx -> Ty -> Ctx;
+ext ctx ty var =
+  case var <_ => Ty>{
+  | (Z) => ty
+  | (S p) => ctx p
+};
+
+
+tSubt' : Ty -> Ty -> tVar -> tVar -> Ty;
+tSubt' subThis inThis forThis Under =
+ ? ;
+
+
+
+-- substitution functions
+--substitute the outermost type
+tSubt : Ty -> Ty -> Ty;
+tSubt subThis inThis =
+  case inThis <_ => Ty> {
+  | (tv (Z)) => subThis
+  | (arr arg bod) => arr (tSubt subThis arg) (tSubt subThis bod)
+  | (forall bod) => forall (tSubt subThis bod)
+  | x => x
+  };
+
+tSubCtx : Ty -> Ctx -> Ctx;
+tSubCtx subThis inThis = inThis;
+
+tSub : (subThis : Ty) -> 
+  (ctx : Ctx) -> (ty : Ty) -> Term ctx ty -> 
+  Term (tSubCtx subThis ctx) (tSubt subThis ty);
+tSub subThis ctx ty inThis = 
+  case inThis <_ => Term (tSubCtx subThis ctx) (tSubt subThis ty)> {
+  | (V _ x) => V (tSubCtx subThis ctx) x
+  | (lam _ targ tbod bod) => 
+     lam (tSubCtx subThis ctx) 
+     (tSubt subThis targ) 
+     (tSubt subThis tbod) (tSub subThis (tSubCtx subThis ctx) (tSubt subThis tbod) bod)
+-- ...
+  } ;
+
+sub : (ctx : Ctx) -> (ty : Ty) -> (subThis : Term ctx ty) -> 
+ (tinthis : Ty) ->
+ (inthis : Term (ext ctx ty) tinthis) -> 
+  Term ctx tinthis ;
+sub ctx ty subThis tinthis inthis =
+case inthis < _ => Term ctx tinthis> {
+-- ...
+};
+
+-- NOTE:  a bug prevents this from being used everywhere
+Ctx : * ;
+Ctx = Var -> Ty;
+
+data Ty : * {
+| tv : tVar -> Ty
+| arr : Ty -> Ty -> Ty
+| forall : Ty -> Ty
+};
+
+data Term : Ctx -> Ty -> * {
+| V : (ctx : (Var -> Ty)) -> (x : Var) -> 
+  Term ctx (ctx x)
+| lam : (ctx : Ctx) -> 
+  (targ : Ty) -> (tbod : Ty) ->
+  Term (ext ctx targ) tbod ->
+  Term ctx (arr targ tbod)
+| app : (ctx : Ctx) -> 
+  (arg : Ty) -> (bod : Ty) ->
+  Term ctx (arr arg bod) ->
+  Term ctx arg ->
+  Term ctx bod
+| tlam : (ctx : Ctx) -> 
+  (bod : Ty) ->
+  Term ctx bod ->
+  Term ctx (forall bod)
+| tapp : (ctx : Ctx) -> 
+  (targ : Ty) -> (tbod : Ty) ->
+  Term ctx (forall tbod) ->
+  Term (tSubCtx targ ctx) (tSubt targ tbod)
+};
+
+step : (ctx : Ctx) -> (ty : Ty) -> Term ctx ty -> 
+  Term ctx ty ;
+step ctx ty trm =
+ case trm <_ => Term ctx ty > {
+ | (app _ targ tbod (lam _ _ _ bod) a) => 
+   sub ctx targ a tbod bod
+ | x => x
+ };
+
+--tests
+e0 : Ty;
+e0 = tSubt (tv 9) (tv 0) ;
+e1 : Ty;
+e1 = tSubt (tv 9) (tv 1) ;
+e2 : Ty;
+e2 = tSubt (tv 9) (forall (tv 0)) ;

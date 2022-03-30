@@ -36,6 +36,7 @@ import Debug.Trace (trace)
 import Data.List
 
 import AlphaShow
+import Unbound.Generics.LocallyNameless.Name
 -- import UnboundShow
 
 -- a little hacky?
@@ -139,6 +140,10 @@ instance (Subst b a, Ord a) => Subst b (Set a) where
   substs subs = Set.map (substs subs)
   substPat ctx i withThis = Set.map (substPat ctx i withThis)
 
+instance (Ord a, AlphaLShow a) => AlphaLShow (Set a) where
+  aShow _ m = do
+    mid <- mapM (aShow 0) $ Set.toList m
+    pure (Set.unions (fmap fst mid), "fromList [" ++ concat (intersperse "," (fmap snd mid)) ++ "]")
 
 -- TODO standard?
 tyBreak :: Ordering -> Ordering -> Ordering
@@ -211,3 +216,8 @@ substssBind' :: (Subst a b, Typeable a, Alpha b, Fresh m) => Bind ([Name a], Nam
 substssBind' bndb (as,a) =  do
   ((xs,x) , b) <- unbind bndb
   pure $ substs (zip xs as) $ subst x a b
+
+-- allow for the same underlieng name qithout need ing to worry aboutindicies and such
+rename :: Name a -> Name b
+rename (Fn s i) = (Fn s i)
+rename (Bn j i) = (Bn j i)

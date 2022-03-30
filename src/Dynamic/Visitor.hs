@@ -26,6 +26,9 @@ import Control.Monad.Identity
 import Dynamic.Norm
 import UnboundHelper
 import SourcePos
+import Dynamic.Eq
+import PreludeHelper
+import Dynamic.ElabBase
 
 
 -- partially instantiate the visitor pattern for now
@@ -140,30 +143,6 @@ visitorSelf = VisitorM {
   vDind = \ _ finish -> finish $ \ i ev -> pure $ Dind i ev
 }
 
-visitorWarnSame :: (MonadWriter [(Exp, Exp, Info)] m, Fresh m) => VisitorM m  Exp
-visitorWarnSame = visitorSelf {
-  vSame = \_ finish -> finish $ \ l info ev r -> do
-    l' <- whnf l -- TODO needs a safe eq
-    r' <- whnf r
-    if l' `aeq` r'
-    then pure $ C l' ev
-    else do
-      tell [(l', r', info)]
-      pure $ Same l' info ev r' 
-}
-rwf :: Monoid w => FreshMT (WriterT w Identity) a -> (a, w)
-rwf e = runIdentity $ runWriterT $ runFreshMT $ e
-
-e0 = rwf $ visitFresh visitorWarnSame TyU
-e1 = rwf $ visitFresh visitorWarnSame $ efun
-
-e2 = rwf $ visitFresh visitorWarnSame $ Same TyU (Info Nothing []) TyU TyU 
-
-e3 = rwf $ visitFresh visitorWarnSame $ Same TyU (Info Nothing []) TyU (Same (Same TyU (Info Nothing []) TyU TyU ) (Info Nothing []) TyU TyU ) 
-
-
-
-efun = Fun $ bind (s2n "f",s2n "x") $ Same TyU (Info Nothing []) TyU (V $  s2n "x")
 --visitFresh visitorWarnSame 
 
 

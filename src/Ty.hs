@@ -160,20 +160,20 @@ combo (h:rest) ls = fmap (h:) ls ++ combo rest ls
 
 
 
-nieveComplement :: Pat -> TcMonad [Pat]
-nieveComplement (PVar _) = pure []
-nieveComplement (Pat dCName args) = do
-  (tCName,_) <- lookupDCName dCName
-  DataDef _ (Map.toList -> cons) <- lookupDataDef tCName
-  let cons' = filter (\ (dCName',_) -> dCName' /= dCName) cons
-  others <- forM cons' $ \ (dCName', tel) -> do
-    args' <- fillFresh tel
-    pure $ Pat dCName' args'
+-- nieveComplement :: Pat -> TcMonad [Pat]
+-- nieveComplement (PVar _) = pure []
+-- nieveComplement (Pat dCName args) = do
+--   (tCName,_) <- lookupDCName dCName
+--   DataDef _ (Map.toList -> cons) <- lookupDataDef tCName
+--   let cons' = filter (\ (dCName',_) -> dCName' /= dCName) cons
+--   others <- forM cons' $ \ (dCName', tel) -> do
+--     args' <- fillFresh tel
+--     pure $ Pat dCName' args'
   
-  pure $ others ++ undefined
+--   pure $ others ++ undefined
 
-nieveComplements :: [Pat] -> TcMonad [Pat]
-nieveComplements [] = pure []
+-- nieveComplements :: [Pat] -> TcMonad [Pat]
+-- nieveComplements [] = pure []
 
 
 isTy :: HasCallStack => Term -> TcMonad Term
@@ -181,7 +181,7 @@ isTy exp = do (exp', _) <- tyCheck exp TyU; pure exp'
 
 tyInfer :: HasCallStack => Term -> TcMonad (Term, Ty)
 tyInfer (Pos s e s') = setRegion s s' $ tyInfer e
-tyInfer (V x) =  do
+tyInfer (V x) = do
   xTy <- lookupTy x
   pure (V x, xTy)
 tyInfer (trm ::: ty) = tyCheck trm ty
@@ -264,6 +264,7 @@ tyInfer (Case scrutinees (An (Just bndoutTy)) branches) = do
     (pats, bod) <- unbind bndP
     pure pats
 
+  -- the all inclusive pattern
   freePat <- forM [1 .. length scrutinees] $ \ _ -> PVar <$> fresh (s2n "_")
 
   uncoveredPat <- removePats [freePat] pats
@@ -375,18 +376,18 @@ dummyTellMaybe x a | x > 0 =
 checkTelMaybe :: (Subst Term a, Alpha a) => [Term] -> Tel Exp (Maybe Ty) a 
              ->  TcMonad (Telescope a)
 checkTelMaybe [] (NoBnd a) = pure (NoBnd a)
-checkTelMaybe (trm : trms) (TelBnd (Just ty) bndRestTel) = do
-  (x,restTel) <- unbind bndRestTel
-  tyCheck trm ty
-  extendDef x trm ty $ do 
-    restTel' <- checkTelMaybe trms restTel
-    pure $ TelBnd ty $ bind x restTel'
-checkTelMaybe (trm : trms) (TelBnd Nothing bndRestTel) = do
-  (x,restTel) <- unbind bndRestTel
-  (trm', ty) <- tyInfer trm
-  extendDef x trm' ty $ do 
-    restTel' <- checkTelMaybe trms restTel
-    pure $ TelBnd ty $ bind x restTel'
+-- checkTelMaybe (trm : trms) (TelBnd (Just ty) bndRestTel) = do
+--   (x,restTel) <- unbind bndRestTel
+--   tyCheck trm ty
+--   extendDef x trm ty $ do 
+--     restTel' <- checkTelMaybe trms restTel
+--     pure $ TelBnd ty $ bind x restTel'
+-- checkTelMaybe (trm : trms) (TelBnd Nothing bndRestTel) = do
+--   (x,restTel) <- unbind bndRestTel
+--   (trm', ty) <- tyInfer trm
+--   extendDef x trm' ty $ do 
+--     restTel' <- checkTelMaybe trms restTel
+--     pure $ TelBnd ty $ bind x restTel'
 checkTelMaybe tel app = throwprettyError $  " applications do not match type, " ++ show tel ++ "~/~" ++ show app
 
 substsTel :: (Typeable a, Alpha a, Alpha a2,

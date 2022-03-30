@@ -42,31 +42,31 @@ fOUni x ls = do
 fOUni' :: HasCallStack => [(Exp, Exp,Ty)] -> [(Exp, Exp, Ty)] -> [(Exp, Exp)] -> TcMonad (TyEnv, [(Exp, Exp,Ty)], [(Exp, Exp)] )
 fOUni'  ((l, r,_) :ls) stuck unsat | sameHead l r == Just False = fOUni' ls stuck $ (l,r):unsat
 
-fOUni' ((asNeu -> Just (DCon s, args), asNeu -> Just (DCon s', args'),ty):rest) stuck unsat | s == s' && length args == length args' = do
+fOUni' ((asNeu -> Just (DCon s, args), asNeu -> Just (DCon s', args'),_):rest) stuck unsat | s == s' && length args == length args' = do
   (_, tel) <- lookupDCName s'
   let neweqs = fmap (\(arg,(arg',ty))-> (arg,arg',ty)) $ zip args $ withTy args' tel
   fOUni' (neweqs++rest) stuck  unsat
 
-fOUni' ((asNeu -> Just (TCon s, args), asNeu -> Just (TCon s', args'),ty):rest) stuck unsat | s == s' && length args == length args' = do
+fOUni' ((asNeu -> Just (TCon s, args), asNeu -> Just (TCon s', args'),_):rest) stuck unsat | s == s' && length args == length args' = do
   tel <- lookupTCName s'
   let neweqs = fmap (\(arg,(arg',ty))-> (arg,arg',ty)) $ zip args $ withTy args' tel
   fOUni' (neweqs++rest) stuck unsat
 
-fOUni' (eq@(V x, e, ety):rest) stuck unsat = do
-  mx <- lookupDef' x
-  case mx of
-    Nothing -> local 
-      (\(TyEnv tyCtx dataCtx defCtx,s) -> (TyEnv tyCtx  dataCtx $ Map.insert x (e,ety) defCtx,s)) $
-        fOUni' rest stuck unsat
-    _ -> fOUni' rest (stuck++ [eq]) unsat 
+-- fOUni' (eq@(V x, e, ety):rest) stuck unsat = do
+--   mx <- lookupDef' x
+--   case mx of
+--     Nothing -> local 
+--       (\(TyEnv tyCtx dataCtx defCtx,s) -> (TyEnv tyCtx  dataCtx $ Map.insert x (e,ety) defCtx,s)) $
+--         fOUni' rest stuck unsat
+--     _ -> fOUni' rest (stuck++ [eq]) unsat 
 
-fOUni' (eq@(e, V x, ety):rest) stuck unsat = do
-  mx <- lookupDef' x
-  case mx of
-    Nothing -> local 
-      (\(TyEnv tyCtx dataCtx defCtx,s) -> (TyEnv tyCtx  dataCtx $ Map.insert x (e,ety) defCtx,s)) $
-        fOUni' rest stuck unsat
-    _ -> fOUni' rest (stuck++ [eq]) unsat 
+-- fOUni' (eq@(e, V x, ety):rest) stuck unsat = do
+--   mx <- lookupDef' x
+--   case mx of
+--     Nothing -> local 
+--       (\(TyEnv tyCtx dataCtx defCtx,s) -> (TyEnv tyCtx  dataCtx $ Map.insert x (e,ety) defCtx,s)) $
+--         fOUni' rest stuck unsat
+--     _ -> fOUni' rest (stuck++ [eq]) unsat 
 
 fOUni' (nope:rest) stuck unsat =  fOUni' rest (stuck++ [nope]) unsat --rotate non easy terms to the back
 

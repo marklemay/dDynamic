@@ -125,12 +125,12 @@ norm (Pos _ e _) critN argN = critN e
 -- unsafe
 whnf' :: (MonadError String m, DefnCtx ctx, MonadReader ctx m, Fresh m)
   => (Exp -> m Exp) -> Exp -> m Exp
-whnf' argN (V x) = do
-  md <- lookupDef' x
-  case md of
-    Just (trm,_) -> whnf' argN trm
-    Nothing -> pure $ V x
-  -- TODO: safely evaluate the annotation?
+-- whnf' argN (V x) = do
+--   md <- lookupDef' x
+--   case md of
+--     Just (trm,_) -> whnf' argN trm
+--     Nothing -> pure $ V x
+--   -- TODO: safely evaluate the annotation?
 whnf' argN (f `App` arg) =  do
   f' <- whnf' pure f
   case f' of
@@ -149,11 +149,11 @@ whnf = whnf' pure
 
 safeWhnf :: (Fresh m, DefnCtx ctx, MonadReader ctx m, MonadError String m)
   => Exp -> m Exp
-safeWhnf (V x) = do
-  md <- lookupDef' x
-  case md of
-    Just (trm,_) -> pure trm -- it is actually unsafe to recursively expand
-    Nothing -> pure $ V x
+-- safeWhnf (V x) = do
+--   md <- lookupDef' x
+--   case md of
+--     Just (trm,_) -> pure trm -- it is actually unsafe to recursively expand
+--     Nothing -> pure $ V x
 safeWhnf e = norm e safeWhnf pure
 
 
@@ -169,15 +169,15 @@ isVal TyU = pure True
 isVal (u ::: _) = isVal u
 isVal (Pos _ u _) = isVal u
 
-isVal (V x) = do
-  mdef <- lookupDef' x 
-  case mdef of
-    Just (def,_) -> isVal def --questionable?
-    Nothing -> pure False -- bald vars are not vals
+-- isVal (V x) = do
+--   mdef <- lookupDef' x 
+--   case mdef of
+--     Just (def,_) -> isVal def --questionable?
+--     Nothing -> pure False -- bald vars are not vals
 isVal _ = pure False 
 
 cbv :: (MonadReader ctx m, DefnCtx ctx, MonadError String m, Fresh m) => Exp -> m Exp
-cbv (V x) = do (trm,_) <- lookupDef x; cbv trm
+-- cbv (V x) = do (trm,_) <- lookupDef x; cbv trm
 cbv (f `App` a) = do
   -- logg $ show f ++ "App" ++ show a
   f' <- cbv f
@@ -204,3 +204,6 @@ safeEval :: (MonadError String m, DefnCtx ctx, MonadReader ctx m, Fresh m)
   => Exp -> m Exp
 safeEval e@(Fun _) = safeWhnf e
 safeEval e = whnf' safeEval e
+
+
+-- TODO readd Ref expansion as apropriate

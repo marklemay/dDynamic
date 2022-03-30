@@ -105,7 +105,13 @@ instance (AlphaLShow a, AlphaLShow b, AlphaLShow c) => AlphaLShow (a,b,c) where
     (vars2, str2) <- aShow 0 b
     (vars3, str3) <- aShow 0 c
     pure (vars1 `Set.union` vars2 `Set.union` vars3, "("++ str1 ++ ", " ++str2 ++ ", " ++str3 ++")")
--- instance (AlphaShow a, AlphaShow b,AlphaShow c, AlphaShow d) => AlphaShow (a,b,c,d)
+instance (AlphaLShow a, AlphaLShow b,AlphaLShow c, AlphaLShow d) => AlphaLShow (a,b,c,d) where
+  aShow i (a,b,c,d) = do
+    (vars1, str1) <- aShow 0 a
+    (vars2, str2) <- aShow 0 b
+    (vars3, str3) <- aShow 0 c
+    (vars4, str4) <- aShow 0 d
+    pure (vars1 `Set.union` vars2 `Set.union` vars3 `Set.union` vars4, "("++ str1 ++ ", " ++str2 ++ ", " ++ str3 ++ ", " ++ str4 ++")")
 -- instance (AlphaShow a, AlphaShow b,AlphaShow c, AlphaShow d, AlphaShow e) =>
 --    AlphaShow (a,b,c,d,e)
 
@@ -192,6 +198,16 @@ appPrec = 2
 showParenthises :: Bool -> String -> String
 showParenthises True s = "(" ++ s ++ ")"
 showParenthises false s = s
+
+
+-- TODO move to a more monadic presentation
+-- data WriteInfo = WriteInfo{appears::[AnyName],str::String}
+
+-- newtype 
+-- LFreshM 
+
+
+
 
 {-
 x, y :: Var

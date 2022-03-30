@@ -5,7 +5,7 @@ data B: * {
   | f : B
 };
 
-
+-- a bool singleton
 data Bs : B -> * {
   | s : (x : B) -> Bs x
 };
@@ -25,5 +25,12 @@ ex2 = fn (s f) ;
 ex3 : Bs t;
 ex3 = 
  case (s f) < _ : Bs t => Bs t > {
+ | (s x) => (s x)
+ };
+
+-- resonably handles this ambigous case
+ex4 : Bs t;
+ex4 = 
+ case (s f) < _ => Bs t > {
  | (s x) => (s x)
  };

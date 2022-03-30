@@ -40,10 +40,14 @@ type TCName = String
 -- | data constructor names
 type DCName = String
 
+type RefName = String
+
 
 data Exp = 
   V Var
   
+  | Ref String
+
   -- | type annotation
   | (:::) Term Ty
 
@@ -119,6 +123,7 @@ data DataDef = DataDef (Telescope ()) (Map DCName (Telescope [Term])) deriving (
 -- the [Ty] and [Term] should always be the same length
 instance Alpha DataDef
 instance Subst Exp DataDef
+instance AlphaLShow DataDef
 
 
 type Telescope = Tel Exp Ty
@@ -249,6 +254,7 @@ simpleShow :: Bool -> Exp -> Integer -> String
 simpleShow b e = 
   case e of
     V x -> \ _ -> show x
+    Ref x -> \ _ -> show x
     TyU -> \ _ -> "*" 
     Solve _ -> \ _ -> "?"
     TCon n -> \ _ -> n
@@ -257,17 +263,19 @@ simpleShow b e =
     Pi aTy (unsafeUnbind-> (x, outTy)) -> paren 2 $ "(" ++ show x ++ " : " ++ simpleShow b aTy 0 ++ ")-> " ++ simpleShow b outTy 2
     Fun (unsafeUnbind-> ((f,x), out)) -> paren 2 $ "fun " ++ show f ++ " " ++ show x ++ " => " ++ simpleShow b out 2
     trm ::: ty -> paren 6 $ simpleShow b trm 7 ++ " : " ++ simpleShow b ty 6
-    -- Case scrut an branches -> 
-    --   paren 8 $  "case " ++ simpleShow b scrut 0 -- prob wrong
-    --     ++ case an of
-    --          An Nothing -> ""
-    --          An (Just (unsafeUnbind-> ((scrutName, args), ty))) -> 
-    --            "<" ++ show scrutName ++ ":_ " ++ (concat $ intersperse " " $ show <$> args) ++ " => " ++ simpleShow b ty 0 ++ ">"
-    --     ++ "{" ++ (concat $ intersperse " " $ 
-    --       fmap (\ (Match dCName (unsafeUnbind-> (args, bod))) -> 
-    --               "| " ++ dCName ++ " " ++ (concat $ intersperse " " $ show <$>  args) 
-    --                ++ " => " ++ simpleShow b bod 0 ) branches) 
-    --       ++ "}"
+    Case scruts an branches -> 
+      paren 8 $  "case " ++ (concat $ intersperse " " $ (\ x -> simpleShow b e 0) <$> scruts) -- simpleShow b scruts 0 -- prob wrong
+        ++ case an of
+             An Nothing -> ""
+             An (Just _) -> 
+               "<..>"
+            --  An (Just (unsafeUnbind-> ((scrutName, args), ty))) -> 
+            --    "<" ++ show scrutName ++ ":_ " ++ (concat $ intersperse " " $ show <$> args) ++ " => " ++ simpleShow b ty 0 ++ ">"
+        ++ "{" ++ (concat $ intersperse " " $ 
+          fmap (\ (Match (unsafeUnbind-> (args, bod))) -> 
+                  "| .." -- ++ dCName ++ " " ++ (concat $ intersperse " " $ show <$>  args) 
+                   ++ " => " ++ simpleShow b bod 0 ) branches) 
+          ++ "}"
         
     Pos _ e _ -> simpleShow b e
     -- (trm ::: ty) -> paren 6 $ simpleShow b trm 0 ++ " : " ++ simpleShow b ty 0
@@ -294,6 +302,7 @@ prettyShow :: Bool -> Exp -> Integer -> String
 prettyShow b e = 
   case e of
     V x -> \ _ -> show x
+    Ref x -> \ _ -> x
     TyU -> \ _ -> "*" 
     Solve _ -> \ _ -> "?"
     (simpleNat -> Just n) -> \ _ -> show n
@@ -330,3 +339,6 @@ prettyShow b e =
       | b                     = "(" ++ showExp ++ ")"
       | outerLevel < curLevel = "(" ++ showExp ++ ")"
       | otherwise             =        showExp
+
+
+

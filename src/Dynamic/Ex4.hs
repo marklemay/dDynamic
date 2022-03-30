@@ -1,4 +1,4 @@
-module Dynamic.Ex3 where
+module Dynamic.Ex4 where
 import GHC.Stack
 
 import Ast
@@ -35,6 +35,9 @@ import Dynamic.ElabBase
 -- r e = runIdentity $ runWithSourceLocMT' $ runExceptT $ runWithModuleMT (runFreshM e) emptyModule
   -- runWithModuleMT runFreshM (runExceptT (ExceptT e m a) e)
 x = s2n "x"
+x' = s2n "x'"
+
+xty = s2n "X"
 y = s2n "y"
 z = s2n "z"
 p = s2n "p"
@@ -47,21 +50,9 @@ id a a1 a2 = C.TConF "Id" [a, a1, a2] (NoBnd ()) (TelBnd C.TyU $ bind x $ TelBnd
 
 r e =  runIdentity $ runExceptT $ runFreshMT $ runWithModuleMT (runWithSourceLocMT' e) stdModule
 
-e1 = r $ getPat (PVar x) nat (empElabInfo pure) 
-e2 = r $ getPats ([PVar x, PVar y]) (TelBnd nat $ bind z $ TelBnd (vecU $ C.V z) $ u $ NoBnd $ C.V z) (empElabInfo pure) 
-e3 = r $ getPat (Pat "S" [PVar x]) nat (empElabInfo pure) 
+e1 = r $ elabInf (V x) $ (empElabInfo pure) {
+  varMap=Map.fromList [(x,x')],
+  tyCtx=Map.fromList [(x', C.V xty)],
+  Dynamic.ElabBase.assign=Map.fromList [(xty, (C.TyU,C.TyU, C.V p))]}
 
-e40 = r $ getPat (Pat "NilU" []) (vecU (n 1)) (empElabInfo pure) 
-e4 = r $ getPat (Pat "reflN" [PVar x]) (idN (n 0) (n 0)) (empElabInfo pure) 
-
--- e2 = r $ getPats ([PVar x, PVar y]) nat (empElabInfo pure) 
--- Right let (p,y) = (s2n"p",s2n"y") in 
---   [Equation (V y) (V y) (Union (Tcon 0 (V p)) TyU (Tcon 0 (V p))) 
---     (Union (Tcon 1 (V p)) (Union (Tcon 0 (V p)) TyU (Tcon 0 (V p))) (Union (Tcon 2 (V p)) (Union (Tcon 0 (V p)) TyU (Tcon 0 (V p))) (V y)))] 
---     fromList [(x, (V y, Tcon 0 (V p), Tcon 1 (V p)))] [] 
---   [Equation (TConF "Nat" [] (NoBnd ()) (NoBnd ())) (TConF "Bool" [] (NoBnd ()) (NoBnd ())) TyU (Union (TConF "Nat" [] (NoBnd ()) (NoBnd ())) (Union TyU TyU TyU) (Union (Tcon 0 (V p)) (Union TyU TyU TyU) (TConF "Bool" [] (NoBnd ()) (NoBnd ()))))]
-
--- TODO
-
--- e6 = r $ fOUni' empElabInfo $ initProb (Set.fromList [x]) [Equation (vec $ V x) (vec $ V x) TyU (V p)] 
 

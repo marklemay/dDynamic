@@ -8,8 +8,17 @@ import Data.Typeable (Typeable)
 import AlphaShow 
 
 
+import Data.Map (Map)
+import qualified Data.Map as Map
+import Data.Set (Set)
+import qualified Data.Set as Set
+
+-- TODO shift to https://github.com/github/semantic/tree/master/semantic-source#readme
+
+type Path = String
+
 -- TODO figure out what is going on here and possibly do that https://github.com/sweirich/trellys/blob/63ea89d8fa09929c23504665c55a3d909fe047c5/zombie-trellys/src/Language/Trellys/GenericBind.hs#L44
-data SourcePos = SourcePos {path::String, col::Int, char :: Int}
+data SourcePos = SourcePos {path::Path, col::Int, char :: Int}
   deriving (
     Show,
    Generic, Typeable)
@@ -31,12 +40,16 @@ debugSR = SourceRange (Just "debug") (SourcePos "" 0 0) (SourcePos "" 0 1)
 
 data SourceRange = SourceRange {source :: Maybe String, start::SourcePos, end::SourcePos}
   deriving (
-    Show,
+    -- Show,
    Generic, Typeable)
+
+instance Show SourceRange where
+  show (SourceRange {start=start, end=end})= prettyRangeloc start end
 
 instance Alpha SourceRange
 instance Subst a SourceRange
-instance AlphaLShow SourceRange
+instance AlphaLShow SourceRange where
+  aShow _ (SourceRange {start=start, end=end}) = pure (Set.empty,prettyRangeloc start end)
 
 -- instance Show SourceRange where
 --   show = lfullshow
@@ -51,7 +64,7 @@ instance Ord SourceRange where
 fullRange path s = SourceRange (Just s) (SourcePos path 0 0) (endPos path s)
 
 -- slightly different then how newlines are handled in the parser
-endPos :: String -> String -> SourcePos
+endPos :: Path -> String -> SourcePos
 endPos path str = SourcePos path (length (lines' str)-1) (length $ last $ lines' str)
 
 lines' str = 
@@ -59,7 +72,8 @@ lines' str =
     [] -> [""]
     x -> x
 
-prettyRange (SourceRange Nothing l r) = [prettyRangeloc l r]
+prettyRange (SourceRange Nothing l r) = -- ["no src"]++
+  [prettyRangeloc l r]
 prettyRange (SourceRange (Just s) l r) = prettyRange' s l r
   ++ [prettyRangeloc l r]
 

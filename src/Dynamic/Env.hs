@@ -22,8 +22,6 @@ import Ast
 import qualified Env as E
 import qualified Dynamic.Ast as C
 import qualified Dynamic.Err as C
-import qualified Dynamic.Temp as C
-import qualified Dynamic.Erase as C
 
 import Data.Map (Map)
 import qualified Data.Map as Map
@@ -43,115 +41,58 @@ import Control.Applicative
 
 import SourcePos
 import Dynamic.Err
+import Dynamic.ElabBase
+import Dynamic.Norm
+import Control.Monad.RWS (MonadWriter)
+import Control.Monad.Writer
 
 -- machinery to translate module definitions from the surface language into the core languguage
-
-type TyCtx = Map Var Ty
-type DataCtx = Map TCName C.DataDef
-
-type TyDefs = [(C.Var, C.Path, C.Exp)]
--- as a list becuase order of assignments matters
+-- TODO seperate the dynamic stuff (needed for reading acuatual files) from the static stuff (good for testing)
 
 
-type Partialmodule = (Map String (Tel C.Term C.Ty ()), Map String (Map String (Tel C.Term C.Ty [C.Ty])), VMap, Map C.Var C.Ty, Map C.Var C.Term)
--- TODO capitalization
+makeMod :: Map TCName C.DataDef -> Map C.RefName (C.Term,C.Ty) -> Module
+makeMod ddefs trmdefs = Module ddefs (DefCtx trmdefs)
 
+emptyModule :: Module
+emptyModule = Module Map.empty (DefCtx Map.empty)
 
+underModule :: (Subst Exp a) => a -> Module -> a
+underModule e (Module {dataCtx=Map.toList-> dataLs,defCtx= DefCtx (Map.keys-> defls)}) = 
+  underRefs (underData e dataLs) defls
 
-data Module = Module DataCtx DefCtx VMap
-  deriving Show
+underRefs :: Subst Exp a => a -> [String] -> a
+underRefs e ls = substs ((\r -> (s2n r,Ref r))<$>ls)e
 
-makeMod :: Map TCName C.DataDef -> Map C.Var C.Term -> Module
-makeMod ddefs trmdefs = Module ddefs (DefCtx trmdefs) $ Map.fromList $ fmap (\(k, _) -> (s2n $ name2String k,k)) $ Map.toList trmdefs
+underData :: Subst Exp t => t -> [(TCName, C.DataDef)] -> t
+underData e [] = e
+underData e ((tCname, C.DataDef _ (Map.toList-> ls)) : rest) = 
+  subst (s2n tCname) (TCon tCname) $ underConstructors' (underData e rest) (fst <$> ls) 
 
-emptyModule = Module Map.empty (DefCtx Map.empty) Map.empty
-
--- | For toplevel term definitions
-newtype DefCtx = DefCtx (Map C.Var C.Term)
-  deriving Show
-
-type VMap = Map Var C.Var
-
-
-undermodule :: (Subst Exp a) => a -> Module -> a
-undermodule e (Module (Map.toList-> ls) _ _) = undermodule' e ls
-
--- undermodule' :: (Subst Exp a) => a -> [(TCName, DataDef)] -> a
-undermodule' e [] = e
--- undermodule' e ((tCname, DataDef (NoBnd ()) (Map.toList-> ls)) : rest) = 
---   subst (s2n tCname) (TCon tCname []) $ underConstructors' (undermodule' e rest) (fst <$> ls) 
-undermodule' e ((tCname, C.DataDef _ (Map.toList-> ls)) : rest) = 
-  subst (s2n tCname) (TCon tCname) $ underConstructors' (undermodule' e rest) (fst <$> ls) 
-
--- underConstructors' :: (Subst Exp a) => a -> [DCName] -> a
+underConstructors' :: Subst Exp t => t -> [DCName] -> t
 underConstructors' e [] = e
 underConstructors' e (dCname : rest) = subst (s2n dCname) (DCon dCname) $ underConstructors' e rest
 
 
 
 
+data Config = Config  {
+    whnf :: forall m. (Fresh m, WithDynDefs m )=>  C.Term -> m C.Term
+  }
+
+defualtConfigConfig :: Config
+defualtConfigConfig = Config{
+    Dynamic.Env.whnf= safeWhnf 1000
+  }
+
+initElabInfo :: (Fresh m, WithDynDefs m ) =>  Config -> ElabInfo m
+initElabInfo (Config{Dynamic.Env.whnf=whnf}) = ElabInfo Map.empty Map.empty Map.empty whnf
 
 
--- a interface to get partial module info out of the environment
-class (Monad m) => WithDynDefs m where 
-   getDatadef' :: TCName -> m (Maybe C.DataDef)
-   getDatadef :: (WithSourceLoc m, MonadError C.Err m) => TCName -> m C.DataDef
-   getDatadef tCName = do
-     mdef <- getDatadef' tCName
-     case mdef of 
-       Nothing -> throwPrettyError $ "tCName not found " ++ tCName
-       Just def -> pure def
-
-   getTConnTel :: (WithSourceLoc m, MonadError C.Err m) => TCName -> m (Tel C.Term C.Ty ())
-   getTConnTel tCName = do
-     (C.DataDef tel _ ) <- getDatadef tCName
-     pure tel
-
-   getConsTcon' :: DCName -> m (Maybe (TCName, Tel C.Term C.Ty [C.Term]))
-   getConsTcon :: (WithSourceLoc m, MonadError C.Err m) => DCName ->  m (TCName, Tel C.Term C.Ty [C.Term])
-   getConsTcon dCName = do
-     mdef <- getConsTcon' dCName
-     case mdef of 
-       Nothing -> throwPrettyError $ "dCName not found " ++ dCName
-       Just def -> pure def
-       
-
-   getDefnTy' :: Var -> m (Maybe (C.Var,C.Term))
-
-   getDefn' :: Var -> m (Maybe (C.Var, C.Term))
-   getDefn :: (WithSourceLoc m, MonadError C.Err m) => Var -> m (C.Var, C.Term)
-   getDefn x = do
-     mx <- getDefn' x
-     case mx of
-       Just ans -> pure ans 
-       Nothing ->  throwPrettyError $  "binding not found " ++ show x
 
 
-   getDefnm' :: C.Var -> m (Maybe C.Term)
-   -- TODO explicitly handle the var remapping?
-
-instance (WithDynDefs m) => (WithDynDefs (ReaderT r m)) where
-  getDatadef' = lift . getDatadef' 
-  getConsTcon' = lift . getConsTcon'
-  getDefn' = lift . getDefn' 
-  getDefnTy' = lift . getDefnTy'
-  getDefnm' = lift . getDefnm'
 
 
-instance (WithDynDefs m) => (WithDynDefs (FreshMT m)) where
-  getDatadef' = lift . getDatadef' 
-  getConsTcon' = lift . getConsTcon'
-  getDefn' = lift . getDefn' 
-  getDefnTy' = lift . getDefnTy'
-  getDefnm' = lift . getDefnm'
-
-instance (WithDynDefs m) => (WithDynDefs (ExceptT e m)) where
-  getDatadef' = lift . getDatadef' 
-  getConsTcon' = lift . getConsTcon'
-  getDefn' = lift . getDefn'
-  getDefnTy' = lift . getDefnTy'
-  getDefnm' = lift . getDefnm'
-
+-- a fancy reader that contains a static module
 newtype WithModuleMT m a = WithModuleMT {unWithModuleMT :: ReaderT Module m a}
   deriving
     ( Functor
@@ -166,10 +107,8 @@ newtype WithModuleMT m a = WithModuleMT {unWithModuleMT :: ReaderT Module m a}
 runWithModuleMT :: WithModuleMT m a -> Module -> m a
 runWithModuleMT e m = runReaderT (unWithModuleMT e) m
 
-
 instance MonadTrans WithModuleMT where
   lift = WithModuleMT . lift
-
 
 instance (Fresh m) => (Fresh (WithModuleMT m)) where
   fresh = lift . fresh
@@ -178,7 +117,6 @@ instance (MonadError e m) => (MonadError e (WithModuleMT m)) where
   throwError = lift . throwError
   catchError m h = error "not done yet"
 
-
 -- TODO: double check
 instance (MonadReader r m) => (MonadReader r (WithModuleMT m)) where
   ask = lift ask
@@ -186,13 +124,18 @@ instance (MonadReader r m) => (MonadReader r (WithModuleMT m)) where
     a <- ma
     lift $ local f $ pure a
 
+instance (MonadWriter w m) => (MonadWriter w (WithModuleMT m)) where
+  tell = lift . tell
+  listen = error "not done yet"
+  pass = error "not done yet"
+  
 instance (Fresh m, Monad m) => (WithDynDefs (WithModuleMT m)) where
   getDatadef' tcName = WithModuleMT $ do
-    (Module dataCtx defCtx vMap) <- ask
+    Module{dataCtx=dataCtx} <- ask
     pure $ Map.lookup tcName dataCtx
 
   getConsTcon' dCName =  WithModuleMT $ do
-    (Module dataCtx defCtx vMap) <- ask
+    Module{dataCtx=dataCtx} <- ask
     case filter (\ (tCname, C.DataDef _ dd) -> Map.member dCName dd) $ Map.toList dataCtx of
       [(tCname, C.DataDef _ dcons)] -> do
         let Just tel = Map.lookup dCName dcons
@@ -200,27 +143,25 @@ instance (Fresh m, Monad m) => (WithDynDefs (WithModuleMT m)) where
       _ -> pure Nothing 
 
   getDefn' x = WithModuleMT $ do
-    (Module dataCtx (DefCtx defCtx) vMap) <- ask
-    case Map.lookup x vMap of
-      Nothing -> pure Nothing
-      Just x' -> 
-        case Map.lookup x' defCtx of
-          Nothing -> pure Nothing 
-          Just def -> pure $ Just (x', def)
+    Module{defCtx=(DefCtx defCtx)} <- ask
+    case Map.lookup x defCtx of
+      Nothing -> pure Nothing 
+      Just (def,_) -> pure $ Just def
+
   getDefnTy' x =  WithModuleMT $ do
-    (Module dataCtx (DefCtx defCtx) vMap) <- ask
-    case Map.lookup x vMap of
-      Nothing -> pure Nothing
-      Just x' -> 
-        case Map.lookup x' defCtx of
-          Nothing -> pure Nothing 
-          Just def -> pure $ Just (x', C.apparentTy def)
+    Module{defCtx=(DefCtx defCtx)} <- ask
+    case Map.lookup x defCtx of
+      Nothing -> pure Nothing 
+      Just (_,ty) -> pure $ Just ty
 
-  getDefnm' x  =  WithModuleMT $ do
-    (Module dataCtx (DefCtx defCtx) vMap) <- ask
-    pure $ Map.lookup x defCtx 
+-- TODO add Elab info as a reader
+-- newtype ElabMT m a = ElabMT {unElabMT :: ReaderT (ElabInfo m) ... (StateT PartialModule m) a}
 
-newtype ElabMT m a = ElabMT {unElabMT :: ReaderT E.TyEnv (StateT Partialmodule m) a}
+-- Config
+
+
+-- the elaboration monad, has a surface language module(E.TyEnv) availible to look up definitions
+newtype ElabMT m a = ElabMT {unElabMT :: ReaderT (E.TyEnv, Config) (StateT PartialModule m) a}
   deriving
     ( Functor
     , Applicative
@@ -231,13 +172,11 @@ newtype ElabMT m a = ElabMT {unElabMT :: ReaderT E.TyEnv (StateT Partialmodule m
     , MonadFix
     )
 
-
-runElabMT :: ElabMT m a -> E.TyEnv -> Partialmodule -> m (a, Partialmodule)
-runElabMT e env s = runStateT (runReaderT (unElabMT e) env) s
+runElabMT :: ElabMT m a -> E.TyEnv -> PartialModule -> m (a, PartialModule)
+runElabMT e env s = runStateT (runReaderT (unElabMT e) (env, defualtConfigConfig)) s
 
 instance MonadTrans ElabMT where
   lift = ElabMT . lift . lift
-
 
 instance (Fresh m) => (Fresh (ElabMT m)) where
   fresh = lift . fresh
@@ -247,64 +186,6 @@ instance (MonadError e m) => (MonadError e (ElabMT m)) where
   catchError m h = error "not done yet"
 --m h = FreshMT $ EC.catchError (unFreshMT m) (unFreshMT . h)
 
-
---TODO belongs somewhere else?
-class (Monad m) => WithSourceLoc m where
-  localSourceRange :: SourceRange -> m a -> m a
-  -- TODO make this properly local?
-
-  askSourceRange :: m (Maybe SourceRange)
-
-localSourceRangeFrom :: WithSourceLoc m  => Exp -> m a -> m a
-localSourceRangeFrom (Pos l e r) ma = do
-  sr <- askSourceRange
-  case sr of
-    Just (SourceRange msrc _ _) -> localSourceRange (SourceRange msrc l r) $ localSourceRangeFrom e ma
-    Nothing -> localSourceRange (SourceRange Nothing l r) $ localSourceRangeFrom e ma
-localSourceRangeFrom _ ma = ma
-
-
-localSources :: WithSourceLoc m  => SourcePos -> SourcePos -> m a -> m a
-localSources l r ma = do
-  sr <- askSourceRange
-  case sr of
-    Just (SourceRange msrc _ _) -> localSourceRange (SourceRange msrc l r) ma
-    Nothing -> localSourceRange (SourceRange Nothing l r) ma
-
-newtype WithSourceLocMT m a = WithSourceLocMT {unWithSourceLocMT :: ReaderT (Maybe SourceRange) m a}
-  deriving
-    ( Functor
-    , Applicative
-    , Alternative
-    , Monad
-    , MonadIO
-    , MonadPlus
-    , MonadFix
-    )
-
-runWithSourceLocMT' m = runReaderT (unWithSourceLocMT m) Nothing
-
-runWithSourceLocMT m sr = runReaderT (unWithSourceLocMT m) sr
-
-
-instance (Monad m) => (WithSourceLoc (WithSourceLocMT m)) where
-  localSourceRange s ma = WithSourceLocMT $ local (\_ -> Just s) $ unWithSourceLocMT ma
-  askSourceRange = WithSourceLocMT ask
-
-instance MonadTrans WithSourceLocMT where
-  lift = WithSourceLocMT . lift 
-
-
-instance (WithSourceLoc m) => (WithSourceLoc (StateT s m)) where
-  localSourceRange src ma = StateT $ \s -> localSourceRange src $ runStateT ma s
-  askSourceRange = lift askSourceRange
-
-  
-instance (WithSourceLoc m) => (WithSourceLoc (ReaderT r m)) where
-  localSourceRange src ma = ReaderT $ \ r -> localSourceRange src  $ runReaderT ma r
-  askSourceRange = lift askSourceRange
-
-
 instance (WithSourceLoc m) => (WithSourceLoc (ElabMT m)) where
   localSourceRange s ma = let
     ee e p = localSourceRange s $ runStateT (runReaderT (unElabMT ma) e) p
@@ -312,64 +193,25 @@ instance (WithSourceLoc m) => (WithSourceLoc (ElabMT m)) where
 
   askSourceRange = lift askSourceRange
 
-instance (Fresh m) => (Fresh (WithSourceLocMT m)) where
-  fresh = lift . fresh
-
-instance (MonadError e m) => (MonadError e (WithSourceLocMT m)) where
-  throwError = lift . throwError
-  catchError m h = error "not done yet"
---m h = FreshMT $ EC.catchError (unFreshMT m) (unFreshMT . h)
-
--- TODO: double check
-instance (MonadReader r m) => (MonadReader r (WithSourceLocMT m)) where
-  ask = lift ask
-  local f ma = do
-    a <- ma
-    lift $ local f $ pure a
 
 
-instance WithDynDefs m => WithDynDefs (WithSourceLocMT m) where
-  getDatadef' = lift . getDatadef'
-  getConsTcon' = lift . getConsTcon'
-  getDefnTy' = lift . getDefnTy' 
-  getDefn' = lift . getDefn'
-  getDefnm' = lift . getDefnm'
-
-throwPrettyError :: HasCallStack => (WithSourceLoc m, MonadError Err m) => String -> m b
-throwPrettyError s = do
-  sr <- askSourceRange
-  throwError $ Msg s sr
 
 
-throwInfoError :: HasCallStack => (MonadError Err m) => String -> C.Info -> m b
-throwInfoError s (C.Info sr obs ctx l r) = do
+throwInfoError :: HasCallStack => (MonadError C.Err m) => String -> C.Info -> m b
+throwInfoError s (C.Info {C.sr=sr, C.obs=obs}) = do
   runWithSourceLocMT (throwPrettyError $ unlines $
     ["",
-    show (C.e $ unignore l) ++ " =/= " ++  show (C.e $ unignore r)
-    ] ++ (case prettyShowCtx ctx of
-           [] -> []
-           pctx -> "since when " : pctx  )
-      ++ [case prettyobs obs of
-           "" -> ""
-           pobs -> "because " ++ pobs ]
-           ++ [
-    -- "because " ++ show obs,
+    --   show (C.e $ unignore l) ++ " =/= " ++  show (C.e $ unignore r)
+    -- ] ++ (case prettyShowCtx ctx of
+    --        [] -> []
+    --        pctx -> "since when " : pctx  )
+    --   ++ [case prettyobs obs of
+    --        "" -> ""
+    --        pobs -> "because " ++ pobs ]
+    --        ++ [
+    "because " ++ show obs,
     s,
     "in"
     ] 
       )
-    $ Just sr
-
-
-prettyShowCtx :: (Map String C.Exp) -> [String]
-prettyShowCtx m = prettyShowCtx' $ Map.toList m
-
-prettyShowCtx' [] = []
-prettyShowCtx' ((n, C.V e _) : rest)  = prettyShowCtx' rest -- hack to aviod toplevel defs
-prettyShowCtx' ((n, e) : rest) = (n++ " := " ++  show (C.e e) ): prettyShowCtx' rest
-
-prettyobs C.Base = "" 
-prettyobs (C.Index i o) = prettyobs o ++ "."++ show i 
-prettyobs (C.AppW e o) = prettyobs o ++ ".AppW<" ++ show (C.e e) ++">"
-prettyobs (C.Aty o) = prettyobs o ++ ".Aty"
-prettyobs (C.Bty e o) = prettyobs o ++ ".Bty<" ++ show (C.e e) ++">"
+    $ sr

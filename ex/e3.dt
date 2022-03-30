@@ -24,7 +24,9 @@ head v =
    } ;
 
 
-
 af : Unit ;
 af = head (Cons tt 1 (Cons tt 0 Nil)) ;
--- make sure cbv still works
+-- cbv checks more then is strictly needed to get a result, whnf would result in ~tt
+
+afok : Unit ;
+afok = head (Cons tt 0 Nil) ;

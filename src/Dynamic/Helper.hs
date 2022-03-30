@@ -19,6 +19,7 @@ import StdLib (stdlib)
 import PreludeHelper
 import SourcePos
 import Dynamic.Err
+import Dynamic.ElabBase
 
 runC :: WithSourceLocMT (WithModuleMT (FreshMT (ExceptT e Identity))) a
   -> Module -> Maybe SourceRange -> Either e a

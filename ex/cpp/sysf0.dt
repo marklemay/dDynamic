@@ -1,0 +1,165 @@
+
+data Nat : * {
+| Z : Nat
+| S : Nat -> Nat
+};
+
+pred : Nat -> Nat;
+pred x = case x <_ => Nat>{
+  | (S x') => x'
+};
+
+data Bool : * {
+  | true  : Bool
+  | false : Bool
+};
+
+eq : Nat -> Nat -> Bool ;
+eq x y =
+  case x, y <_ => _ => Bool>{
+  | (Z) => (Z) => true 
+  | (S x') => (S y') => eq x' y' 
+  | _ => _ => false
+};
+
+data Comp : * {
+  | Gt : Comp
+  | Eq : Comp
+  | Lt : Comp
+};
+
+comp : Nat -> Nat -> Comp ;
+comp x y =
+  case x, y <_ => _ => Comp>{
+  | (Z)    => (Z)    => Eq 
+  | (Z)    => (S _)  => Lt 
+  | (S _)  => (Z)    =>  Gt 
+  | (S x') => (S y') => comp x' y'
+};
+
+-- ailias for Type vars
+tVar : *;
+tVar = Nat;
+
+data Ty : * {
+| tv     : tVar -> Ty
+| arr    : Ty -> Ty -> Ty
+| forall : Ty -> Ty
+};
+
+tyext : Ty -> Ty;
+tyext = tyext' 0 ;
+
+tyext' : tVar -> Ty -> Ty;
+tyext' insert inThis =
+  case inThis <_ => Ty> {
+  | (tv x) => case (comp x insert) < _ => Ty>{
+    | (Lt) => tv x -- local var
+    | _ => tv (S x) --global var
+  }
+  | (arr arg bod) => arr (tyext' insert arg) (tyext' insert bod)
+  | (forall bod) => forall (tyext' (S insert) bod)
+};
+
+--tests
+e00 : Ty;
+e00 = tyext' 9 (tv 0) ;
+e01 : Ty;
+e01 = tyext' 0 (tv 1) ;
+e02 : Ty;
+e02 = tyext' 0 (forall (arr (tv 0) (tv 1))) ;
+
+tSubt : Ty -> Ty -> Ty;
+tSubt = tSubt' 0;
+
+-- take the ith var and subtitute it,
+tSubt' : tVar -> Ty -> Ty -> Ty;
+tSubt' subThis withThis inThis =
+  case inThis <_ => Ty> {
+  | (tv x) => case (comp x subThis) < _ => Ty>{
+    | (Lt) => tv x
+    | (Eq) => withThis
+    | (Gt) => tv (pred x)
+  }
+  | (arr arg bod) => arr (tSubt' subThis withThis arg) (tSubt' subThis withThis bod)
+  | (forall bod) => forall (tSubt' (S subThis) (tyext withThis) bod)
+  };
+
+--tests
+e10 : Ty;
+e10 = tSubt (tv 9) (tv 0) ;
+e11 : Ty;
+e11 = tSubt (tv 9) (tv 1) ;
+e13 : Ty;
+e13 = tSubt (tv 9) (forall (tv 0)) ;
+e14 : Ty;
+e14 = tSubt (tv 9) (forall (arr (tv 0) (arr (tv 1) (tv 2)))) ;
+
+
+-- ailias for Term vars
+Var : *;
+Var = Nat;
+
+Ctx : * ;
+Ctx = Var -> Ty;
+
+-- extend a context
+ext : Ctx -> Ty -> Ctx;
+ext ctx ty var =
+  case var <_ => Ty>{
+  | (Z) => ty
+  | (S p) => ctx p -- TODO reference not being resolved in the unfier
+};
+
+insertCtx : (ctx : Ctx) -> (ty : Ty) -> Var -> Ctx;
+insertCtx ctx ty v x = case (comp v x) < _ => Ty >{
+  | Lt => ctx (S x)
+  | Eq => ty
+  | Gt => ctx x
+};
+
+
+tSubCtx : Ty -> Ctx -> Ctx;
+tSubCtx subThis ctx = \ x => tSubt subThis (ctx x) ;
+
+--tests
+all0 : Ctx;
+all0 = \ _ => tv 0;
+e20 : Ty;
+e20 = (tSubCtx (forall (tv 0)) all0) 2;
+
+data Term : Ctx -> Ty -> * {
+| V : (ctx : Ctx) 
+  -> (x : Var) -> Term ctx (ctx x)
+| lam : (ctx : Ctx) 
+  -> (targ : Ty) -> (tbod : Ty)
+  -> Term (ext ctx targ) tbod 
+  -> Term ctx (arr targ tbod)
+| app : (ctx : Ctx) 
+  -> (arg : Ty) -> (bod : Ty)
+  -> Term ctx (arr arg bod)
+  -> Term ctx arg
+  -> Term ctx bod
+| tlam : (ctx : Ctx)
+  -> (bod : Ty)
+  -> Term ctx bod
+  -> Term ctx (forall bod)
+| tapp : (ctx : Ctx) 
+  -> (targ : Ty) -> (tbod : Ty) 
+  -> Term ctx (forall tbod)
+  -> Term (tSubCtx targ ctx) (tSubt targ tbod)
+};
+
+polyId : (ctx : Ctx) -> Term ctx (forall (arr (tv 0) (tv 0)));
+polyId ctx = tlam ctx (arr (tv 0) (tv 0)) (lam ctx (tv 0) (tv 0) (V (ext ctx (tv 0)) 0) );
+
+
+sub' : (ctx : Ctx) -> (ty : Ty) -> Term ctx ty -> (repaceThis : Var) -> (inty : Ty) 
+  -> Term (insertCtx ctx ty repaceThis) inty -> Term ctx inty;
+sub' ctx ty withThis repaceThis inty inthis = inthis ;
+
+sub : (ctx : Ctx) -> (ty : Ty) -> Term ctx ty -> (inty : Ty) -> Term (ext ctx ty) inty -> Term ctx inty;
+sub ctx ty withThis inty inthis = inthis ;
+
+-- tmext : (ctx : Ctx) -> (ty : Ty) -> Term ctx ty -> Term (ext ctx tye) ty 
+

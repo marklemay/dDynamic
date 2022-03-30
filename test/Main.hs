@@ -39,13 +39,14 @@ allTests =
     "allTests"
     [
       -- operations we might want to show off live
-      Presentation.Surface.tests,
+      -- Presentation.Surface.tests,
       Presentation.Cast.tests,
       Presentation.CastUncleaned.tests,
-      stdLibTest,
-     Parser.Fun.tests,
+      -- stdLibTest,
+     Parser.Fun.tests
+    --  ,
     --  Parser.Exp.tests,
     
-     Elab.Fun.tests
+    --  Elab.Fun.tests
     ]
 

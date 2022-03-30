@@ -19,8 +19,8 @@ import qualified StdLib
 import qualified Helper
 import qualified Env
 
-
 import Data.Char
+import Env (Module)
 
 comment :: Parser ()
 comment = do
@@ -116,7 +116,7 @@ withInfixl pa ls = let
 
 
 exp :: Parser Exp
-exp = pi <|> (do
+exp = loc $ pi <|> (do
   e <- exp2
   (tokenl $ do 
     literal "->" 
@@ -139,14 +139,14 @@ exp1 :: Parser Exp
 exp1 = exp0 `withInfixl` [("", App)] 
 
 exp0 :: Parser Exp
-exp0 = (tokenl $
+exp0 = (tokenl $ --TODO move tokenl to exp, replacing loc
   (do literal "*"; pure TyU) <|>
   (do literal "?"; pure $ Solve noAn) <|>
   fun  <|> lam <|> elim <|> --pi <|> 
   (do i <- natParser; pure $ StdLib.n i) <|> -- stdlib hack
   vec <|>
   (do v <- nameParser; pure $ V v) 
-  ) <|> (do keyword "("; e<-exp;keyword ")"; pure e) 
+  ) <|> (do keyword "("; e<- exp;keyword ")"; pure e) 
 
  -- stdlib hack
 vec :: Parser Exp
@@ -226,11 +226,11 @@ pat = (do
   keyword ")"
   pure $ Pat dCname args
 
-modulep :: Parser (Map TCName DataDef, Map Var (Term, Ty))
+modulep :: Parser Module
 modulep = do
   e <- rep $ do d <- datadef <||> termdef; keyword ";"; pure d
   let (Map.fromList -> datas, Map.fromList -> terms) = partitionEithers e
-  pure $ Env.undermodule (datas, terms) datas
+  pure $ Env.undermodule (datas, terms) datas terms
 
 datadef :: Parser (TCName, DataDef)
 datadef = do
@@ -251,7 +251,7 @@ datadef = do
   pure (tCName, DataDef tel $ Map.fromList cls)
 
 
-termdef :: Parser (Var, (Term, Ty))
+termdef :: Parser (RefName, (Term, Ty))
 termdef = do
   x <- token nameParser'
   keyword ":"
@@ -260,8 +260,8 @@ termdef = do
   keyword x
   largs <- rep $ token nameParser
   keyword "="
-  bod <- exp
-  pure (s2n x, (lamall largs bod, ty))
+  bod <- loc exp
+  pure (x, (lamall largs bod, ty))
 
 
 

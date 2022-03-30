@@ -1,0 +1,3116 @@
+-- elabCastTelUnit
+-- ty TyU
+--
+-- elabCastTelUnit
+-- ty TConF "Nat" []
+    ( NoBnd () )
+    ( NoBnd () )
+--
+-- elabCastTelUnit
+-- ty TyU
+--
+-- elabCastTelUnit
+-- ty TConF "Nat" []
+    ( NoBnd () )
+    ( NoBnd () )
+-- let _=s2n "_" in TelBnd Nothing
+    ( bind _
+        ( NoBnd
+            ( Pos
+                ( SourcePos "ex/a0.dt" 16 15 )
+                ( Pos
+                    ( SourcePos "ex/a0.dt" 16 15 )
+                    ( Pos
+                        ( SourcePos "ex/a0.dt" 16 15 )
+                        ( TCon "Nat" )
+                        ( SourcePos "ex/a0.dt" 16 18 )
+                    )
+                    ( SourcePos "ex/a0.dt" 16 18 )
+                )
+                ( SourcePos "ex/a0.dt" 16 18 )
+            )
+        )
+    )
+-- "TODO needs to set up the equations with the already existing assignments"
+-- let
+    ( A114, B, _, _1, n ) =
+    ( s2n "A114", s2n "B", s2n "_", s2n "_1", s2n "n" ) in TelBnd Nothing
+    ( bind n
+        ( TelBnd
+            ( Just
+                ( Pos
+                    ( SourcePos "ex/a0.dt" 37 23 )
+                    ( Pos
+                        ( SourcePos "ex/a0.dt" 37 29 )
+                        ( App
+                            ( App
+                                ( Pos
+                                    ( SourcePos "ex/a0.dt" 37 23 )
+                                    ( Pos
+                                        ( SourcePos "ex/a0.dt" 37 23 )
+                                        ( TCon "Vec" )
+                                        ( SourcePos "ex/a0.dt" 37 26 )
+                                    )
+                                    ( SourcePos "ex/a0.dt" 37 27 )
+                                )
+                                ( Pos
+                                    ( SourcePos "ex/a0.dt" 37 27 ) ( V A114 )
+                                    ( SourcePos "ex/a0.dt" 37 28 )
+                                )
+                            )
+                            ( Pos
+                                ( SourcePos "ex/a0.dt" 37 29 ) ( V n )
+                                ( SourcePos "ex/a0.dt" 37 30 )
+                            )
+                        )
+                        ( SourcePos "ex/a0.dt" 37 31 )
+                    )
+                    ( SourcePos "ex/a0.dt" 37 31 )
+                )
+            )
+            ( bind _
+                ( NoBnd
+                    ( Pos
+                        ( SourcePos "ex/a0.dt" 37 34 )
+                        ( Pi
+                            ( Pos
+                                ( SourcePos "ex/a0.dt" 37 39 )
+                                ( Pos
+                                    ( SourcePos "ex/a0.dt" 37 39 )
+                                    ( Pos
+                                        ( SourcePos "ex/a0.dt" 37 39 ) TyU
+                                        ( SourcePos "ex/a0.dt" 37 40 )
+                                    )
+                                    ( SourcePos "ex/a0.dt" 37 40 )
+                                )
+                                ( SourcePos "ex/a0.dt" 37 40 )
+                            )
+                            ( bind B
+                                ( Pos
+                                    ( SourcePos "ex/a0.dt" 37 45 )
+                                    ( Pos
+                                        ( SourcePos "ex/a0.dt" 37 54 )
+                                        ( Pi
+                                            ( Pos
+                                                ( SourcePos "ex/a0.dt" 37 45 )
+                                                ( Pos
+                                                    ( SourcePos "ex/a0.dt" 37 46 )
+                                                    ( Pos
+                                                        ( SourcePos "ex/a0.dt" 37 48 )
+                                                        ( Pi
+                                                            ( Pos
+                                                                ( SourcePos "ex/a0.dt" 37 46 )
+                                                                ( Pos
+                                                                    ( SourcePos "ex/a0.dt" 37 46 ) ( V A114 )
+                                                                    ( SourcePos "ex/a0.dt" 37 47 )
+                                                                )
+                                                                ( SourcePos "ex/a0.dt" 37 48 )
+                                                            )
+                                                            ( bind _1
+                                                                ( Pos
+                                                                    ( SourcePos "ex/a0.dt" 37 50 )
+                                                                    ( Pos
+                                                                        ( SourcePos "ex/a0.dt" 37 51 )
+                                                                        ( Pos
+                                                                            ( SourcePos "ex/a0.dt" 37 51 ) ( V B )
+                                                                            ( SourcePos "ex/a0.dt" 37 52 )
+                                                                        )
+                                                                        ( SourcePos "ex/a0.dt" 37 52 )
+                                                                    )
+                                                                    ( SourcePos "ex/a0.dt" 37 52 )
+                                                                )
+                                                            )
+                                                        )
+                                                        ( SourcePos "ex/a0.dt" 37 52 )
+                                                    )
+                                                    ( SourcePos "ex/a0.dt" 37 52 )
+                                                )
+                                                ( SourcePos "ex/a0.dt" 37 54 )
+                                            )
+                                            ( bind _1
+                                                ( Pos
+                                                    ( SourcePos "ex/a0.dt" 37 56 )
+                                                    ( Pos
+                                                        ( SourcePos "ex/a0.dt" 37 63 )
+                                                        ( App
+                                                            ( App
+                                                                ( Pos
+                                                                    ( SourcePos "ex/a0.dt" 37 57 )
+                                                                    ( Pos
+                                                                        ( SourcePos "ex/a0.dt" 37 57 )
+                                                                        ( TCon "Vec" )
+                                                                        ( SourcePos "ex/a0.dt" 37 60 )
+                                                                    )
+                                                                    ( SourcePos "ex/a0.dt" 37 61 )
+                                                                )
+                                                                ( Pos
+                                                                    ( SourcePos "ex/a0.dt" 37 61 ) ( V B )
+                                                                    ( SourcePos "ex/a0.dt" 37 62 )
+                                                                )
+                                                            )
+                                                            ( Pos
+                                                                ( SourcePos "ex/a0.dt" 37 63 ) ( V n )
+                                                                ( SourcePos "ex/a0.dt" 37 64 )
+                                                            )
+                                                        )
+                                                        ( SourcePos "ex/a0.dt" 37 65 )
+                                                    )
+                                                    ( SourcePos "ex/a0.dt" 37 65 )
+                                                )
+                                            )
+                                        )
+                                        ( SourcePos "ex/a0.dt" 37 65 )
+                                    )
+                                    ( SourcePos "ex/a0.dt" 37 65 )
+                                )
+                            )
+                        )
+                        ( SourcePos "ex/a0.dt" 37 65 )
+                    )
+                )
+            )
+        )
+    )
+--
+-- checkTelMaybe
+-- ctyconcrete =
+-- let
+    ( A116, n120, _, _1 ) =
+    ( s2n "A116", s2n "n120", s2n "_", s2n "_1" ) in App
+    ( App
+        ( TConF "Vec" []
+            ( TelBnd TyU
+                ( bind _
+                    ( TelBnd
+                        ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                        ( bind _1 ( NoBnd () ) )
+                    )
+                )
+            )
+            ( TelBnd TyU
+                ( bind _
+                    ( TelBnd
+                        ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                        ( bind _1 ( NoBnd () ) )
+                    )
+                )
+            )
+        ) ( V A116 )
+    ) ( V n120 )
+-- cexp =
+-- let v124=s2n "v124" in V v124
+-- "TODO needs to set up the equations with the already existing assignments"
+-- let _=s2n "_" in TelBnd Nothing
+    ( bind _
+        ( NoBnd
+            ( Pos
+                ( SourcePos "ex/a0.dt" 58 16 )
+                ( Pos
+                    ( SourcePos "ex/a0.dt" 58 16 )
+                    ( Pos
+                        ( SourcePos "ex/a0.dt" 58 16 )
+                        ( TCon "Bool" )
+                        ( SourcePos "ex/a0.dt" 58 20 )
+                    )
+                    ( SourcePos "ex/a0.dt" 58 21 )
+                )
+                ( SourcePos "ex/a0.dt" 58 21 )
+            )
+        )
+    )
+-- "TODO needs to set up the equations with the already existing assignments"
+-- let
+    ( A191, n' ) =
+    ( s2n "A191", s2n "n'" ) in TelBnd
+    ( Just
+        ( Pos
+            ( SourcePos "ex/a0.dt" 29 16 )
+            ( Pos
+                ( SourcePos "ex/a0.dt" 29 16 )
+                ( Pos
+                    ( SourcePos "ex/a0.dt" 29 16 )
+                    ( TCon "Nat" )
+                    ( SourcePos "ex/a0.dt" 29 19 )
+                )
+                ( SourcePos "ex/a0.dt" 29 20 )
+            )
+            ( SourcePos "ex/a0.dt" 29 20 )
+        )
+    )
+    ( bind n'
+        ( NoBnd
+            ( Pos
+                ( SourcePos "ex/a0.dt" 29 23 )
+                ( Pos
+                    ( SourcePos "ex/a0.dt" 29 29 )
+                    ( App
+                        ( App
+                            ( Pos
+                                ( SourcePos "ex/a0.dt" 29 23 )
+                                ( Pos
+                                    ( SourcePos "ex/a0.dt" 29 23 )
+                                    ( TCon "Vec" )
+                                    ( SourcePos "ex/a0.dt" 29 26 )
+                                )
+                                ( SourcePos "ex/a0.dt" 29 27 )
+                            )
+                            ( Pos
+                                ( SourcePos "ex/a0.dt" 29 27 ) ( V A191 )
+                                ( SourcePos "ex/a0.dt" 29 28 )
+                            )
+                        )
+                        ( Pos
+                            ( SourcePos "ex/a0.dt" 29 29 ) ( V n' )
+                            ( SourcePos "ex/a0.dt" 29 31 )
+                        )
+                    )
+                    ( SourcePos "ex/a0.dt" 29 32 )
+                )
+                ( SourcePos "ex/a0.dt" 29 32 )
+            )
+        )
+    )
+--
+-- checkTelMaybe
+-- ctyconcrete =
+-- TConF "Nat" []
+    ( NoBnd () )
+    ( NoBnd () )
+-- cexp =
+-- let n201=s2n "n201" in V n201
+-- "TODO needs to set up the equations with the already existing assignments"
+elaborated
+cleaned
+loaded
+dt> ex0
+-- Pos
+    ( SourcePos "" 0 0 )
+    ( Pos
+        ( SourcePos "" 0 0 )
+        ( Pos ( SourcePos "" 0 0 ) ( Ref "ex0" ) ( SourcePos "" 0 3 ) )
+        ( SourcePos "" 0 3 )
+    )
+    ( SourcePos "" 0 3 )
+ex0
+ : Vec Bool 1
+-- isValue a' = True
+-- TConF "Bool" []
+    ( NoBnd () )
+    ( NoBnd () )
+-- isValue a' = True
+-- DConF "true" []
+    ( "Bool", NoBnd [] )
+    ( NoBnd () )
+    ( NoBnd () )
+-- isValue a' = True
+-- DConF "Z" []
+    ( "Nat", NoBnd [] )
+    ( NoBnd () )
+    ( NoBnd () )
+-- isValue a' = True
+-- let _=s2n "_" in DConF "S"
+    [ DConF "Z" [] ( "Nat", NoBnd [] ) ( NoBnd () ) ( NoBnd () ) ]
+    ( "Nat", NoBnd [] )
+    ( TelBnd
+        ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+        ( bind _ ( NoBnd () ) )
+    )
+    ( NoBnd () )
+-- isValue a' = True
+-- TConF "Bool" []
+    ( NoBnd () )
+    ( NoBnd () )
+-- isValue a' = True
+-- DConF "true" []
+    ( "Bool", NoBnd [] )
+    ( NoBnd () )
+    ( NoBnd () )
+-- isValue a' = True
+-- DConF "Z" []
+    ( "Nat", NoBnd [] )
+    ( NoBnd () )
+    ( NoBnd () )
+-- isValue a' = True
+-- TConF "Bool" []
+    ( NoBnd () )
+    ( NoBnd () )
+-- isValue a' = True
+-- DConF "true" []
+    ( "Bool", NoBnd [] )
+    ( NoBnd () )
+    ( NoBnd () )
+-- isValue a' = True
+-- DConF "Z" []
+    ( "Nat", NoBnd [] )
+    ( NoBnd () )
+    ( NoBnd () )
+-- isValue a' = True
+-- TConF "Bool" []
+    ( NoBnd () )
+    ( NoBnd () )
+-- isValue a' = True
+-- let
+    ( A, _, _1 ) =
+    ( s2n "A", s2n "_", s2n "_1" ) in C
+    ( DConF "Nil"
+        [ TConF "Bool" [] ( NoBnd () ) ( NoBnd () ) ]
+        ( "Vec"
+        , NoBnd
+            [ TConF "Bool" []
+                ( NoBnd () )
+                ( NoBnd () )
+            , DConF "Z" []
+                ( "Nat", NoBnd [] )
+                ( NoBnd () )
+                ( NoBnd () )
+            ]
+        )
+        ( TelBnd TyU ( bind A ( NoBnd () ) ) )
+        ( TelBnd TyU
+            ( bind _
+                ( TelBnd
+                    ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                    ( bind _1 ( NoBnd () ) )
+                )
+            )
+        )
+    )
+    ( TConF "Vec"
+        [ TConF "Bool" []
+            ( NoBnd () )
+            ( NoBnd () )
+        , C
+            ( DConF "Z" [] ( "Nat", NoBnd [] ) ( NoBnd () ) ( NoBnd () ) )
+            ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+        ]
+        ( NoBnd () )
+        ( TelBnd TyU
+            ( bind _
+                ( TelBnd
+                    ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                    ( bind _1 ( NoBnd () ) )
+                )
+            )
+        )
+    )
+-- let
+    ( A, _, _1, _2, n ) =
+    ( s2n "A", s2n "_", s2n "_1", s2n "_2", s2n "n" ) in C
+    ( DConF "Cons"
+        [ TConF "Bool" []
+            ( NoBnd () )
+            ( NoBnd () )
+        , DConF "true" []
+            ( "Bool", NoBnd [] )
+            ( NoBnd () )
+            ( NoBnd () )
+        , DConF "Z" []
+            ( "Nat", NoBnd [] )
+            ( NoBnd () )
+            ( NoBnd () )
+        , C
+            ( DConF "Nil"
+                [ TConF "Bool" [] ( NoBnd () ) ( NoBnd () ) ]
+                ( "Vec"
+                , NoBnd
+                    [ TConF "Bool" []
+                        ( NoBnd () )
+                        ( NoBnd () )
+                    , DConF "Z" []
+                        ( "Nat", NoBnd [] )
+                        ( NoBnd () )
+                        ( NoBnd () )
+                    ]
+                )
+                ( TelBnd TyU ( bind A ( NoBnd () ) ) )
+                ( TelBnd TyU
+                    ( bind _
+                        ( TelBnd
+                            ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                            ( bind _1 ( NoBnd () ) )
+                        )
+                    )
+                )
+            )
+            ( TConF "Vec"
+                [ TConF "Bool" []
+                    ( NoBnd () )
+                    ( NoBnd () )
+                , C
+                    ( DConF "Z" []
+                        ( "Nat", NoBnd [] )
+                        ( NoBnd () )
+                        ( NoBnd () )
+                    )
+                    ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                ]
+                ( NoBnd () )
+                ( TelBnd TyU
+                    ( bind _
+                        ( TelBnd
+                            ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                            ( bind _1 ( NoBnd () ) )
+                        )
+                    )
+                )
+            )
+        ]
+        ( "Vec"
+        , NoBnd
+            [ TConF "Bool" []
+                ( NoBnd () )
+                ( NoBnd () )
+            , App
+                ( DConF "S" []
+                    ( "Nat"
+                    , TelBnd
+                        ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                        ( bind _ ( NoBnd [] ) )
+                    )
+                    ( TelBnd
+                        ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                        ( bind _ ( NoBnd () ) )
+                    )
+                    ( NoBnd () )
+                )
+                ( DConF "Z" [] ( "Nat", NoBnd [] ) ( NoBnd () ) ( NoBnd () ) )
+            ]
+        )
+        ( TelBnd TyU
+            ( bind A
+                ( TelBnd ( V A )
+                    ( bind _
+                        ( TelBnd
+                            ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                            ( bind n
+                                ( TelBnd
+                                    ( App
+                                        ( App
+                                            ( TConF "Vec" []
+                                                ( TelBnd TyU
+                                                    ( bind _1
+                                                        ( TelBnd
+                                                            ( TConF "Nat" []
+                                                                ( NoBnd () )
+                                                                ( NoBnd () )
+                                                            )
+                                                            ( bind _2
+                                                                ( NoBnd () )
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                                ( TelBnd TyU
+                                                    ( bind _1
+                                                        ( TelBnd
+                                                            ( TConF "Nat" []
+                                                                ( NoBnd () )
+                                                                ( NoBnd () )
+                                                            )
+                                                            ( bind _2
+                                                                ( NoBnd () )
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                            ) ( V A )
+                                        ) ( V n )
+                                    )
+                                    ( bind _1 ( NoBnd () ) )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        ( TelBnd TyU
+            ( bind _
+                ( TelBnd
+                    ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                    ( bind _1 ( NoBnd () ) )
+                )
+            )
+        )
+    )
+    ( TConF "Vec"
+        [ TConF "Bool" []
+            ( NoBnd () )
+            ( NoBnd () )
+        , DConF "S"
+            [ C
+                ( DConF "Z" [] ( "Nat", NoBnd [] ) ( NoBnd () ) ( NoBnd () ) )
+                ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+            ]
+            ( "Nat", NoBnd [] )
+            ( TelBnd
+                ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                ( bind _ ( NoBnd () ) )
+            )
+            ( NoBnd () )
+        ]
+        ( NoBnd () )
+        ( TelBnd TyU
+            ( bind _
+                ( TelBnd
+                    ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                    ( bind _1 ( NoBnd () ) )
+                )
+            )
+        )
+    )
+~>
+[true]<Bool>
+dt> ex01
+-- Pos
+    ( SourcePos "" 0 0 )
+    ( Pos
+        ( SourcePos "" 0 0 )
+        ( Pos ( SourcePos "" 0 0 ) ( Ref "ex01" ) ( SourcePos "" 0 4 ) )
+        ( SourcePos "" 0 4 )
+    )
+    ( SourcePos "" 0 4 )
+ex01
+ : Vec Bool 1
+-- isValue a' = True
+-- TConF "Bool" []
+    ( NoBnd () )
+    ( NoBnd () )
+-- isValue a' = True
+-- DConF "Z" []
+    ( "Nat", NoBnd [] )
+    ( NoBnd () )
+    ( NoBnd () )
+-- isValue a' = True
+-- let _=s2n "_" in DConF "S"
+    [ DConF "Z" [] ( "Nat", NoBnd [] ) ( NoBnd () ) ( NoBnd () ) ]
+    ( "Nat", NoBnd [] )
+    ( TelBnd
+        ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+        ( bind _ ( NoBnd () ) )
+    )
+    ( NoBnd () )
+-- isValue a' = True
+-- TConF "Bool" []
+    ( NoBnd () )
+    ( NoBnd () )
+-- isValue a' = True
+-- DConF "true" []
+    ( "Bool", NoBnd [] )
+    ( NoBnd () )
+    ( NoBnd () )
+-- isValue a' = True
+-- DConF "Z" []
+    ( "Nat", NoBnd [] )
+    ( NoBnd () )
+    ( NoBnd () )
+-- isValue a' = True
+-- let _=s2n "_" in DConF "S"
+    [ DConF "Z" [] ( "Nat", NoBnd [] ) ( NoBnd () ) ( NoBnd () ) ]
+    ( "Nat", NoBnd [] )
+    ( TelBnd
+        ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+        ( bind _ ( NoBnd () ) )
+    )
+    ( NoBnd () )
+-- isValue a' = True
+-- TConF "Bool" []
+    ( NoBnd () )
+    ( NoBnd () )
+-- isValue a' = True
+-- DConF "true" []
+    ( "Bool", NoBnd [] )
+    ( NoBnd () )
+    ( NoBnd () )
+-- isValue a' = True
+-- DConF "Z" []
+    ( "Nat", NoBnd [] )
+    ( NoBnd () )
+    ( NoBnd () )
+-- isValue a' = True
+-- TConF "Bool" []
+    ( NoBnd () )
+    ( NoBnd () )
+-- isValue a' = True
+-- DConF "true" []
+    ( "Bool", NoBnd [] )
+    ( NoBnd () )
+    ( NoBnd () )
+-- isValue a' = True
+-- DConF "Z" []
+    ( "Nat", NoBnd [] )
+    ( NoBnd () )
+    ( NoBnd () )
+-- isValue a' = True
+-- TConF "Bool" []
+    ( NoBnd () )
+    ( NoBnd () )
+-- isValue a' = True
+-- let
+    ( A, _, _1 ) =
+    ( s2n "A", s2n "_", s2n "_1" ) in C
+    ( DConF "Nil"
+        [ TConF "Bool" [] ( NoBnd () ) ( NoBnd () ) ]
+        ( "Vec"
+        , NoBnd
+            [ TConF "Bool" []
+                ( NoBnd () )
+                ( NoBnd () )
+            , DConF "Z" []
+                ( "Nat", NoBnd [] )
+                ( NoBnd () )
+                ( NoBnd () )
+            ]
+        )
+        ( TelBnd TyU ( bind A ( NoBnd () ) ) )
+        ( TelBnd TyU
+            ( bind _
+                ( TelBnd
+                    ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                    ( bind _1 ( NoBnd () ) )
+                )
+            )
+        )
+    )
+    ( TConF "Vec"
+        [ TConF "Bool" []
+            ( NoBnd () )
+            ( NoBnd () )
+        , C
+            ( DConF "Z" [] ( "Nat", NoBnd [] ) ( NoBnd () ) ( NoBnd () ) )
+            ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+        ]
+        ( NoBnd () )
+        ( TelBnd TyU
+            ( bind _
+                ( TelBnd
+                    ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                    ( bind _1 ( NoBnd () ) )
+                )
+            )
+        )
+    )
+-- isValue a' = True
+-- let
+    ( A, _, _1, _2, n ) =
+    ( s2n "A", s2n "_", s2n "_1", s2n "_2", s2n "n" ) in C
+    ( DConF "Cons"
+        [ TConF "Bool" []
+            ( NoBnd () )
+            ( NoBnd () )
+        , DConF "true" []
+            ( "Bool", NoBnd [] )
+            ( NoBnd () )
+            ( NoBnd () )
+        , DConF "Z" []
+            ( "Nat", NoBnd [] )
+            ( NoBnd () )
+            ( NoBnd () )
+        , C
+            ( DConF "Nil"
+                [ TConF "Bool" [] ( NoBnd () ) ( NoBnd () ) ]
+                ( "Vec"
+                , NoBnd
+                    [ TConF "Bool" []
+                        ( NoBnd () )
+                        ( NoBnd () )
+                    , DConF "Z" []
+                        ( "Nat", NoBnd [] )
+                        ( NoBnd () )
+                        ( NoBnd () )
+                    ]
+                )
+                ( TelBnd TyU ( bind A ( NoBnd () ) ) )
+                ( TelBnd TyU
+                    ( bind _
+                        ( TelBnd
+                            ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                            ( bind _1 ( NoBnd () ) )
+                        )
+                    )
+                )
+            )
+            ( TConF "Vec"
+                [ TConF "Bool" []
+                    ( NoBnd () )
+                    ( NoBnd () )
+                , C
+                    ( DConF "Z" []
+                        ( "Nat", NoBnd [] )
+                        ( NoBnd () )
+                        ( NoBnd () )
+                    )
+                    ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                ]
+                ( NoBnd () )
+                ( TelBnd TyU
+                    ( bind _
+                        ( TelBnd
+                            ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                            ( bind _1 ( NoBnd () ) )
+                        )
+                    )
+                )
+            )
+        ]
+        ( "Vec"
+        , NoBnd
+            [ TConF "Bool" []
+                ( NoBnd () )
+                ( NoBnd () )
+            , App
+                ( DConF "S" []
+                    ( "Nat"
+                    , TelBnd
+                        ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                        ( bind _ ( NoBnd [] ) )
+                    )
+                    ( TelBnd
+                        ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                        ( bind _ ( NoBnd () ) )
+                    )
+                    ( NoBnd () )
+                )
+                ( DConF "Z" [] ( "Nat", NoBnd [] ) ( NoBnd () ) ( NoBnd () ) )
+            ]
+        )
+        ( TelBnd TyU
+            ( bind A
+                ( TelBnd ( V A )
+                    ( bind _
+                        ( TelBnd
+                            ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                            ( bind n
+                                ( TelBnd
+                                    ( App
+                                        ( App
+                                            ( TConF "Vec" []
+                                                ( TelBnd TyU
+                                                    ( bind _1
+                                                        ( TelBnd
+                                                            ( TConF "Nat" []
+                                                                ( NoBnd () )
+                                                                ( NoBnd () )
+                                                            )
+                                                            ( bind _2
+                                                                ( NoBnd () )
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                                ( TelBnd TyU
+                                                    ( bind _1
+                                                        ( TelBnd
+                                                            ( TConF "Nat" []
+                                                                ( NoBnd () )
+                                                                ( NoBnd () )
+                                                            )
+                                                            ( bind _2
+                                                                ( NoBnd () )
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                            ) ( V A )
+                                        ) ( V n )
+                                    )
+                                    ( bind _1 ( NoBnd () ) )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        ( TelBnd TyU
+            ( bind _
+                ( TelBnd
+                    ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                    ( bind _1 ( NoBnd () ) )
+                )
+            )
+        )
+    )
+    ( TConF "Vec"
+        [ TConF "Bool" []
+            ( NoBnd () )
+            ( NoBnd () )
+        , DConF "S"
+            [ C
+                ( DConF "Z" [] ( "Nat", NoBnd [] ) ( NoBnd () ) ( NoBnd () ) )
+                ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+            ]
+            ( "Nat", NoBnd [] )
+            ( TelBnd
+                ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                ( bind _ ( NoBnd () ) )
+            )
+            ( NoBnd () )
+        ]
+        ( NoBnd () )
+        ( TelBnd TyU
+            ( bind _
+                ( TelBnd
+                    ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                    ( bind _1 ( NoBnd () ) )
+                )
+            )
+        )
+    )
+-- isValue a' = True
+-- TConF "Bool" []
+    ( NoBnd () )
+    ( NoBnd () )
+-- isValue a' = True
+-- let
+    ( _, p_, x ) =
+    ( s2n "_", s2n "p_", s2n "x" ) in Fun
+    ( bind
+        ( _, x )
+        ( Case [ V x ]
+            [ Match
+                ( bind
+                    [ Pat "true" [] p_ ]
+                    ( DConF "false" []
+                        ( "Bool", NoBnd [] )
+                        ( NoBnd () )
+                        ( NoBnd () )
+                    )
+                )
+            , Match
+                ( bind
+                    [ Pat "false" [] p_ ]
+                    ( DConF "true" []
+                        ( "Bool", NoBnd [] )
+                        ( NoBnd () )
+                        ( NoBnd () )
+                    )
+                )
+            ] ( An Nothing )
+        )
+    )
+-- isValue a' = True
+-- Union
+    ( TConF "Bool" [] ( NoBnd () ) ( NoBnd () ) ) TyU
+    ( TConF "Bool" [] ( NoBnd () ) ( NoBnd () ) )
+-- isValue a' = True
+-- DConF "Z" []
+    ( "Nat", NoBnd [] )
+    ( NoBnd () )
+    ( NoBnd () )
+-- isValue a' = False
+-- let _=s2n "_" in Union
+    ( DConF "Z" [] ( "Nat", NoBnd [] ) ( NoBnd () ) ( NoBnd () ) )
+    ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+    ( Dind 0
+        ( Union
+            ( DConF "S"
+                [ DConF "Z" [] ( "Nat", NoBnd [] ) ( NoBnd () ) ( NoBnd () ) ]
+                ( "Nat", NoBnd [] )
+                ( TelBnd
+                    ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                    ( bind _ ( NoBnd () ) )
+                )
+                ( NoBnd () )
+            )
+            ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+            ( DConF "Nat"
+                [ C
+                    ( DConF "Nat" []
+                        ( "Nat", NoBnd [] )
+                        ( NoBnd () )
+                        ( NoBnd () )
+                    )
+                    ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                ]
+                ( "Nat", NoBnd [] )
+                ( TelBnd
+                    ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                    ( bind _ ( NoBnd () ) )
+                )
+                ( NoBnd () )
+            )
+        )
+    )
+-- isValue a' = False
+-- let
+    ( A, _, _1 ) =
+    ( s2n "A", s2n "_", s2n "_1" ) in C
+    ( C
+        ( DConF "Nil"
+            [ TConF "Bool" [] ( NoBnd () ) ( NoBnd () ) ]
+            ( "Vec"
+            , NoBnd
+                [ TConF "Bool" []
+                    ( NoBnd () )
+                    ( NoBnd () )
+                , DConF "Z" []
+                    ( "Nat", NoBnd [] )
+                    ( NoBnd () )
+                    ( NoBnd () )
+                ]
+            )
+            ( TelBnd TyU ( bind A ( NoBnd () ) ) )
+            ( TelBnd TyU
+                ( bind _
+                    ( TelBnd
+                        ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                        ( bind _1 ( NoBnd () ) )
+                    )
+                )
+            )
+        )
+        ( TConF "Vec"
+            [ TConF "Bool" []
+                ( NoBnd () )
+                ( NoBnd () )
+            , C
+                ( DConF "Z" [] ( "Nat", NoBnd [] ) ( NoBnd () ) ( NoBnd () ) )
+                ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+            ]
+            ( NoBnd () )
+            ( TelBnd TyU
+                ( bind _
+                    ( TelBnd
+                        ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                        ( bind _1 ( NoBnd () ) )
+                    )
+                )
+            )
+        )
+    )
+    ( App
+        ( TConF "Vec"
+            [ Union
+                ( TConF "Bool" [] ( NoBnd () ) ( NoBnd () ) ) TyU
+                ( TConF "Bool" [] ( NoBnd () ) ( NoBnd () ) )
+            ]
+            ( TelBnd
+                ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                ( bind _ ( NoBnd () ) )
+            )
+            ( TelBnd TyU
+                ( bind _
+                    ( TelBnd
+                        ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                        ( bind _1 ( NoBnd () ) )
+                    )
+                )
+            )
+        )
+        ( Union
+            ( DConF "Z" [] ( "Nat", NoBnd [] ) ( NoBnd () ) ( NoBnd () ) )
+            ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+            ( Dind 0
+                ( Union
+                    ( DConF "S"
+                        [ DConF "Z" []
+                            ( "Nat", NoBnd [] )
+                            ( NoBnd () )
+                            ( NoBnd () )
+                        ]
+                        ( "Nat", NoBnd [] )
+                        ( TelBnd
+                            ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                            ( bind _ ( NoBnd () ) )
+                        )
+                        ( NoBnd () )
+                    )
+                    ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                    ( DConF "Nat"
+                        [ C
+                            ( DConF "Nat" []
+                                ( "Nat", NoBnd [] )
+                                ( NoBnd () )
+                                ( NoBnd () )
+                            )
+                            ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                        ]
+                        ( "Nat", NoBnd [] )
+                        ( TelBnd
+                            ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                            ( bind _ ( NoBnd () ) )
+                        )
+                        ( NoBnd () )
+                    )
+                )
+            )
+        )
+    )
+-- isValue a' = False
+-- let
+    ( A, B, _, _1, _2, _3, n, p_, x ) =
+    ( s2n "A"
+    , s2n "B"
+    , s2n "_"
+    , s2n "_1"
+    , s2n "_2"
+    , s2n "_3"
+    , s2n "n"
+    , s2n "p_"
+    , s2n "x"
+    ) in App
+    ( App
+        ( App
+            ( C
+                ( App
+                    ( C
+                        ( App
+                            ( Ref "mapVec" )
+                            ( TConF "Bool" [] ( NoBnd () ) ( NoBnd () ) )
+                        )
+                        ( Pi
+                            ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                            ( bind n
+                                ( Pi
+                                    ( App
+                                        ( App
+                                            ( TConF "Vec" []
+                                                ( TelBnd TyU
+                                                    ( bind _
+                                                        ( TelBnd
+                                                            ( TConF "Nat" []
+                                                                ( NoBnd () )
+                                                                ( NoBnd () )
+                                                            )
+                                                            ( bind _1
+                                                                ( NoBnd () )
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                                ( TelBnd TyU
+                                                    ( bind _
+                                                        ( TelBnd
+                                                            ( TConF "Nat" []
+                                                                ( NoBnd () )
+                                                                ( NoBnd () )
+                                                            )
+                                                            ( bind _1
+                                                                ( NoBnd () )
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                            ( Union
+                                                ( TConF "Bool" []
+                                                    ( NoBnd () )
+                                                    ( NoBnd () )
+                                                ) TyU
+                                                ( Union
+                                                    ( Tind 0
+                                                        ( TConF "Vec"
+                                                            [ TConF "Bool" []
+                                                                ( NoBnd () )
+                                                                ( NoBnd () )
+                                                            , DConF "S"
+                                                                [ C
+                                                                    ( DConF "Z" []
+                                                                        ( "Nat"
+                                                                        , NoBnd []
+                                                                        )
+                                                                        ( NoBnd () )
+                                                                        ( NoBnd () )
+                                                                    )
+                                                                    ( TConF "Nat" []
+                                                                        ( NoBnd () )
+                                                                        ( NoBnd () )
+                                                                    )
+                                                                ]
+                                                                ( "Nat"
+                                                                , NoBnd []
+                                                                )
+                                                                ( TelBnd
+                                                                    ( TConF "Nat" []
+                                                                        ( NoBnd () )
+                                                                        ( NoBnd () )
+                                                                    )
+                                                                    ( bind _
+                                                                        ( NoBnd () )
+                                                                    )
+                                                                )
+                                                                ( NoBnd () )
+                                                            ]
+                                                            ( NoBnd () )
+                                                            ( TelBnd TyU
+                                                                ( bind _
+                                                                    ( TelBnd
+                                                                        ( TConF "Nat" []
+                                                                            ( NoBnd () )
+                                                                            ( NoBnd () )
+                                                                        )
+                                                                        ( bind _1
+                                                                            ( NoBnd () )
+                                                                        )
+                                                                    )
+                                                                )
+                                                            )
+                                                        )
+                                                    ) TyU
+                                                    ( TConF "Bool" []
+                                                        ( NoBnd () )
+                                                        ( NoBnd () )
+                                                    )
+                                                )
+                                            )
+                                        ) ( V n )
+                                    )
+                                    ( bind _
+                                        ( Pi TyU
+                                            ( bind B
+                                                ( Pi
+                                                    ( Pi
+                                                        ( Union
+                                                            ( TConF "Bool" []
+                                                                ( NoBnd () )
+                                                                ( NoBnd () )
+                                                            ) TyU
+                                                            ( Union
+                                                                ( Tind 0
+                                                                    ( TConF "Vec"
+                                                                        [ TConF "Bool" []
+                                                                            ( NoBnd () )
+                                                                            ( NoBnd () )
+                                                                        , DConF "S"
+                                                                            [ C
+                                                                                ( DConF "Z" []
+                                                                                    ( "Nat"
+                                                                                    , NoBnd []
+                                                                                    )
+                                                                                    ( NoBnd () )
+                                                                                    ( NoBnd () )
+                                                                                )
+                                                                                ( TConF "Nat" []
+                                                                                    ( NoBnd () )
+                                                                                    ( NoBnd () )
+                                                                                )
+                                                                            ]
+                                                                            ( "Nat"
+                                                                            , NoBnd []
+                                                                            )
+                                                                            ( TelBnd
+                                                                                ( TConF "Nat" []
+                                                                                    ( NoBnd () )
+                                                                                    ( NoBnd () )
+                                                                                )
+                                                                                ( bind _1
+                                                                                    ( NoBnd () )
+                                                                                )
+                                                                            )
+                                                                            ( NoBnd () )
+                                                                        ]
+                                                                        ( NoBnd () )
+                                                                        ( TelBnd TyU
+                                                                            ( bind _1
+                                                                                ( TelBnd
+                                                                                    ( TConF "Nat" []
+                                                                                        ( NoBnd () )
+                                                                                        ( NoBnd () )
+                                                                                    )
+                                                                                    ( bind _2
+                                                                                        ( NoBnd () )
+                                                                                    )
+                                                                                )
+                                                                            )
+                                                                        )
+                                                                    )
+                                                                ) TyU
+                                                                ( TConF "Bool" []
+                                                                    ( NoBnd () )
+                                                                    ( NoBnd () )
+                                                                )
+                                                            )
+                                                        )
+                                                        ( bind _1 ( V B ) )
+                                                    )
+                                                    ( bind _1
+                                                        ( App
+                                                            ( App
+                                                                ( TConF "Vec" []
+                                                                    ( TelBnd TyU
+                                                                        ( bind _2
+                                                                            ( TelBnd
+                                                                                ( TConF "Nat" []
+                                                                                    ( NoBnd () )
+                                                                                    ( NoBnd () )
+                                                                                )
+                                                                                ( bind _3
+                                                                                    ( NoBnd () )
+                                                                                )
+                                                                            )
+                                                                        )
+                                                                    )
+                                                                    ( TelBnd TyU
+                                                                        ( bind _2
+                                                                            ( TelBnd
+                                                                                ( TConF "Nat" []
+                                                                                    ( NoBnd () )
+                                                                                    ( NoBnd () )
+                                                                                )
+                                                                                ( bind _3
+                                                                                    ( NoBnd () )
+                                                                                )
+                                                                            )
+                                                                        )
+                                                                    )
+                                                                ) ( V B )
+                                                            ) ( V n )
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                    ( DConF "Z" []
+                        ( "Nat", NoBnd [] )
+                        ( NoBnd () )
+                        ( NoBnd () )
+                    )
+                )
+                ( Pi
+                    ( App
+                        ( App
+                            ( TConF "Vec" []
+                                ( TelBnd TyU
+                                    ( bind _
+                                        ( TelBnd
+                                            ( TConF "Nat" []
+                                                ( NoBnd () )
+                                                ( NoBnd () )
+                                            )
+                                            ( bind _1 ( NoBnd () ) )
+                                        )
+                                    )
+                                )
+                                ( TelBnd TyU
+                                    ( bind _
+                                        ( TelBnd
+                                            ( TConF "Nat" []
+                                                ( NoBnd () )
+                                                ( NoBnd () )
+                                            )
+                                            ( bind _1 ( NoBnd () ) )
+                                        )
+                                    )
+                                )
+                            )
+                            ( TConF "Bool" [] ( NoBnd () ) ( NoBnd () ) )
+                        )
+                        ( Union
+                            ( DConF "Z" []
+                                ( "Nat", NoBnd [] )
+                                ( NoBnd () )
+                                ( NoBnd () )
+                            )
+                            ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                            ( Dind 0
+                                ( Union
+                                    ( App
+                                        ( DConF "S" []
+                                            ( "Nat"
+                                            , TelBnd
+                                                ( TConF "Nat" []
+                                                    ( NoBnd () )
+                                                    ( NoBnd () )
+                                                )
+                                                ( bind _ ( NoBnd [] ) )
+                                            )
+                                            ( TelBnd
+                                                ( TConF "Nat" []
+                                                    ( NoBnd () )
+                                                    ( NoBnd () )
+                                                )
+                                                ( bind _ ( NoBnd () ) )
+                                            )
+                                            ( NoBnd () )
+                                        )
+                                        ( DConF "Z" []
+                                            ( "Nat", NoBnd [] )
+                                            ( NoBnd () )
+                                            ( NoBnd () )
+                                        )
+                                    )
+                                    ( Union
+                                        ( TConF "Nat" []
+                                            ( NoBnd () )
+                                            ( NoBnd () )
+                                        ) TyU
+                                        ( TConF "Nat" []
+                                            ( NoBnd () )
+                                            ( NoBnd () )
+                                        )
+                                    )
+                                    ( Union
+                                        ( Tind 1
+                                            ( TConF "Vec"
+                                                [ TConF "Bool" []
+                                                    ( NoBnd () )
+                                                    ( NoBnd () )
+                                                , DConF "S"
+                                                    [ C
+                                                        ( DConF "Z" []
+                                                            ( "Nat", NoBnd [] )
+                                                            ( NoBnd () )
+                                                            ( NoBnd () )
+                                                        )
+                                                        ( TConF "Nat" []
+                                                            ( NoBnd () )
+                                                            ( NoBnd () )
+                                                        )
+                                                    ]
+                                                    ( "Nat", NoBnd [] )
+                                                    ( TelBnd
+                                                        ( TConF "Nat" []
+                                                            ( NoBnd () )
+                                                            ( NoBnd () )
+                                                        )
+                                                        ( bind _ ( NoBnd () ) )
+                                                    )
+                                                    ( NoBnd () )
+                                                ]
+                                                ( NoBnd () )
+                                                ( TelBnd TyU
+                                                    ( bind _
+                                                        ( TelBnd
+                                                            ( TConF "Nat" []
+                                                                ( NoBnd () )
+                                                                ( NoBnd () )
+                                                            )
+                                                            ( bind _1
+                                                                ( NoBnd () )
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                        ( Union
+                                            ( TConF "Nat" []
+                                                ( NoBnd () )
+                                                ( NoBnd () )
+                                            ) TyU
+                                            ( TConF "Nat" []
+                                                ( NoBnd () )
+                                                ( NoBnd () )
+                                            )
+                                        )
+                                        ( C
+                                            ( DConF "S"
+                                                [ DConF "Z" []
+                                                    ( "Nat", NoBnd [] )
+                                                    ( NoBnd () )
+                                                    ( NoBnd () )
+                                                ]
+                                                ( "Nat", NoBnd [] )
+                                                ( TelBnd
+                                                    ( TConF "Nat" []
+                                                        ( NoBnd () )
+                                                        ( NoBnd () )
+                                                    )
+                                                    ( bind _ ( NoBnd () ) )
+                                                )
+                                                ( NoBnd () )
+                                            )
+                                            ( TConF "Nat" []
+                                                ( NoBnd () )
+                                                ( NoBnd () )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                    ( bind _
+                        ( Pi TyU
+                            ( bind B
+                                ( Pi
+                                    ( Pi
+                                        ( TConF "Bool" []
+                                            ( NoBnd () )
+                                            ( NoBnd () )
+                                        )
+                                        ( bind _1 ( V B ) )
+                                    )
+                                    ( bind _1
+                                        ( App
+                                            ( App
+                                                ( TConF "Vec" []
+                                                    ( TelBnd TyU
+                                                        ( bind _2
+                                                            ( TelBnd
+                                                                ( TConF "Nat" []
+                                                                    ( NoBnd () )
+                                                                    ( NoBnd () )
+                                                                )
+                                                                ( bind _3
+                                                                    ( NoBnd () )
+                                                                )
+                                                            )
+                                                        )
+                                                    )
+                                                    ( TelBnd TyU
+                                                        ( bind _2
+                                                            ( TelBnd
+                                                                ( TConF "Nat" []
+                                                                    ( NoBnd () )
+                                                                    ( NoBnd () )
+                                                                )
+                                                                ( bind _3
+                                                                    ( NoBnd () )
+                                                                )
+                                                            )
+                                                        )
+                                                    )
+                                                ) ( V B )
+                                            )
+                                            ( Union
+                                                ( DConF "Z" []
+                                                    ( "Nat", NoBnd [] )
+                                                    ( NoBnd () )
+                                                    ( NoBnd () )
+                                                )
+                                                ( TConF "Nat" []
+                                                    ( NoBnd () )
+                                                    ( NoBnd () )
+                                                )
+                                                ( Dind 0
+                                                    ( Union
+                                                        ( App
+                                                            ( DConF "S" []
+                                                                ( "Nat"
+                                                                , TelBnd
+                                                                    ( TConF "Nat" []
+                                                                        ( NoBnd () )
+                                                                        ( NoBnd () )
+                                                                    )
+                                                                    ( bind _2
+                                                                        ( NoBnd [] )
+                                                                    )
+                                                                )
+                                                                ( TelBnd
+                                                                    ( TConF "Nat" []
+                                                                        ( NoBnd () )
+                                                                        ( NoBnd () )
+                                                                    )
+                                                                    ( bind _2
+                                                                        ( NoBnd () )
+                                                                    )
+                                                                )
+                                                                ( NoBnd () )
+                                                            )
+                                                            ( DConF "Z" []
+                                                                ( "Nat"
+                                                                , NoBnd []
+                                                                )
+                                                                ( NoBnd () )
+                                                                ( NoBnd () )
+                                                            )
+                                                        )
+                                                        ( Union
+                                                            ( TConF "Nat" []
+                                                                ( NoBnd () )
+                                                                ( NoBnd () )
+                                                            ) TyU
+                                                            ( TConF "Nat" []
+                                                                ( NoBnd () )
+                                                                ( NoBnd () )
+                                                            )
+                                                        )
+                                                        ( Union
+                                                            ( Tind 1
+                                                                ( TConF "Vec"
+                                                                    [ TConF "Bool" []
+                                                                        ( NoBnd () )
+                                                                        ( NoBnd () )
+                                                                    , DConF "S"
+                                                                        [ C
+                                                                            ( DConF "Z" []
+                                                                                ( "Nat"
+                                                                                , NoBnd []
+                                                                                )
+                                                                                ( NoBnd () )
+                                                                                ( NoBnd () )
+                                                                            )
+                                                                            ( TConF "Nat" []
+                                                                                ( NoBnd () )
+                                                                                ( NoBnd () )
+                                                                            )
+                                                                        ]
+                                                                        ( "Nat"
+                                                                        , NoBnd []
+                                                                        )
+                                                                        ( TelBnd
+                                                                            ( TConF "Nat" []
+                                                                                ( NoBnd () )
+                                                                                ( NoBnd () )
+                                                                            )
+                                                                            ( bind _2
+                                                                                ( NoBnd () )
+                                                                            )
+                                                                        )
+                                                                        ( NoBnd () )
+                                                                    ]
+                                                                    ( NoBnd () )
+                                                                    ( TelBnd TyU
+                                                                        ( bind _2
+                                                                            ( TelBnd
+                                                                                ( TConF "Nat" []
+                                                                                    ( NoBnd () )
+                                                                                    ( NoBnd () )
+                                                                                )
+                                                                                ( bind _3
+                                                                                    ( NoBnd () )
+                                                                                )
+                                                                            )
+                                                                        )
+                                                                    )
+                                                                )
+                                                            )
+                                                            ( Union
+                                                                ( TConF "Nat" []
+                                                                    ( NoBnd () )
+                                                                    ( NoBnd () )
+                                                                ) TyU
+                                                                ( TConF "Nat" []
+                                                                    ( NoBnd () )
+                                                                    ( NoBnd () )
+                                                                )
+                                                            )
+                                                            ( C
+                                                                ( DConF "S"
+                                                                    [ DConF "Z" []
+                                                                        ( "Nat"
+                                                                        , NoBnd []
+                                                                        )
+                                                                        ( NoBnd () )
+                                                                        ( NoBnd () )
+                                                                    ]
+                                                                    ( "Nat"
+                                                                    , NoBnd []
+                                                                    )
+                                                                    ( TelBnd
+                                                                        ( TConF "Nat" []
+                                                                            ( NoBnd () )
+                                                                            ( NoBnd () )
+                                                                        )
+                                                                        ( bind _2
+                                                                            ( NoBnd () )
+                                                                        )
+                                                                    )
+                                                                    ( NoBnd () )
+                                                                )
+                                                                ( TConF "Nat" []
+                                                                    ( NoBnd () )
+                                                                    ( NoBnd () )
+                                                                )
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+            ( C
+                ( C
+                    ( DConF "Nil"
+                        [ TConF "Bool" [] ( NoBnd () ) ( NoBnd () ) ]
+                        ( "Vec"
+                        , NoBnd
+                            [ TConF "Bool" []
+                                ( NoBnd () )
+                                ( NoBnd () )
+                            , DConF "Z" []
+                                ( "Nat", NoBnd [] )
+                                ( NoBnd () )
+                                ( NoBnd () )
+                            ]
+                        )
+                        ( TelBnd TyU ( bind A ( NoBnd () ) ) )
+                        ( TelBnd TyU
+                            ( bind _
+                                ( TelBnd
+                                    ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                                    ( bind _1 ( NoBnd () ) )
+                                )
+                            )
+                        )
+                    )
+                    ( TConF "Vec"
+                        [ TConF "Bool" []
+                            ( NoBnd () )
+                            ( NoBnd () )
+                        , C
+                            ( DConF "Z" []
+                                ( "Nat", NoBnd [] )
+                                ( NoBnd () )
+                                ( NoBnd () )
+                            )
+                            ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                        ]
+                        ( NoBnd () )
+                        ( TelBnd TyU
+                            ( bind _
+                                ( TelBnd
+                                    ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                                    ( bind _1 ( NoBnd () ) )
+                                )
+                            )
+                        )
+                    )
+                )
+                ( App
+                    ( TConF "Vec"
+                        [ Union
+                            ( TConF "Bool" [] ( NoBnd () ) ( NoBnd () ) ) TyU
+                            ( TConF "Bool" [] ( NoBnd () ) ( NoBnd () ) )
+                        ]
+                        ( TelBnd
+                            ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                            ( bind _ ( NoBnd () ) )
+                        )
+                        ( TelBnd TyU
+                            ( bind _
+                                ( TelBnd
+                                    ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                                    ( bind _1 ( NoBnd () ) )
+                                )
+                            )
+                        )
+                    )
+                    ( Union
+                        ( DConF "Z" []
+                            ( "Nat", NoBnd [] )
+                            ( NoBnd () )
+                            ( NoBnd () )
+                        )
+                        ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                        ( Dind 0
+                            ( Union
+                                ( DConF "S"
+                                    [ DConF "Z" []
+                                        ( "Nat", NoBnd [] )
+                                        ( NoBnd () )
+                                        ( NoBnd () )
+                                    ]
+                                    ( "Nat", NoBnd [] )
+                                    ( TelBnd
+                                        ( TConF "Nat" []
+                                            ( NoBnd () )
+                                            ( NoBnd () )
+                                        )
+                                        ( bind _ ( NoBnd () ) )
+                                    )
+                                    ( NoBnd () )
+                                )
+                                ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                                ( DConF "Nat"
+                                    [ C
+                                        ( DConF "Nat" []
+                                            ( "Nat", NoBnd [] )
+                                            ( NoBnd () )
+                                            ( NoBnd () )
+                                        )
+                                        ( TConF "Nat" []
+                                            ( NoBnd () )
+                                            ( NoBnd () )
+                                        )
+                                    ]
+                                    ( "Nat", NoBnd [] )
+                                    ( TelBnd
+                                        ( TConF "Nat" []
+                                            ( NoBnd () )
+                                            ( NoBnd () )
+                                        )
+                                        ( bind _ ( NoBnd () ) )
+                                    )
+                                    ( NoBnd () )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        ( TConF "Bool" [] ( NoBnd () ) ( NoBnd () ) )
+    )
+    ( Fun
+        ( bind
+            ( _, x )
+            ( Case [ V x ]
+                [ Match
+                    ( bind
+                        [ Pat "true" [] p_ ]
+                        ( DConF "false" []
+                            ( "Bool", NoBnd [] )
+                            ( NoBnd () )
+                            ( NoBnd () )
+                        )
+                    )
+                , Match
+                    ( bind
+                        [ Pat "false" [] p_ ]
+                        ( DConF "true" []
+                            ( "Bool", NoBnd [] )
+                            ( NoBnd () )
+                            ( NoBnd () )
+                        )
+                    )
+                ] ( An Nothing )
+            )
+        )
+    )
+-- let
+    ( A, B, _, _1, _2, _3, n, p_, x ) =
+    ( s2n "A"
+    , s2n "B"
+    , s2n "_"
+    , s2n "_1"
+    , s2n "_2"
+    , s2n "_3"
+    , s2n "n"
+    , s2n "p_"
+    , s2n "x"
+    ) in C
+    ( App
+        ( C
+            ( App
+                ( App
+                    ( App
+                        ( DConF "Cons" []
+                            ( "Vec"
+                            , TelBnd TyU
+                                ( bind A
+                                    ( TelBnd ( V A )
+                                        ( bind _
+                                            ( TelBnd
+                                                ( TConF "Nat" []
+                                                    ( NoBnd () )
+                                                    ( NoBnd () )
+                                                )
+                                                ( bind n
+                                                    ( TelBnd
+                                                        ( App
+                                                            ( App
+                                                                ( TConF "Vec" []
+                                                                    ( TelBnd TyU
+                                                                        ( bind _1
+                                                                            ( TelBnd
+                                                                                ( TConF "Nat" []
+                                                                                    ( NoBnd () )
+                                                                                    ( NoBnd () )
+                                                                                )
+                                                                                ( bind _2
+                                                                                    ( NoBnd () )
+                                                                                )
+                                                                            )
+                                                                        )
+                                                                    )
+                                                                    ( TelBnd TyU
+                                                                        ( bind _1
+                                                                            ( TelBnd
+                                                                                ( TConF "Nat" []
+                                                                                    ( NoBnd () )
+                                                                                    ( NoBnd () )
+                                                                                )
+                                                                                ( bind _2
+                                                                                    ( NoBnd () )
+                                                                                )
+                                                                            )
+                                                                        )
+                                                                    )
+                                                                ) ( V A )
+                                                            ) ( V n )
+                                                        )
+                                                        ( bind _1
+                                                            ( NoBnd
+                                                                [ V A
+                                                                , App
+                                                                    ( DConF "S" []
+                                                                        ( "Nat"
+                                                                        , TelBnd
+                                                                            ( TConF "Nat" []
+                                                                                ( NoBnd () )
+                                                                                ( NoBnd () )
+                                                                            )
+                                                                            ( bind _2
+                                                                                ( NoBnd [] )
+                                                                            )
+                                                                        )
+                                                                        ( TelBnd
+                                                                            ( TConF "Nat" []
+                                                                                ( NoBnd () )
+                                                                                ( NoBnd () )
+                                                                            )
+                                                                            ( bind _2
+                                                                                ( NoBnd () )
+                                                                            )
+                                                                        )
+                                                                        ( NoBnd () )
+                                                                    ) ( V n )
+                                                                ]
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                            ( TelBnd TyU
+                                ( bind A
+                                    ( TelBnd ( V A )
+                                        ( bind _
+                                            ( TelBnd
+                                                ( TConF "Nat" []
+                                                    ( NoBnd () )
+                                                    ( NoBnd () )
+                                                )
+                                                ( bind n
+                                                    ( TelBnd
+                                                        ( App
+                                                            ( App
+                                                                ( TConF "Vec" []
+                                                                    ( TelBnd TyU
+                                                                        ( bind _1
+                                                                            ( TelBnd
+                                                                                ( TConF "Nat" []
+                                                                                    ( NoBnd () )
+                                                                                    ( NoBnd () )
+                                                                                )
+                                                                                ( bind _2
+                                                                                    ( NoBnd () )
+                                                                                )
+                                                                            )
+                                                                        )
+                                                                    )
+                                                                    ( TelBnd TyU
+                                                                        ( bind _1
+                                                                            ( TelBnd
+                                                                                ( TConF "Nat" []
+                                                                                    ( NoBnd () )
+                                                                                    ( NoBnd () )
+                                                                                )
+                                                                                ( bind _2
+                                                                                    ( NoBnd () )
+                                                                                )
+                                                                            )
+                                                                        )
+                                                                    )
+                                                                ) ( V A )
+                                                            ) ( V n )
+                                                        )
+                                                        ( bind _1 ( NoBnd () ) )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                            ( TelBnd TyU
+                                ( bind _
+                                    ( TelBnd
+                                        ( TConF "Nat" []
+                                            ( NoBnd () )
+                                            ( NoBnd () )
+                                        )
+                                        ( bind _1 ( NoBnd () ) )
+                                    )
+                                )
+                            )
+                        )
+                        ( TConF "Bool" [] ( NoBnd () ) ( NoBnd () ) )
+                    )
+                    ( App
+                        ( Fun
+                            ( bind
+                                ( _, x )
+                                ( Case [ V x ]
+                                    [ Match
+                                        ( bind
+                                            [ Pat "true" [] p_ ]
+                                            ( DConF "false" []
+                                                ( "Bool", NoBnd [] )
+                                                ( NoBnd () )
+                                                ( NoBnd () )
+                                            )
+                                        )
+                                    , Match
+                                        ( bind
+                                            [ Pat "false" [] p_ ]
+                                            ( DConF "true" []
+                                                ( "Bool", NoBnd [] )
+                                                ( NoBnd () )
+                                                ( NoBnd () )
+                                            )
+                                        )
+                                    ] ( An Nothing )
+                                )
+                            )
+                        )
+                        ( C
+                            ( DConF "true" []
+                                ( "Bool", NoBnd [] )
+                                ( NoBnd () )
+                                ( NoBnd () )
+                            )
+                            ( Union
+                                ( TConF "Bool" []
+                                    ( NoBnd () )
+                                    ( NoBnd () )
+                                ) TyU
+                                ( Union
+                                    ( Tind 0
+                                        ( TConF "Vec"
+                                            [ TConF "Bool" []
+                                                ( NoBnd () )
+                                                ( NoBnd () )
+                                            , DConF "S"
+                                                [ C
+                                                    ( DConF "Z" []
+                                                        ( "Nat", NoBnd [] )
+                                                        ( NoBnd () )
+                                                        ( NoBnd () )
+                                                    )
+                                                    ( TConF "Nat" []
+                                                        ( NoBnd () )
+                                                        ( NoBnd () )
+                                                    )
+                                                ]
+                                                ( "Nat", NoBnd [] )
+                                                ( TelBnd
+                                                    ( TConF "Nat" []
+                                                        ( NoBnd () )
+                                                        ( NoBnd () )
+                                                    )
+                                                    ( bind _ ( NoBnd () ) )
+                                                )
+                                                ( NoBnd () )
+                                            ]
+                                            ( NoBnd () )
+                                            ( TelBnd TyU
+                                                ( bind _
+                                                    ( TelBnd
+                                                        ( TConF "Nat" []
+                                                            ( NoBnd () )
+                                                            ( NoBnd () )
+                                                        )
+                                                        ( bind _1 ( NoBnd () ) )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    ) TyU
+                                    ( TConF "Bool" []
+                                        ( NoBnd () )
+                                        ( NoBnd () )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+                ( DConF "Z" [] ( "Nat", NoBnd [] ) ( NoBnd () ) ( NoBnd () ) )
+            )
+            ( Pi
+                ( App
+                    ( App
+                        ( TConF "Vec" []
+                            ( TelBnd TyU
+                                ( bind _
+                                    ( TelBnd
+                                        ( TConF "Nat" []
+                                            ( NoBnd () )
+                                            ( NoBnd () )
+                                        )
+                                        ( bind _1 ( NoBnd () ) )
+                                    )
+                                )
+                            )
+                            ( TelBnd TyU
+                                ( bind _
+                                    ( TelBnd
+                                        ( TConF "Nat" []
+                                            ( NoBnd () )
+                                            ( NoBnd () )
+                                        )
+                                        ( bind _1 ( NoBnd () ) )
+                                    )
+                                )
+                            )
+                        )
+                        ( TConF "Bool" [] ( NoBnd () ) ( NoBnd () ) )
+                    )
+                    ( Union
+                        ( DConF "Z" []
+                            ( "Nat", NoBnd [] )
+                            ( NoBnd () )
+                            ( NoBnd () )
+                        )
+                        ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                        ( Dind 0
+                            ( Union
+                                ( App
+                                    ( DConF "S" []
+                                        ( "Nat"
+                                        , TelBnd
+                                            ( TConF "Nat" []
+                                                ( NoBnd () )
+                                                ( NoBnd () )
+                                            )
+                                            ( bind _ ( NoBnd [] ) )
+                                        )
+                                        ( TelBnd
+                                            ( TConF "Nat" []
+                                                ( NoBnd () )
+                                                ( NoBnd () )
+                                            )
+                                            ( bind _ ( NoBnd () ) )
+                                        )
+                                        ( NoBnd () )
+                                    )
+                                    ( DConF "Z" []
+                                        ( "Nat", NoBnd [] )
+                                        ( NoBnd () )
+                                        ( NoBnd () )
+                                    )
+                                )
+                                ( Union
+                                    ( TConF "Nat" []
+                                        ( NoBnd () )
+                                        ( NoBnd () )
+                                    ) TyU
+                                    ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                                )
+                                ( Union
+                                    ( Tind 1
+                                        ( TConF "Vec"
+                                            [ TConF "Bool" []
+                                                ( NoBnd () )
+                                                ( NoBnd () )
+                                            , DConF "S"
+                                                [ C
+                                                    ( DConF "Z" []
+                                                        ( "Nat", NoBnd [] )
+                                                        ( NoBnd () )
+                                                        ( NoBnd () )
+                                                    )
+                                                    ( TConF "Nat" []
+                                                        ( NoBnd () )
+                                                        ( NoBnd () )
+                                                    )
+                                                ]
+                                                ( "Nat", NoBnd [] )
+                                                ( TelBnd
+                                                    ( TConF "Nat" []
+                                                        ( NoBnd () )
+                                                        ( NoBnd () )
+                                                    )
+                                                    ( bind _ ( NoBnd () ) )
+                                                )
+                                                ( NoBnd () )
+                                            ]
+                                            ( NoBnd () )
+                                            ( TelBnd TyU
+                                                ( bind _
+                                                    ( TelBnd
+                                                        ( TConF "Nat" []
+                                                            ( NoBnd () )
+                                                            ( NoBnd () )
+                                                        )
+                                                        ( bind _1 ( NoBnd () ) )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                    ( Union
+                                        ( TConF "Nat" []
+                                            ( NoBnd () )
+                                            ( NoBnd () )
+                                        ) TyU
+                                        ( TConF "Nat" []
+                                            ( NoBnd () )
+                                            ( NoBnd () )
+                                        )
+                                    )
+                                    ( C
+                                        ( DConF "S"
+                                            [ DConF "Z" []
+                                                ( "Nat", NoBnd [] )
+                                                ( NoBnd () )
+                                                ( NoBnd () )
+                                            ]
+                                            ( "Nat", NoBnd [] )
+                                            ( TelBnd
+                                                ( TConF "Nat" []
+                                                    ( NoBnd () )
+                                                    ( NoBnd () )
+                                                )
+                                                ( bind _ ( NoBnd () ) )
+                                            )
+                                            ( NoBnd () )
+                                        )
+                                        ( TConF "Nat" []
+                                            ( NoBnd () )
+                                            ( NoBnd () )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+                ( bind _
+                    ( TConF "Vec"
+                        [ TConF "Bool" []
+                            ( NoBnd () )
+                            ( NoBnd () )
+                        , App
+                            ( DConF "S" []
+                                ( "Nat"
+                                , TelBnd
+                                    ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                                    ( bind _1 ( NoBnd [] ) )
+                                )
+                                ( TelBnd
+                                    ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                                    ( bind _1 ( NoBnd () ) )
+                                )
+                                ( NoBnd () )
+                            )
+                            ( Union
+                                ( DConF "Z" []
+                                    ( "Nat", NoBnd [] )
+                                    ( NoBnd () )
+                                    ( NoBnd () )
+                                )
+                                ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                                ( Dind 0
+                                    ( Union
+                                        ( App
+                                            ( DConF "S" []
+                                                ( "Nat"
+                                                , TelBnd
+                                                    ( TConF "Nat" []
+                                                        ( NoBnd () )
+                                                        ( NoBnd () )
+                                                    )
+                                                    ( bind _1 ( NoBnd [] ) )
+                                                )
+                                                ( TelBnd
+                                                    ( TConF "Nat" []
+                                                        ( NoBnd () )
+                                                        ( NoBnd () )
+                                                    )
+                                                    ( bind _1 ( NoBnd () ) )
+                                                )
+                                                ( NoBnd () )
+                                            )
+                                            ( DConF "Z" []
+                                                ( "Nat", NoBnd [] )
+                                                ( NoBnd () )
+                                                ( NoBnd () )
+                                            )
+                                        )
+                                        ( Union
+                                            ( TConF "Nat" []
+                                                ( NoBnd () )
+                                                ( NoBnd () )
+                                            ) TyU
+                                            ( TConF "Nat" []
+                                                ( NoBnd () )
+                                                ( NoBnd () )
+                                            )
+                                        )
+                                        ( Union
+                                            ( Tind 1
+                                                ( TConF "Vec"
+                                                    [ TConF "Bool" []
+                                                        ( NoBnd () )
+                                                        ( NoBnd () )
+                                                    , DConF "S"
+                                                        [ C
+                                                            ( DConF "Z" []
+                                                                ( "Nat"
+                                                                , NoBnd []
+                                                                )
+                                                                ( NoBnd () )
+                                                                ( NoBnd () )
+                                                            )
+                                                            ( TConF "Nat" []
+                                                                ( NoBnd () )
+                                                                ( NoBnd () )
+                                                            )
+                                                        ]
+                                                        ( "Nat", NoBnd [] )
+                                                        ( TelBnd
+                                                            ( TConF "Nat" []
+                                                                ( NoBnd () )
+                                                                ( NoBnd () )
+                                                            )
+                                                            ( bind _1
+                                                                ( NoBnd () )
+                                                            )
+                                                        )
+                                                        ( NoBnd () )
+                                                    ]
+                                                    ( NoBnd () )
+                                                    ( TelBnd TyU
+                                                        ( bind _1
+                                                            ( TelBnd
+                                                                ( TConF "Nat" []
+                                                                    ( NoBnd () )
+                                                                    ( NoBnd () )
+                                                                )
+                                                                ( bind _2
+                                                                    ( NoBnd () )
+                                                                )
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                            ( Union
+                                                ( TConF "Nat" []
+                                                    ( NoBnd () )
+                                                    ( NoBnd () )
+                                                ) TyU
+                                                ( TConF "Nat" []
+                                                    ( NoBnd () )
+                                                    ( NoBnd () )
+                                                )
+                                            )
+                                            ( C
+                                                ( DConF "S"
+                                                    [ DConF "Z" []
+                                                        ( "Nat", NoBnd [] )
+                                                        ( NoBnd () )
+                                                        ( NoBnd () )
+                                                    ]
+                                                    ( "Nat", NoBnd [] )
+                                                    ( TelBnd
+                                                        ( TConF "Nat" []
+                                                            ( NoBnd () )
+                                                            ( NoBnd () )
+                                                        )
+                                                        ( bind _1 ( NoBnd () ) )
+                                                    )
+                                                    ( NoBnd () )
+                                                )
+                                                ( TConF "Nat" []
+                                                    ( NoBnd () )
+                                                    ( NoBnd () )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        ]
+                        ( NoBnd () )
+                        ( TelBnd TyU
+                            ( bind _1
+                                ( TelBnd
+                                    ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                                    ( bind _2 ( NoBnd () ) )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        ( App
+            ( App
+                ( App
+                    ( C
+                        ( App
+                            ( C
+                                ( App
+                                    ( Ref "mapVec" )
+                                    ( TConF "Bool" []
+                                        ( NoBnd () )
+                                        ( NoBnd () )
+                                    )
+                                )
+                                ( Pi
+                                    ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                                    ( bind n
+                                        ( Pi
+                                            ( App
+                                                ( App
+                                                    ( TConF "Vec" []
+                                                        ( TelBnd TyU
+                                                            ( bind _
+                                                                ( TelBnd
+                                                                    ( TConF "Nat" []
+                                                                        ( NoBnd () )
+                                                                        ( NoBnd () )
+                                                                    )
+                                                                    ( bind _1
+                                                                        ( NoBnd () )
+                                                                    )
+                                                                )
+                                                            )
+                                                        )
+                                                        ( TelBnd TyU
+                                                            ( bind _
+                                                                ( TelBnd
+                                                                    ( TConF "Nat" []
+                                                                        ( NoBnd () )
+                                                                        ( NoBnd () )
+                                                                    )
+                                                                    ( bind _1
+                                                                        ( NoBnd () )
+                                                                    )
+                                                                )
+                                                            )
+                                                        )
+                                                    )
+                                                    ( Union
+                                                        ( TConF "Bool" []
+                                                            ( NoBnd () )
+                                                            ( NoBnd () )
+                                                        ) TyU
+                                                        ( Union
+                                                            ( Tind 0
+                                                                ( TConF "Vec"
+                                                                    [ TConF "Bool" []
+                                                                        ( NoBnd () )
+                                                                        ( NoBnd () )
+                                                                    , DConF "S"
+                                                                        [ C
+                                                                            ( DConF "Z" []
+                                                                                ( "Nat"
+                                                                                , NoBnd []
+                                                                                )
+                                                                                ( NoBnd () )
+                                                                                ( NoBnd () )
+                                                                            )
+                                                                            ( TConF "Nat" []
+                                                                                ( NoBnd () )
+                                                                                ( NoBnd () )
+                                                                            )
+                                                                        ]
+                                                                        ( "Nat"
+                                                                        , NoBnd []
+                                                                        )
+                                                                        ( TelBnd
+                                                                            ( TConF "Nat" []
+                                                                                ( NoBnd () )
+                                                                                ( NoBnd () )
+                                                                            )
+                                                                            ( bind _
+                                                                                ( NoBnd () )
+                                                                            )
+                                                                        )
+                                                                        ( NoBnd () )
+                                                                    ]
+                                                                    ( NoBnd () )
+                                                                    ( TelBnd TyU
+                                                                        ( bind _
+                                                                            ( TelBnd
+                                                                                ( TConF "Nat" []
+                                                                                    ( NoBnd () )
+                                                                                    ( NoBnd () )
+                                                                                )
+                                                                                ( bind _1
+                                                                                    ( NoBnd () )
+                                                                                )
+                                                                            )
+                                                                        )
+                                                                    )
+                                                                )
+                                                            ) TyU
+                                                            ( TConF "Bool" []
+                                                                ( NoBnd () )
+                                                                ( NoBnd () )
+                                                            )
+                                                        )
+                                                    )
+                                                ) ( V n )
+                                            )
+                                            ( bind _
+                                                ( Pi TyU
+                                                    ( bind B
+                                                        ( Pi
+                                                            ( Pi
+                                                                ( Union
+                                                                    ( TConF "Bool" []
+                                                                        ( NoBnd () )
+                                                                        ( NoBnd () )
+                                                                    ) TyU
+                                                                    ( Union
+                                                                        ( Tind 0
+                                                                            ( TConF "Vec"
+                                                                                [ TConF "Bool" []
+                                                                                    ( NoBnd () )
+                                                                                    ( NoBnd () )
+                                                                                , DConF "S"
+                                                                                    [ C
+                                                                                        ( DConF "Z" []
+                                                                                            ( "Nat"
+                                                                                            , NoBnd []
+                                                                                            )
+                                                                                            ( NoBnd () )
+                                                                                            ( NoBnd () )
+                                                                                        )
+                                                                                        ( TConF "Nat" []
+                                                                                            ( NoBnd () )
+                                                                                            ( NoBnd () )
+                                                                                        )
+                                                                                    ]
+                                                                                    ( "Nat"
+                                                                                    , NoBnd []
+                                                                                    )
+                                                                                    ( TelBnd
+                                                                                        ( TConF "Nat" []
+                                                                                            ( NoBnd () )
+                                                                                            ( NoBnd () )
+                                                                                        )
+                                                                                        ( bind _1
+                                                                                            ( NoBnd () )
+                                                                                        )
+                                                                                    )
+                                                                                    ( NoBnd () )
+                                                                                ]
+                                                                                ( NoBnd () )
+                                                                                ( TelBnd TyU
+                                                                                    ( bind _1
+                                                                                        ( TelBnd
+                                                                                            ( TConF "Nat" []
+                                                                                                ( NoBnd () )
+                                                                                                ( NoBnd () )
+                                                                                            )
+                                                                                            ( bind _2
+                                                                                                ( NoBnd () )
+                                                                                            )
+                                                                                        )
+                                                                                    )
+                                                                                )
+                                                                            )
+                                                                        ) TyU
+                                                                        ( TConF "Bool" []
+                                                                            ( NoBnd () )
+                                                                            ( NoBnd () )
+                                                                        )
+                                                                    )
+                                                                )
+                                                                ( bind _1 ( V B ) )
+                                                            )
+                                                            ( bind _1
+                                                                ( App
+                                                                    ( App
+                                                                        ( TConF "Vec" []
+                                                                            ( TelBnd TyU
+                                                                                ( bind _2
+                                                                                    ( TelBnd
+                                                                                        ( TConF "Nat" []
+                                                                                            ( NoBnd () )
+                                                                                            ( NoBnd () )
+                                                                                        )
+                                                                                        ( bind _3
+                                                                                            ( NoBnd () )
+                                                                                        )
+                                                                                    )
+                                                                                )
+                                                                            )
+                                                                            ( TelBnd TyU
+                                                                                ( bind _2
+                                                                                    ( TelBnd
+                                                                                        ( TConF "Nat" []
+                                                                                            ( NoBnd () )
+                                                                                            ( NoBnd () )
+                                                                                        )
+                                                                                        ( bind _3
+                                                                                            ( NoBnd () )
+                                                                                        )
+                                                                                    )
+                                                                                )
+                                                                            )
+                                                                        ) ( V B )
+                                                                    ) ( V n )
+                                                                )
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                            ( DConF "Z" []
+                                ( "Nat", NoBnd [] )
+                                ( NoBnd () )
+                                ( NoBnd () )
+                            )
+                        )
+                        ( Pi
+                            ( App
+                                ( App
+                                    ( TConF "Vec" []
+                                        ( TelBnd TyU
+                                            ( bind _
+                                                ( TelBnd
+                                                    ( TConF "Nat" []
+                                                        ( NoBnd () )
+                                                        ( NoBnd () )
+                                                    )
+                                                    ( bind _1 ( NoBnd () ) )
+                                                )
+                                            )
+                                        )
+                                        ( TelBnd TyU
+                                            ( bind _
+                                                ( TelBnd
+                                                    ( TConF "Nat" []
+                                                        ( NoBnd () )
+                                                        ( NoBnd () )
+                                                    )
+                                                    ( bind _1 ( NoBnd () ) )
+                                                )
+                                            )
+                                        )
+                                    )
+                                    ( TConF "Bool" []
+                                        ( NoBnd () )
+                                        ( NoBnd () )
+                                    )
+                                )
+                                ( Union
+                                    ( DConF "Z" []
+                                        ( "Nat", NoBnd [] )
+                                        ( NoBnd () )
+                                        ( NoBnd () )
+                                    )
+                                    ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                                    ( Dind 0
+                                        ( Union
+                                            ( App
+                                                ( DConF "S" []
+                                                    ( "Nat"
+                                                    , TelBnd
+                                                        ( TConF "Nat" []
+                                                            ( NoBnd () )
+                                                            ( NoBnd () )
+                                                        )
+                                                        ( bind _ ( NoBnd [] ) )
+                                                    )
+                                                    ( TelBnd
+                                                        ( TConF "Nat" []
+                                                            ( NoBnd () )
+                                                            ( NoBnd () )
+                                                        )
+                                                        ( bind _ ( NoBnd () ) )
+                                                    )
+                                                    ( NoBnd () )
+                                                )
+                                                ( DConF "Z" []
+                                                    ( "Nat", NoBnd [] )
+                                                    ( NoBnd () )
+                                                    ( NoBnd () )
+                                                )
+                                            )
+                                            ( Union
+                                                ( TConF "Nat" []
+                                                    ( NoBnd () )
+                                                    ( NoBnd () )
+                                                ) TyU
+                                                ( TConF "Nat" []
+                                                    ( NoBnd () )
+                                                    ( NoBnd () )
+                                                )
+                                            )
+                                            ( Union
+                                                ( Tind 1
+                                                    ( TConF "Vec"
+                                                        [ TConF "Bool" []
+                                                            ( NoBnd () )
+                                                            ( NoBnd () )
+                                                        , DConF "S"
+                                                            [ C
+                                                                ( DConF "Z" []
+                                                                    ( "Nat"
+                                                                    , NoBnd []
+                                                                    )
+                                                                    ( NoBnd () )
+                                                                    ( NoBnd () )
+                                                                )
+                                                                ( TConF "Nat" []
+                                                                    ( NoBnd () )
+                                                                    ( NoBnd () )
+                                                                )
+                                                            ]
+                                                            ( "Nat", NoBnd [] )
+                                                            ( TelBnd
+                                                                ( TConF "Nat" []
+                                                                    ( NoBnd () )
+                                                                    ( NoBnd () )
+                                                                )
+                                                                ( bind _
+                                                                    ( NoBnd () )
+                                                                )
+                                                            )
+                                                            ( NoBnd () )
+                                                        ]
+                                                        ( NoBnd () )
+                                                        ( TelBnd TyU
+                                                            ( bind _
+                                                                ( TelBnd
+                                                                    ( TConF "Nat" []
+                                                                        ( NoBnd () )
+                                                                        ( NoBnd () )
+                                                                    )
+                                                                    ( bind _1
+                                                                        ( NoBnd () )
+                                                                    )
+                                                                )
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                                ( Union
+                                                    ( TConF "Nat" []
+                                                        ( NoBnd () )
+                                                        ( NoBnd () )
+                                                    ) TyU
+                                                    ( TConF "Nat" []
+                                                        ( NoBnd () )
+                                                        ( NoBnd () )
+                                                    )
+                                                )
+                                                ( C
+                                                    ( DConF "S"
+                                                        [ DConF "Z" []
+                                                            ( "Nat", NoBnd [] )
+                                                            ( NoBnd () )
+                                                            ( NoBnd () )
+                                                        ]
+                                                        ( "Nat", NoBnd [] )
+                                                        ( TelBnd
+                                                            ( TConF "Nat" []
+                                                                ( NoBnd () )
+                                                                ( NoBnd () )
+                                                            )
+                                                            ( bind _
+                                                                ( NoBnd () )
+                                                            )
+                                                        )
+                                                        ( NoBnd () )
+                                                    )
+                                                    ( TConF "Nat" []
+                                                        ( NoBnd () )
+                                                        ( NoBnd () )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                            ( bind _
+                                ( Pi TyU
+                                    ( bind B
+                                        ( Pi
+                                            ( Pi
+                                                ( TConF "Bool" []
+                                                    ( NoBnd () )
+                                                    ( NoBnd () )
+                                                )
+                                                ( bind _1 ( V B ) )
+                                            )
+                                            ( bind _1
+                                                ( App
+                                                    ( App
+                                                        ( TConF "Vec" []
+                                                            ( TelBnd TyU
+                                                                ( bind _2
+                                                                    ( TelBnd
+                                                                        ( TConF "Nat" []
+                                                                            ( NoBnd () )
+                                                                            ( NoBnd () )
+                                                                        )
+                                                                        ( bind _3
+                                                                            ( NoBnd () )
+                                                                        )
+                                                                    )
+                                                                )
+                                                            )
+                                                            ( TelBnd TyU
+                                                                ( bind _2
+                                                                    ( TelBnd
+                                                                        ( TConF "Nat" []
+                                                                            ( NoBnd () )
+                                                                            ( NoBnd () )
+                                                                        )
+                                                                        ( bind _3
+                                                                            ( NoBnd () )
+                                                                        )
+                                                                    )
+                                                                )
+                                                            )
+                                                        ) ( V B )
+                                                    )
+                                                    ( Union
+                                                        ( DConF "Z" []
+                                                            ( "Nat", NoBnd [] )
+                                                            ( NoBnd () )
+                                                            ( NoBnd () )
+                                                        )
+                                                        ( TConF "Nat" []
+                                                            ( NoBnd () )
+                                                            ( NoBnd () )
+                                                        )
+                                                        ( Dind 0
+                                                            ( Union
+                                                                ( App
+                                                                    ( DConF "S" []
+                                                                        ( "Nat"
+                                                                        , TelBnd
+                                                                            ( TConF "Nat" []
+                                                                                ( NoBnd () )
+                                                                                ( NoBnd () )
+                                                                            )
+                                                                            ( bind _2
+                                                                                ( NoBnd [] )
+                                                                            )
+                                                                        )
+                                                                        ( TelBnd
+                                                                            ( TConF "Nat" []
+                                                                                ( NoBnd () )
+                                                                                ( NoBnd () )
+                                                                            )
+                                                                            ( bind _2
+                                                                                ( NoBnd () )
+                                                                            )
+                                                                        )
+                                                                        ( NoBnd () )
+                                                                    )
+                                                                    ( DConF "Z" []
+                                                                        ( "Nat"
+                                                                        , NoBnd []
+                                                                        )
+                                                                        ( NoBnd () )
+                                                                        ( NoBnd () )
+                                                                    )
+                                                                )
+                                                                ( Union
+                                                                    ( TConF "Nat" []
+                                                                        ( NoBnd () )
+                                                                        ( NoBnd () )
+                                                                    ) TyU
+                                                                    ( TConF "Nat" []
+                                                                        ( NoBnd () )
+                                                                        ( NoBnd () )
+                                                                    )
+                                                                )
+                                                                ( Union
+                                                                    ( Tind 1
+                                                                        ( TConF "Vec"
+                                                                            [ TConF "Bool" []
+                                                                                ( NoBnd () )
+                                                                                ( NoBnd () )
+                                                                            , DConF "S"
+                                                                                [ C
+                                                                                    ( DConF "Z" []
+                                                                                        ( "Nat"
+                                                                                        , NoBnd []
+                                                                                        )
+                                                                                        ( NoBnd () )
+                                                                                        ( NoBnd () )
+                                                                                    )
+                                                                                    ( TConF "Nat" []
+                                                                                        ( NoBnd () )
+                                                                                        ( NoBnd () )
+                                                                                    )
+                                                                                ]
+                                                                                ( "Nat"
+                                                                                , NoBnd []
+                                                                                )
+                                                                                ( TelBnd
+                                                                                    ( TConF "Nat" []
+                                                                                        ( NoBnd () )
+                                                                                        ( NoBnd () )
+                                                                                    )
+                                                                                    ( bind _2
+                                                                                        ( NoBnd () )
+                                                                                    )
+                                                                                )
+                                                                                ( NoBnd () )
+                                                                            ]
+                                                                            ( NoBnd () )
+                                                                            ( TelBnd TyU
+                                                                                ( bind _2
+                                                                                    ( TelBnd
+                                                                                        ( TConF "Nat" []
+                                                                                            ( NoBnd () )
+                                                                                            ( NoBnd () )
+                                                                                        )
+                                                                                        ( bind _3
+                                                                                            ( NoBnd () )
+                                                                                        )
+                                                                                    )
+                                                                                )
+                                                                            )
+                                                                        )
+                                                                    )
+                                                                    ( Union
+                                                                        ( TConF "Nat" []
+                                                                            ( NoBnd () )
+                                                                            ( NoBnd () )
+                                                                        ) TyU
+                                                                        ( TConF "Nat" []
+                                                                            ( NoBnd () )
+                                                                            ( NoBnd () )
+                                                                        )
+                                                                    )
+                                                                    ( C
+                                                                        ( DConF "S"
+                                                                            [ DConF "Z" []
+                                                                                ( "Nat"
+                                                                                , NoBnd []
+                                                                                )
+                                                                                ( NoBnd () )
+                                                                                ( NoBnd () )
+                                                                            ]
+                                                                            ( "Nat"
+                                                                            , NoBnd []
+                                                                            )
+                                                                            ( TelBnd
+                                                                                ( TConF "Nat" []
+                                                                                    ( NoBnd () )
+                                                                                    ( NoBnd () )
+                                                                                )
+                                                                                ( bind _2
+                                                                                    ( NoBnd () )
+                                                                                )
+                                                                            )
+                                                                            ( NoBnd () )
+                                                                        )
+                                                                        ( TConF "Nat" []
+                                                                            ( NoBnd () )
+                                                                            ( NoBnd () )
+                                                                        )
+                                                                    )
+                                                                )
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                    ( C
+                        ( C
+                            ( DConF "Nil"
+                                [ TConF "Bool" [] ( NoBnd () ) ( NoBnd () ) ]
+                                ( "Vec"
+                                , NoBnd
+                                    [ TConF "Bool" []
+                                        ( NoBnd () )
+                                        ( NoBnd () )
+                                    , DConF "Z" []
+                                        ( "Nat", NoBnd [] )
+                                        ( NoBnd () )
+                                        ( NoBnd () )
+                                    ]
+                                )
+                                ( TelBnd TyU ( bind A ( NoBnd () ) ) )
+                                ( TelBnd TyU
+                                    ( bind _
+                                        ( TelBnd
+                                            ( TConF "Nat" []
+                                                ( NoBnd () )
+                                                ( NoBnd () )
+                                            )
+                                            ( bind _1 ( NoBnd () ) )
+                                        )
+                                    )
+                                )
+                            )
+                            ( TConF "Vec"
+                                [ TConF "Bool" []
+                                    ( NoBnd () )
+                                    ( NoBnd () )
+                                , C
+                                    ( DConF "Z" []
+                                        ( "Nat", NoBnd [] )
+                                        ( NoBnd () )
+                                        ( NoBnd () )
+                                    )
+                                    ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                                ]
+                                ( NoBnd () )
+                                ( TelBnd TyU
+                                    ( bind _
+                                        ( TelBnd
+                                            ( TConF "Nat" []
+                                                ( NoBnd () )
+                                                ( NoBnd () )
+                                            )
+                                            ( bind _1 ( NoBnd () ) )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                        ( App
+                            ( TConF "Vec"
+                                [ Union
+                                    ( TConF "Bool" []
+                                        ( NoBnd () )
+                                        ( NoBnd () )
+                                    ) TyU
+                                    ( TConF "Bool" []
+                                        ( NoBnd () )
+                                        ( NoBnd () )
+                                    )
+                                ]
+                                ( TelBnd
+                                    ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                                    ( bind _ ( NoBnd () ) )
+                                )
+                                ( TelBnd TyU
+                                    ( bind _
+                                        ( TelBnd
+                                            ( TConF "Nat" []
+                                                ( NoBnd () )
+                                                ( NoBnd () )
+                                            )
+                                            ( bind _1 ( NoBnd () ) )
+                                        )
+                                    )
+                                )
+                            )
+                            ( Union
+                                ( DConF "Z" []
+                                    ( "Nat", NoBnd [] )
+                                    ( NoBnd () )
+                                    ( NoBnd () )
+                                )
+                                ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                                ( Dind 0
+                                    ( Union
+                                        ( DConF "S"
+                                            [ DConF "Z" []
+                                                ( "Nat", NoBnd [] )
+                                                ( NoBnd () )
+                                                ( NoBnd () )
+                                            ]
+                                            ( "Nat", NoBnd [] )
+                                            ( TelBnd
+                                                ( TConF "Nat" []
+                                                    ( NoBnd () )
+                                                    ( NoBnd () )
+                                                )
+                                                ( bind _ ( NoBnd () ) )
+                                            )
+                                            ( NoBnd () )
+                                        )
+                                        ( TConF "Nat" []
+                                            ( NoBnd () )
+                                            ( NoBnd () )
+                                        )
+                                        ( DConF "Nat"
+                                            [ C
+                                                ( DConF "Nat" []
+                                                    ( "Nat", NoBnd [] )
+                                                    ( NoBnd () )
+                                                    ( NoBnd () )
+                                                )
+                                                ( TConF "Nat" []
+                                                    ( NoBnd () )
+                                                    ( NoBnd () )
+                                                )
+                                            ]
+                                            ( "Nat", NoBnd [] )
+                                            ( TelBnd
+                                                ( TConF "Nat" []
+                                                    ( NoBnd () )
+                                                    ( NoBnd () )
+                                                )
+                                                ( bind _ ( NoBnd () ) )
+                                            )
+                                            ( NoBnd () )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+                ( TConF "Bool" [] ( NoBnd () ) ( NoBnd () ) )
+            )
+            ( Fun
+                ( bind
+                    ( _, x )
+                    ( Case [ V x ]
+                        [ Match
+                            ( bind
+                                [ Pat "true" [] p_ ]
+                                ( DConF "false" []
+                                    ( "Bool", NoBnd [] )
+                                    ( NoBnd () )
+                                    ( NoBnd () )
+                                )
+                            )
+                        , Match
+                            ( bind
+                                [ Pat "false" [] p_ ]
+                                ( DConF "true" []
+                                    ( "Bool", NoBnd [] )
+                                    ( NoBnd () )
+                                    ( NoBnd () )
+                                )
+                            )
+                        ] ( An Nothing )
+                    )
+                )
+            )
+        )
+    )
+    ( TConF "Vec"
+        [ TConF "Bool" []
+            ( NoBnd () )
+            ( NoBnd () )
+        , DConF "S"
+            [ C
+                ( DConF "Z" [] ( "Nat", NoBnd [] ) ( NoBnd () ) ( NoBnd () ) )
+                ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+            ]
+            ( "Nat", NoBnd [] )
+            ( TelBnd
+                ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                ( bind _ ( NoBnd () ) )
+            )
+            ( NoBnd () )
+        ]
+        ( NoBnd () )
+        ( TelBnd TyU
+            ( bind _
+                ( TelBnd
+                    ( TConF "Nat" [] ( NoBnd () ) ( NoBnd () ) )
+                    ( bind _1 ( NoBnd () ) )
+                )
+            )
+        )
+    )

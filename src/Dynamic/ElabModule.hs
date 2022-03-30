@@ -44,96 +44,107 @@ import UnboundHelper
 import Control.Monad.Reader (runReader, ReaderT(runReaderT),  MonadReader(ask))
 import Control.Monad.State
 import Control.Monad.Identity
+import Dynamic.ElabBase
+import PreludeHelper
+import GHC.TopHandler (runIO)
+import AlphaShow (lfullshow)
+import Data.Typeable
+import Dynamic.Visitor
+import Dynamic.Norm (safeWhnf)
+import Dynamic.Warning
 
--- Elab the full module, a little hacky TODO: should only rely on the module typeclasses not the specific data
+-- to Elab a full module with fully mutual recirsive definitions we need to elaborate definitions in a "just in time" sort of way
+-- this is where the partial module comes in
+--TODO: should only rely on the module typeclasses not the specific data
 
 
 
-
-instance (Fresh m, MonadError C.Err m, Monad m, WithSourceLoc m) => (C.WithDynDefs (ElabMT m)) where
+instance (Fresh m, MonadError C.Err m, Monad m, WithSourceLoc m) => (WithDynDefs (ElabMT m)) where
   getDatadef' tcName = ElabMT $ do
-    (E.TyEnv _ dt _) <- ask
+    (E.TyEnv{E.dataCtx=dt},config) <- ask
     case Map.lookup tcName dt of
       Nothing -> pure Nothing
       Just (DataDef _ cons) -> do
-       tel <- unElabMT $ getTConnTel tcName
-       consls <- forM (Map.toList cons) $ \ (dCName, _) -> do
-         (_ , contel) <- unElabMT $ getConsTcon dCName
-         pure (dCName, contel)
-       pure $ Just $ C.DataDef tel $ Map.fromList consls 
+        -- mtel <- unElabMT $ getTConnTel' tcName
+        -- case mtel of
+        --   Nothing  -> pure Nothing  
+        --   Just tel -> do
+       -- get the elements in a way that will elaborate them if they are not already
+        tel <- unElabMT $ getTConnTel tcName
+        consls <- forM (Map.toList cons) $ \ (dCName, _) -> do
+          (_ , contel) <- unElabMT $ getConsTcon dCName
+          pure (dCName, contel)
+        pure $ Just $ C.DataDef tel $ Map.fromList consls 
  --  getDatadef
 
   getTConnTel tConn = ElabMT $ do
-    (pc, _, _, _, _) <- get 
+    PartialModule{tCons=pc}<- get 
     case Map.lookup tConn pc of
       Just xx -> pure xx
       Nothing -> do
-        (E.TyEnv _ dt _)  <- ask
+        (E.TyEnv{E.dataCtx=dt},config) <- ask
         case Map.lookup tConn dt of
           Nothing -> throwPrettyError $ "could not find def of type constructor '" ++ tConn ++ "'"
           Just (DataDef tel _) -> do
-            tel' <- unElabMT $ elabTelUnit tel Map.empty Map.empty []
-            modify (\ (ptc, pdc, vmap, deftys, pdef) -> (Map.insert tConn tel' ptc, pdc, vmap, deftys, pdef) )
+            tel' <- unElabMT $ elabTelUnit tel $ initElabInfo config 
+            modify $ \ pm@PartialModule{tCons=pc'} -> pm{tCons=Map.insert tConn tel' pc'}
             pure tel'
 
   getConsTcon' dCName = ElabMT $ do
-    (E.TyEnv _ dt _) <- ask
+    (E.TyEnv{E.dataCtx=dt},config) <- ask
     case filter (\ (tCname, DataDef _ dd) -> Map.member dCName dd) $ Map.toList dt of
       [(tCname, DataDef _ dcons)] -> do
         telTys <- unElabMT $ getTConnTel tCname -- make sure the tc is resolved
-        (_, pdc, _, _, _) <- get
+        PartialModule{dCons=pdc} <- get
         case Map.lookup tCname pdc >>= Map.lookup dCName of
-         Just xx -> pure $ Just (tCname, xx)
-         Nothing -> do
-           let (Just tel) = Map.lookup dCName dcons
-           tel' <- unElabMT $ elabTelLs tel telTys Map.empty Map.empty []
-           modify (\ (ptc, pdc, vmap, deftys, pdef) -> (ptc, instertsert tCname dCName tel' pdc, vmap, deftys, pdef) )
-           pure $ Just (tCname, tel')
+          Just xx -> pure $ Just (tCname, xx)
+          Nothing -> do
+            let (Just tel) = Map.lookup dCName dcons
+            tel' <- unElabMT $ elabTelLs tel telTys $ initElabInfo config
+            modify $ \ pm@PartialModule{dCons=pdc'} -> pm{dCons=instertsert tCname dCName tel' pdc'}
+            pure $ Just (tCname, tel')
       _ -> pure Nothing
 
 
   getDefnTy' x = ElabMT $ do
-    x' <- elabdfnVar x
-    (_, _, _, dfnty, _) <- get 
-    case Map.lookup x' dfnty of
-      Just ty -> pure $ Just (x',ty)
+    PartialModule{refTys=dfnty} <- get 
+    case Map.lookup x dfnty of
+      Just ty -> pure $ Just ty
       Nothing -> do
-        (E.TyEnv _ _ defn) <- ask
+        (E.TyEnv{E.defCtx=defn},config) <- ask
         case Map.lookup x defn of
           Nothing -> pure Nothing  
           Just (_,ty) -> do
-            ty' <- unElabMT $ elabty ty Map.empty Map.empty []
-            modify $ \ (ptc, pdc, vmap, defTy, pdef) ->  (ptc, pdc, vmap, Map.insert x' ty' defTy, pdef) 
-            pure $ Just (x', ty')
+            ty' <- unElabMT $ elabCast ty C.TyU $ initElabInfo config
+            modify $ \ pm@PartialModule{refTys=dfnty'} -> pm{refTys= Map.insert x ty' dfnty'}
+            pure $ Just ty'
 
   getDefn' x = ElabMT $ do
-    mxty <- unElabMT $ getDefnTy' x
-    case mxty of
-      Nothing -> pure Nothing 
-      Just (x', ty) -> do
-        (_, _, _, _, dfn) <- get
-        case Map.lookup x' dfn of
-          Just trm -> pure $ Just (x',trm)
-          Nothing -> do
-            (E.TyEnv _ _ defn) <- ask
+    PartialModule{refDefs=dfn} <- get
+    case Map.lookup x dfn of
+      Just trm -> pure $ Just trm
+      Nothing -> do
+        mxty <- unElabMT $ getDefnTy' x
+        case mxty of
+          Nothing -> pure Nothing 
+          Just ty -> do
+            (E.TyEnv{E.defCtx=defn},config) <- ask
             let Just (trm,_) = Map.lookup x defn
-            def <- unElabMT $ elabCast trm ty Map.empty Map.empty []
-            modify $ \ (ptc, pdc, vmap, defTy, pdef) ->  (ptc, pdc, vmap, defTy, Map.insert x' def pdef)
-            pure $ Just (x', def)
+            -- loggg ""
+            -- loggg "getDefn'"
+            -- loggg $ "x = " ++ x
+            -- loggg $ "ty = " ++ lfullshow ty
+            def <- unElabMT $ elabCast trm ty $ initElabInfo config
+            modify $ \ pm@PartialModule{refDefs=dfnty'} -> pm{refDefs= Map.insert x def dfnty'}
+            pure $ Just def
 
-  getDefnm' x = ElabMT $ do
-    (_, _, _, _, dfn) <- get
-    pure $ Map.lookup x dfn
-
-
-
-elabTelUnit ::  (Fresh m, MonadError C.Err m, C.WithDynDefs m, WithSourceLoc m) => Tel Term Ty () -> Ctx -> VMap -> TyDefs -> m (Tel C.Term C.Ty ())
-elabTelUnit (NoBnd ()) _ _ _ = pure $ NoBnd ()
-elabTelUnit (TelBnd ty bndbod) ctx rename assumeDefs = do
-  ty' <- elabty ty ctx rename assumeDefs
+elabTelUnit ::  (Fresh m, MonadError C.Err m, WithDynDefs m, WithSourceLoc m) => Tel Term Ty () -> (ElabInfo m) -> m (Tel C.Term C.Ty ())
+elabTelUnit (NoBnd ()) _ = pure $ NoBnd ()
+elabTelUnit (TelBnd ty bndbod) ctx = do
+  ty' <- elabCast ty C.TyU ctx
   (x, bod) <- unbind bndbod
-  x' <- fresh $ s2n $ name2String x
-  bod' <- elabTelUnit bod (Map.insert x ty' ctx) (Map.insert x x' rename) assumeDefs
+  (x', ctx') <- setVar x ty' ctx
+  bod' <- elabTelUnit bod ctx'
   pure $ TelBnd ty' $ bind x' bod'
 
 --elabTelLs :: (Fresh m, MonadError C.Err m, MonadWithDynDefs m) => Tel Term Ty [Exp] -> Tel C.Term C.Ty () -> Ctx -> VMap -> m (Tel C.Term C.Ty [C.CastExp])
@@ -141,41 +152,30 @@ elabTelLs
   :: (Fresh m, MonadError C.Err m, WithDynDefs m, WithSourceLoc m) =>
      Tel Term Exp [Exp]
      -> Tel C.Term C.Ty ()
-     -> Map (Name Term) C.Exp
-     -> Map (Name Term) (Name C.Term)
-     -> TyDefs
+     -> (ElabInfo m)
      -> m (Tel C.Term C.Exp [C.Exp])
-elabTelLs (NoBnd params) telltys ctx rename assumeDefs = do
-  params' <- elabCastTelUnit params telltys ctx rename assumeDefs
+-- elabTelLs = error "working on it"
+elabTelLs (NoBnd params) telltys ctx = do
+  params' <- elabCastTelUnit params telltys ctx
   pure $ NoBnd params'
-elabTelLs (TelBnd ty bndbod) telltys ctx rename assumeDefs = do
-  ty' <- elabTy ty ctx rename assumeDefs
+elabTelLs (TelBnd ty bndbod) telltys ctx  = do
+  ty' <- elabCast ty C.TyU ctx
   (x, bod) <- unbind bndbod
-  x' <- fresh $ s2n $ name2String x
-  bod' <- elabTelLs bod telltys (Map.insert x ty' ctx) (Map.insert x x' rename) assumeDefs
+  (x', ctx') <- setVar x ty' ctx
+  bod' <- elabTelLs bod telltys ctx'
   pure $ TelBnd ty' $ bind x' bod'
 
-
-elabdfnVar :: (Fresh m, MonadError C.Err m, MonadState Partialmodule m, MonadReader E.TyEnv m) => Var -> m C.Var
-elabdfnVar x = do
-  src@(E.TyEnv _ _ defn) <- ask
-  (_, _, rename, _, _) <- get
-  case Map.lookup x rename of
-    Just x' -> pure x'
-    Nothing -> do
-      x' <- fresh $ s2n $ name2String x
-      modify (\ (ptc, pdc, vmap, deftys, pdef) -> (ptc, pdc, Map.insert x x' vmap, deftys, pdef))
-      pure x'
-
 -- | run in an empty module
-rem' :: ElabMT (WithSourceLocMT (FreshMT (ExceptT e Identity))) a -> E.TyEnv -> Either e (a, Partialmodule)
+rem' :: ElabMT (WithSourceLocMT (FreshMT (ExceptT e Identity))) a -> E.TyEnv -> Either e (a, PartialModule)
 rem' e env = runIdentity $ runExceptT $ runFreshMT $ runWithSourceLocMT' $ runElabMT e env emp
 
 
 rem e env s = runIdentity $ runExceptT $ runFreshMT $ runWithSourceLocMT (runElabMT e env emp) s
 
+-- remIO e env s = runIO $ runFreshMT $ runWithSourceLocMT (runElabMT e env emp) s
 
-emp = (Map.empty, Map.empty,Map.empty,Map.empty,Map.empty)
+
+emp = PartialModule Map.empty Map.empty Map.empty Map.empty
 
 
 instertsert :: (Ord k1, Ord k2) => k1 -> k2 -> v -> Map k1 (Map k2 v) -> Map k1 (Map k2 v)
@@ -185,13 +185,23 @@ instertsert k1 k2 v m =
     Just mm -> Map.insert k1 (Map.insert k2 v mm) m
 
 -- Elab the full module, a little hacky TODO: should only rely on the module typeclasses not the specific data
-elabmodule' :: E.TyEnv -> Either
-     C.Err ((Map TCName C.DataDef, Map C.Var C.Term), Partialmodule)
-elabmodule' src = elabmodule src Nothing  
+-- elabmodule' :: E.TyEnv -> Either
+--      C.Err ((Map TCName C.DataDef, Map C.Var C.Term), PartialModule)
+-- elabmodule' :: E.TyEnv -> Either C.Err (Module, PartialModule)
+-- elabmodule' src = elabmodule src Nothing rem
 
 
-elabmodule src@(E.TyEnv _ dt dfns) = rem (do
-  let dfnVars = fmap fst $ Map.toList dfns
+elabmodule src range = do
+  (m, _) <- runWithSourceLocMT (runElabMT (elabmodule' src) src emp) range
+  pure m
+
+
+-- elabmodule'IO src = elabmodule src Nothing remIO
+
+elabmodule' :: (WithDynDefs m, WithSourceLoc m, MonadError C.Err m) => E.TyEnv -> m Module
+elabmodule' src@(E.TyEnv{E.dataCtx=dt, E.defCtx=dfns}) = do
+  logg $  "dfns=" ++ show dfns
+  let dfnRefs = fmap fst $ Map.toList dfns
   -- -- mapM_ (\ x -> elabdfnVar' x src) dfnVars
 
   let tCnames = fmap fst $ Map.toList dt
@@ -200,23 +210,24 @@ elabmodule src@(E.TyEnv _ dt dfns) = rem (do
   let dCnames = concat $ fmap (\ (_, (DataDef _ cons)) -> Map.keys cons  ) $ Map.toList  dt
   mapM_ (\ x -> getConsTcon' x) dCnames
 
-  mapM_ (\ x -> getDefnTy' x ) dfnVars
-  mapM_ (\ x -> getDefn' x ) dfnVars
+  mapM_ (\ x -> getDefnTy' x ) dfnRefs
+  mapM_ (\ x -> getDefn' x ) dfnRefs
 
-  termdefns <- mapM (\ x -> getDefn x ) dfnVars
+  termdefns <- mapM (\ x -> do
+    def <- getDefn x 
+    ty <- getDefnTy x 
+    pure (x,(def,ty))
+    ) dfnRefs
 
   datadefls <- mapM (\ x -> do def <- getDatadef x; pure (x,def) ) tCnames
 
-  pure  (Map.fromList datadefls, Map.fromList termdefns)
-    )  src
-
-
-
+  pure (Module {dataCtx=Map.fromList datadefls, defCtx=DefCtx $ Map.fromList termdefns})
+  
 
 -- | run under a surface language module, without source info
-rununder' :: ElabMT (WithSourceLocMT ( FreshMT (ExceptT C.Err Identity))) a -> E.TyEnv -> Either C.Err (a, Partialmodule)
+rununder' :: ElabMT (WithSourceLocMT ( FreshMT (ExceptT C.Err Identity))) a -> E.TyEnv -> Either C.Err (a, PartialModule)
 rununder' e src@(E.TyEnv _ dt dfns) = rem' (do
-  let dfnVars = fmap fst $ Map.toList dfns
+  let dfnRefs = fmap fst $ Map.toList dfns
   -- -- mapM_ (\ x -> elabdfnVar' x src) dfnVars
 
   let tCnames = fmap fst $ Map.toList dt
@@ -225,10 +236,14 @@ rununder' e src@(E.TyEnv _ dt dfns) = rem' (do
   let dCnames = concat $ fmap (\ (_, (DataDef _ cons)) -> Map.keys cons  ) $ Map.toList  dt
   mapM_ (\ x -> getConsTcon' x) dCnames
 
-  mapM_ (\ x -> getDefnTy' x ) dfnVars
-  mapM_ (\ x -> getDefn' x ) dfnVars
+  mapM_ (\ x -> getDefnTy' x ) dfnRefs
+  mapM_ (\ x -> getDefn' x ) dfnRefs
 
-  termdefns <- mapM (\ x -> getDefn x ) dfnVars
+  termdefns <- mapM (\ x -> do
+    def <- getDefn x 
+    ty <- getDefnTy x 
+    pure (x,(def,ty))
+    ) dfnRefs
 
   datadefls <- mapM (\ x -> do def <- getDatadef x; pure (x,def) ) tCnames
 
@@ -237,10 +252,69 @@ rununder' e src@(E.TyEnv _ dt dfns) = rem' (do
   e
     )  src
 
-
-
 -- an elaborated version of the stdlib
 stdlib :: Module
-stdlib = Module datas (DefCtx defs) rename
+stdlib = modul
   where
-    Right ((datas,defs) , (_, _, rename , _ , _))  = elabmodule' $ E.stdlib
+    Right modul  = runIdentity $ runExceptT $ runFreshMT $ elabmodule E.stdlib Nothing 
+
+
+
+
+Right stdlibIO' = runIdentity $ runExceptT $ runFreshMT $ elabmodule E.stdlib Nothing
+
+
+
+stdlibIO'' :: Module
+stdlibIO'' = runFreshM $ visitModule stdlibIO'  (visitFresh visitorCleanSameDef)
+
+stdlibIO :: Module
+stdlibwarns :: [(C.Exp, C.Exp, C.Info)]
+(stdlibIO, stdlibwarns) = rwf $ visitModule stdlibIO'' (visitFresh visitorWarnSame) 
+
+
+-- eq 
+
+visitModule m@(Module {dataCtx=dataCtx, defCtx= DefCtx (Map.toList -> defCtx)}) w = runWithModuleMT (do
+  dataCtx' <- forM (Map.toList dataCtx) $ \ (tcname, C.DataDef tel (Map.toList -> cdefs)) -> do
+    tel' <- visitTelU tel w
+    cdefs' <- forM cdefs $ \ (dcname, ctel) -> do 
+      ctel' <- visitTelE ctel w 
+      pure (dcname, ctel') 
+    
+    pure (tcname, C.DataDef tel' (Map.fromList cdefs'))
+  
+  defCtx' <- forM defCtx $ \ (tcname, (trm,ty)) -> do
+    trm' <- w trm
+    ty' <- w ty
+    pure (tcname, (trm', ty'))
+
+  pure $ Module (Map.fromList dataCtx') (DefCtx $ Map.fromList defCtx')) m
+
+
+-- visitTelU :: (Typeable n, Fresh f, Alpha t,
+--   Alpha a) =>
+--   Tel n t () -> (t -> f a) -> f (Tel n a ())
+visitTelU :: (Fresh m) => Tel C.Term C.Ty () -> (C.Term -> m C.Term ) -> m (Tel C.Term C.Ty ()) 
+visitTelU (NoBnd ()) w = pure $ NoBnd ()
+visitTelU (TelBnd ex bndRest) w = do
+  ex' <- w ex
+  (x,rest) <- unbind bndRest
+  rest' <- visitTelU rest w
+  pure $ TelBnd ex' $ bind x rest'
+
+
+visitTelE :: (Fresh m) => Tel C.Term C.Ty [C.Term]  -> (C.Term -> m C.Term) -> m (Tel C.Term C.Ty [C.Term] ) 
+visitTelE (NoBnd e) w = do
+  e' <- mapM w e
+  pure $ NoBnd e'
+visitTelE (TelBnd ex bndRest) w = do
+  ex' <- w ex
+  (x,rest) <- unbind bndRest
+  rest' <- visitTelE rest w
+  pure $ TelBnd ex' $ bind x rest'
+
+-- visitorWarnSame
+-- data DataDef = DataDef (Tel Term Ty ()) (Map DCName (Tel Term Ty [Term])) deriving (
+--   -- Show, 
+--   Generic, Typeable)

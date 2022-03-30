@@ -34,10 +34,11 @@ data Vec : (A : *) -> Nat -> * {
 
 append : (A : *) -> (n : Nat) -> Vec A n -> (m : Nat) -> Vec A m -> Vec A (add n m) ;
 append A n vn m vm = 
-  case vn < _ => Vec A (add n m) >{ -- multi matching allows for definitional computation
-   | (Nil _) => vm
-   | (Cons _ a pn pvn) => Cons A a (add pn m) (append A pn pvn m vm)
+  case n, vn < n' => _ : Vec A n' => Vec A (add n' m) >{ -- multi matching allows for definitional computation
+   | (Z)   => (Nil _) => vm
+   | (S _) => (Cons _ a pn pvn) => Cons A a (add pn m) (append A pn pvn m vm)
   };
+
 
 data Id : (A : *) -> A -> A -> * {
 | refl  : (A : *) -> (a : A) -> Id A a a
@@ -50,8 +51,8 @@ cong : (A : *) ->
  Id A x y -> 
  Id B (f x) (f y) ;
 cong A x y B f eq = 
-  case eq <_ => Id B (f x) (f y) > {
-  | (refl _ a) => (refl B (f a))
+  case x, y, eq < x => y => _ : Id A x y  => Id B (f x) (f y) > {
+  | _ => _ => (refl _ a) => (refl B (f a))
   } ;
 
 
@@ -64,14 +65,14 @@ appendAssoc : (A : *) ->
   (append A x vx (add y z) (append A y vy z vz))
   (append A (add x y) (append A x vx y vy) z vz);
 appendAssoc A x y z vx vy vz =
- case vx
-   < vx' : Vec A x =>
+ case x, vx
+   < x => vx' : Vec A x =>
       Id (Vec A (add x (add y z)))
         (append A x vx' (add y z) (append A y vy z vz))
         (append A (add x y) (append A x vx' y vy) z vz)> {
-  | (Nil _) =>
+  | _ => (Nil _) =>
        refl (Vec A (add y z)) (append A y vy z vz)
-  | (Cons _ a px ls) =>
+  | _ => (Cons _ a px ls) =>
       cong
       (Vec A (add px (add y z)))
       (append A px ls (add y z) (append A y vy z vz))

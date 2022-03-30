@@ -49,14 +49,6 @@ tail A n v =
    | (Cons _ _ _ v) => v
    } ;
 
-append : (A : *) -> (n : Nat) -> Vec A n -> (m : Nat) -> Vec A m -> Vec A (add n m) ;
-append A n vn m vm = 
-  case n, vn < n' => _ : Vec A n' => Vec A (add n' m) >{ -- multi matching allows for definitional computation
-   | (Z)   => (Nil _) => vm
-   | (S _) => (Cons _ a pn pvn) => Cons A a (add pn m) (append A pn pvn m vm)
-  };
-
-
 rep : (A : *) -> A -> (n : Nat) -> Vec A n ;
 rep A a n = 
   case n < n' : Nat => Vec A n' >{
@@ -102,3 +94,15 @@ test = 1 ;
 
 
 
+revapp : (A : *) -> (m : Nat) -> Vec A m -> 
+                    (n : Nat) -> Vec A n -> Vec A (add m n) ;
+revapp A m vm n vn =
+  case m, vm < m => _ : Vec A m =>
+    case m < _ => * >{
+      | (Z) => Vec A n
+      | (S m') => Vec A (add m' (S n))
+    }
+  >{
+    | (Z)   => (Nil _) => vn
+    | (S _) => (Cons _ a m vm) => revapp A m vm (S n) (Cons A a n vn)
+   } ;
