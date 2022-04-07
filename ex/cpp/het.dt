@@ -86,3 +86,6 @@ appendAssoc A x y z vx vy vz =
 -- usage
 e1 : Vec Nat 4 ;
 e1 = append Nat 2 [1,2]<Nat> 2 [8,9]<Nat> ;
+
+-- appendAssoc Nat 2 1 2 [1,2]<Nat> [5]<Nat> [8,9]<Nat>
+-- TODO above is not reducing in the interperter for whatever reason

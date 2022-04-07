@@ -36,6 +36,7 @@ append : (A : *) -> (n : Nat) -> Vec A n -> (m : Nat) -> Vec A m -> Vec A (add n
 append A n vn m vm = 
   case n, vn < n' => _ : Vec A n' => Vec A (add n' m) >{ -- multi matching allows for definitional computation
    | (Z)   => (Nil _) => vm
+   | (S _) => (Cons _ a pn pvn) => Cons A a (add pn m) (append A pn pvn m vm)
   };
 
 
@@ -45,6 +46,7 @@ mapVec A n v =
   case n, v < n => _ : Vec A n => (B : *) -> (A -> B) -> Vec B n >{
    | (Z)   =>  (Nil A)          => \ B => \ _ => Nil B
    | (S _) =>  (Cons A a pn pv) => \ B => \ f => Cons B (f a) pn (mapVec A pn pv B f)
+   -- should really allow (S _) to be elaborated from _.
   };
 
 -- more examples

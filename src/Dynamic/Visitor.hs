@@ -42,7 +42,7 @@ data VisitorM m a = VisitorM {
   vPi :: Exp -> ((a -> Var -> a -> m a) -> m a) -> m a,
   vTConF :: Exp -> ((TCName -> [a] -> (Tel Exp Ty ()) -> (Tel Exp Ty ()) -> m a) -> m a) -> m a, -- tell not counted
   vDConF :: Exp -> ((DCName -> [a] -> TCName -> Tel Exp Ty [Term] -> Tel Exp Ty () -> (Tel Exp Ty ())-> m a) -> m a) -> m a,
-  vCase :: Exp -> (([a] -> [([Pat], a)] -> (An [([Pat], SourceRange)]) -> m a) -> m a) -> m a, 
+  vCase :: Exp -> (([a] -> [([Pat], a)] -> (An ([[Pat]], Maybe SourceRange)) -> m a) -> m a) -> m a, 
   vTyU :: Exp -> (m a -> m a) -> m a, 
   vC :: Exp -> ((a -> a -> m a) -> m a) -> m a, 
   vBlame :: Exp -> ((a -> a -> m a) -> m a) -> m a, 
@@ -142,82 +142,3 @@ visitorSelf = VisitorM {
   vTind = \ _ finish -> finish $ \ i ev -> pure $ Tind i ev,
   vDind = \ _ finish -> finish $ \ i ev -> pure $ Dind i ev
 }
-
---visitFresh visitorWarnSame 
-
-
--- TODO can generalize over binding strategy (for instance destructive visists may not need to care as much)
--- visit :: (Monad m) => VisitorM m a -> Exp -> m a
--- visit v@(VisitorM{vV=vV}) e@(V x) = 
---   vV e $ \ f -> f x
--- visit v@(VisitorM{vSame=vSame}) e@(Same l info ev r) = 
---   vSame e $ \ f -> do
---     l' <- visit v l
---     ev' <- visit v ev
---     r' <- visit v r
---     f l' info ev' r'
--- visit v e = undefined 
-
-
--- data VisitorM m a = VisitorM {
---   -- first parameter allows for short cuircuting the remianing computations, or inspecting "unofficial"  parts of the expression
---   vV :: Exp -> Var -> m a,
---   vFun :: Exp -> Var -> Var -> a -> m a,
---   vApp :: Exp -> a -> a -> m a,
---   vPi :: Exp -> (a -> Var -> a -> a) -> m a,
---   vTConF :: Exp -> (TCName -> [a] -> a) -> m a, -- tell
---   vDConF :: Exp -> (DCName -> [a] -> a) -> m a, -- tell
---   vRef :: Exp -> (RefName -> a) -> m a, 
---   vCase :: Exp -> ([a] -> [(Pat, a)]-> a) -> m a, 
---   vTyU :: Exp -> m a, 
---   vC :: Exp -> (a -> a -> a) -> m a, 
---   vBlame :: Exp -> (a -> a -> a) -> m a, 
---   vSame :: Exp -> (a -> Info -> a -> a) -> m a, 
---   vUnion :: Exp -> (a -> a -> a) -> m a, 
---   vTcon :: Exp -> (Integer -> a -> a) -> m a, 
---   vDcon :: Exp -> (Integer -> a -> a) -> m a
--- }
-
--- visit :: (Monad m) => VisitorM m a -> Exp -> m a
--- visit (VisitorM{vV=vV}) e@(V x) = vV e x
--- visit v@(VisitorM{vFun=vFun}) e@(Fun (unsafeUnbind -> ((selfName, argName), bod))) = do
---   bod' <- visit v bod
---   f' <- vFun e selfName argName bod'
---   pure f'
--- visit v@(VisitorM{vApp=vApp}) e@(f `App` a) = do
---   f' <- visit v f
---   a' <- visit v a
---   app <- vApp e f' a'
---   pure app
---   -- <*> visit v f <*> visit v a
--- visit v e = undefined 
-
--- visitorSelf :: (Applicative m) => VisitorM m Exp
--- visitorSelf = 
---   VisitorM {
---   vV = \ e x -> pure $ V x,
---   vFun = \ e self inp bod -> pure $ Fun $ bind (self, inp) bod,
---   vApp = \ e f a ->  pure $ f `App` a
---   -- vPi :: (a -> Var -> a -> a) -> m a,
---   -- vTConF :: (TCName -> [a] -> a) -> m a, -- tell
---   -- vDConF :: (DCName -> [a] -> a) -> m a, -- tell
---   -- vRef :: (RefName -> a) -> m a, 
---   -- vCase :: ([a] -> [(Pat, a)]-> a) -> m a, 
---   -- vTyU :: m a, 
---   -- vC :: (a -> a -> a) -> m a, 
---   -- vBlame :: (a -> a -> a) -> m a, 
---   -- vSame :: (a -> Info -> a -> a) -> m a, 
---   -- vUnion :: (a -> a -> a) -> m a, 
---   -- vTcon :: (Integer -> a -> a) -> m a, 
---   -- vDcon :: (Integer -> a -> a) -> m a
--- }
-
-
--- -- data Walker a = Walker {
--- --   wV :: Var -> a,
--- --   wFun :: ((Var, Var) -> a -> a) -> a,
--- --   wApp :: (a -> a -> a) -> a,
--- --   wPi :: (a -> Var -> a -> a) -> a,
--- --   wTConF :: (DCName -> [a] -> a) -> a, -- tell
--- -- }
--- -- data WalkerM m a = 

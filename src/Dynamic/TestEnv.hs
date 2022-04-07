@@ -20,7 +20,7 @@ stdModule = Module{dataCtx=dataCtx', defCtx=DefCtx Map.empty}
 
 dataCtx' = Map.fromList [
   ("Unit", DataDef (NoBnd ()) $ Map.fromList [("tt", NoBnd [])] ),
-  ("Bool", DataDef (NoBnd ()) $ Map.fromList [("true", NoBnd []),("false", NoBnd [])] ),
+  ("Bool", DataDef (NoBnd ()) $ Map.fromList [("t", NoBnd []),("f", NoBnd [])] ),
   ("Nat", DataDef (NoBnd ()) $ Map.fromList [("Z", NoBnd []),("S", (TelBnd nat $ u $ NoBnd []))] ),
 
   ("Id", DataDef (TelBnd TyU $ bind x $ TelBnd (V x) $ u $ TelBnd (V x) $ u$ NoBnd ()) $ Map.fromList [("refl", TelBnd TyU $ bind x $ TelBnd (V x) $ bind y $ NoBnd [V x, V y, V y])] ),

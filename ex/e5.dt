@@ -1,0 +1,47 @@
+
+data Emp : * {
+};
+
+data Unit : * {
+  | tt  : Unit
+};
+
+data Bool : * {
+  | true  : Bool
+  | false : Bool
+};
+
+data Nat : * {
+  | Z : Nat
+  | S : Nat -> Nat
+};
+
+data trip : * -> * {
+  | mkTrip : (X : *) -> X -> X -> X -> trip X 
+};
+
+
+
+et : trip Bool ->  Unit ;
+et x = case x < _ => Unit > {
+  | (mkTrip _ (true) (true) (true)) => tt
+} ;
+
+et2 : trip (trip Bool) ->  Unit ;
+et2 x = case x < _ => Unit > {
+  | (mkTrip _ (mkTrip _ (true) (true) (true)) (mkTrip _ (true) (true) (true)) _) => tt
+} ;
+
+
+mm : Bool -> * ;
+mm x = case x < _ => * > {
+  | (true) => Nat
+  | (false) => Bool
+} ;
+
+
+e3 : Bool ;
+e3 = case true, 2 < b => _ : (mm b)  => Bool > {
+  | (true) => (Z) => true
+  -- TODO not generating unseen patterns in a type directed way
+} ;

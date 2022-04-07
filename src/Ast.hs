@@ -1,6 +1,5 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE DeriveDataTypeable, DeriveGeneric, MultiParamTypeClasses, FlexibleContexts, FlexibleInstances, DeriveFunctor, RankNTypes, LambdaCase  #-}
-
 --TODO clean up GHC params
 
 module Ast where
@@ -23,7 +22,7 @@ import AlphaShow
 import SourcePos
 
 import Data.List
-import Unbound.Generics.LocallyNameless.Name ( Name(Bn) )
+import Unbound.Generics.LocallyNameless.Name ( Name(Bn, Fn) )
 import Unbound.Generics.LocallyNameless.Bind 
 import Unbound.Generics.LocallyNameless.Unsafe (unsafeUnbind)
 
@@ -297,10 +296,11 @@ tyAscrip (_ :::_ ) = True
 tyAscrip (Pos _ e _) = tyAscrip e 
 tyAscrip _ = False 
 
-
+-- b force parens
 prettyShow :: Bool -> Exp -> Integer -> String
 prettyShow b e = 
   case e of
+    V (Fn x _) -> \ _ -> x -- hack for a more pretty view
     V x -> \ _ -> show x
     Ref x -> \ _ -> x
     TyU -> \ _ -> "*" 
@@ -340,5 +340,34 @@ prettyShow b e =
       | outerLevel < curLevel = "(" ++ showExp ++ ")"
       | otherwise             =        showExp
 
+
+
+-- prettyShowWithPos :: Bool -> Exp -> Integer -> (Exp, String)
+-- prettyShowWithPos = undefined 
+
+-- data PrintWithPos a = PrintWithPos (String, Integer -> Integer -> a) deriving (Functor) 
+
+-- instance Applicative PrintWithPos where
+--   pure a = undefined -- PrintWithPos ("", a)
+--   f <*> a = undefined -- _
+
+-- instance Monad PrintWithPos where
+--   (>>=) = undefined
+
+-- print :: String -> PrintWithPos ()
+-- print = undefined 
+
+-- printPos :: String -> PrintWithPos (Int,Int)
+-- printPos = undefined 
+
+-- printe :: String -> Exp -> PrintWithPos Exp
+-- printe s e = undefined --PrintWithPos (String ) 
+
+
+-- prettyShowWithPos' :: Bool -> Exp -> Integer -> PrintWithPos Exp
+-- prettyShowWithPos' b e = 
+--   case e of
+--     V (Fn x _) -> \ _ -> printe x e
+--     _ -> undefined 
 
 

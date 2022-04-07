@@ -29,20 +29,40 @@ import Dynamic.Eq
 import PreludeHelper
 import Dynamic.ElabBase
 import Dynamic.Visitor
+import GHC.Generics
+import Data.Data
+import AlphaShow
 
-visitorWarnSame :: (MonadWriter [(Exp, Exp, Info)] m, Fresh m) => VisitorM m  Exp
+data Warning 
+  = EqWarning Exp -- left
+    Info Exp -- evidence
+    Exp --right
+  | Unmatched [[Pat]] --non-empty
+    (Maybe SourceRange)
+    deriving (
+  -- Show, 
+  Generic, Typeable)
+  -- just for debugging
+instance Alpha Warning
+instance AlphaLShow Warning
+instance Show Warning where
+  show = lfullshow
+
+
+visitorWarnSame :: (MonadWriter [Warning] m, Fresh m) => VisitorM m  Exp
 visitorWarnSame = visitorSelf {
   vSame = \_ finish -> finish $ \ l info ev r -> do
-    -- TODO proprly should also apply
-    -- l' <- whnf l -- TODO needs a safe eq
-    -- r' <- whnf r
-    -- if l' `aeq` r'
-    -- then pure $ C l' ev
-    -- else do
-    --   tell [(l', r', info)]
-    --   pure $ Same l' info ev r' 
-    tell [(l, r, info)]
-    pure $ Same l info ev r 
+
+    -- tell [(l, r, info)]
+    tell [EqWarning l info ev r]
+    pure $ Same l info ev r
+  ,
+  vCase = \_ finish -> finish $ \ scruts branches unmatched -> do
+    case unmatched of 
+      An (Just (p@(_:_), sr)) -> tell [Unmatched p sr]
+      _ -> pure ()
+      
+    pure $ Case scruts (fmap (\ (p,e)-> Match $ bind p e) branches) unmatched
 }
 
 visitorCleanSame :: (Fresh m) => VisitorM m  Exp
@@ -89,12 +109,12 @@ rwf :: Monoid w => FreshMT (WriterT w Identity) a -> (a, w)
 rwf e = runIdentity $ runWriterT $ runFreshMT $ e
 
 e0 = rwf $ visitFresh visitorWarnSame TyU
-e1 = rwf $ visitFresh visitorWarnSame $ efun
+-- e1 = rwf $ visitFresh visitorWarnSame $ efun
 
-e2 = rwf $ visitFresh visitorWarnSame $ Same TyU (Info Nothing []) TyU TyU 
+-- e2 = rwf $ visitFresh visitorWarnSame $ Same TyU (Info Nothing []) TyU TyU 
 
-e3 = rwf $ visitFresh visitorWarnSame $ Same TyU (Info Nothing []) TyU (Same (Same TyU (Info Nothing []) TyU TyU ) (Info Nothing []) TyU TyU ) 
+-- e3 = rwf $ visitFresh visitorWarnSame $ Same TyU (Info Nothing []) TyU (Same (Same TyU (Info Nothing []) TyU TyU ) (Info Nothing []) TyU TyU ) 
 
 
 
-efun = Fun $ bind (s2n "f",s2n "x") $ Same TyU (Info Nothing []) TyU (V $  s2n "x")
+-- efun = Fun $ bind (s2n "f",s2n "x") $ Same TyU (Info Nothing []) TyU (V $  s2n "x")

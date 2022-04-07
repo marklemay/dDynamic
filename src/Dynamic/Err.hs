@@ -30,6 +30,8 @@ import Data.Typeable (Typeable)
 import GHC.Generics (Generic)
 
 import SourcePos
+import AlphaShow
+import Unbound.Generics.LocallyNameless
 
 
 -- TODO include info
@@ -38,6 +40,9 @@ data Err = Msg String (Maybe SourceRange)
   Show, 
   Generic, Typeable)
 
+-- dumb stuff for debugging
+instance Alpha Err
+instance AlphaLShow Err
 
 prettyErr :: Err -> String
 prettyErr (Msg msg Nothing) = msg

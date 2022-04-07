@@ -1,0 +1,43 @@
+
+data Emp : * {
+};
+
+data Unit : * {
+  | tt  : Unit
+};
+
+data Bool : * {
+  | true  : Bool
+  | false : Bool
+};
+
+data Nat : * {
+  | Z : Nat
+  | S : Nat -> Nat
+};
+
+ee : Emp -> Unit ;
+ee e = case e < _ => Unit > {} ; -- this should get no warning, but probly will for sort of silly reasions
+
+eu : Unit ;
+eu = case tt < _ => Unit > {} ;
+
+
+eu1 : Unit ;
+eu1 = case true, true, true < _ => _ => _ => Unit > {
+  | (true) => (false) => _ => tt
+} ;
+
+eu2 : Unit ;
+eu2 = case true, true, true < _ => _ => _ => Unit > {
+  | (true) => (false) => _ => tt
+  | (false) => (false) => _ => tt
+  | _ => (true) => _ => tt
+} ;
+
+
+en : Unit ;
+en = case 3 < _ => Unit > {
+  | (S (S _)) => tt
+} ;
+

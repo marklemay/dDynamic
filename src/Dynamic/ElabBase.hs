@@ -54,7 +54,7 @@ import Control.Monad.Reader
     ( ReaderT(..), MonadReader(ask, local) )
 import Control.Monad.State
 
--- this file exsts becuase haskell is bad aobut cyclic module depndnecies!
+-- this file exsts becuase GHC is bad aobut cyclic module depndnecies!
 
 -- TODO perhaps readerize this?
 data ElabInfo m = ElabInfo  {
@@ -228,6 +228,9 @@ class (Monad m) => WithSourceLoc m where
   -- TODO make this properly local?
 
   askSourceRange :: m (Maybe SourceRange)
+
+
+
 
 localSourceRangeFrom :: WithSourceLoc m  => Ast.Exp -> m a -> m a
 localSourceRangeFrom (Pos l e r) ma = do

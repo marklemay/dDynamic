@@ -72,6 +72,8 @@ okFun x = head Bool x (rep Bool true (add x 1)) ;
 
 
 
+alsookFun : Nat -> Bool ;
+alsookFun x = head Bool x (rep Bool true (add 1 x)) ;
 
 
 

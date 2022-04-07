@@ -40,6 +40,7 @@ import Control.Monad.State.Strict (State)
 import Control.Monad.State (StateT)
 import Control.Monad.State (runState)
 import Control.Monad.State (StateT(runStateT))
+import Control.Monad.Logic
 
 
 class (Monad m) => MonadDelay m where
@@ -112,3 +113,17 @@ instance (Alternative m, Monad m) => Alternative (EitherT e m) where
 
 instance MonadPlus m => MonadPlus (EitherT e m) where
 
+
+instance Fresh m => Fresh (LogicT m) where
+  fresh = lift . fresh
+
+
+instance MonadLogic m => MonadLogic (FreshMT m) where
+  -- use the underling State imple
+  msplit freshma = FreshMT $ fmap (fmap $ \(a,ma) -> (a, FreshMT ma))  $ msplit $ unFreshMT freshma
+  -- TODO: this messes with delay in some of the supported libs
+
+  -- use underlieing representation so computation can be delayed
+  ml `interleave` mr = FreshMT $ unFreshMT ml `interleave` unFreshMT mr
+
+  --TODO : implement all of the ops since the library provides a more efficient implementation

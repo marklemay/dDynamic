@@ -11,7 +11,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes #-}
-
+{-# LANGUAGE DoAndIfThenElse #-}
 
 module Repl where
 
@@ -69,7 +69,12 @@ import qualified AlphaShow as C
 import qualified Dynamic.ElabBase as C
 import ParserMonad (ParseError)
 import Control.Monad.Writer
+import Dynamic.Ast (Info(origL))
+import Unbound.Generics.LocallyNameless.Ignore
+import Data.List (intersperse)
 
+
+-- TOOD cmds: clean, whnf, :r
 
 -- runFile :: FilePath -> IO LangOut
 -- runFile path = 
@@ -137,16 +142,47 @@ loadFile path = do
           mod' <- runFreshMT $ C.visitModule mod (C.visitFresh C.visitorCleanSameDef)
           putStrLn "cleaned"
           (mod'', warnings) <- runWriterT $ runFreshMT $ C.visitModule mod' (C.visitFresh C.visitorWarnSame)
-          forM_ warnings $ \ w@(l, r, info@C.Info{C.sr=msr}) -> do
-            l' <- runFreshMT $ C.erase l
-            r' <- runFreshMT $ C.erase r
-            case msr of
-              Just src -> putStrLn $ unlines $ prettyRange src
-              Nothing -> pure ()
+          
+          if null warnings
+          then pure ()
+          else putStrLn "warnings:"
 
-            putStrLn $ show l' ++ "=?=" ++ show r'
-            loggg $ lfullshow w
-            putStrLn ""
+
+          forM_ warnings $ \ w -> 
+            case w of
+              C.EqWarning l info@C.Info{C.sr=msr,C.origL=I origL,C.origR=I origR} _ r -> do
+                case msr of
+                  Just src -> putStrLn $ unlines $ prettyRange src
+                  Nothing -> pure ()
+                
+                l' <- runFreshMT $ C.erase l
+                r' <- runFreshMT $ C.erase r
+
+                origL' <- runFreshMT $ C.erase origL
+                origR' <- runFreshMT $ C.erase origR
+
+                putStrLn "  possibly mismatched types: "
+                if (show origL', show origR') /= (show l', show r') 
+                then putStrLn $ "  " ++ show origL' ++ "=?=" ++ show origR' ++ " ~>"
+                else pure ()
+                putStrLn $ "  " ++ show l' ++ "=?=" ++ show r'
+                -- loggg $ lfullshow w
+                putStrLn ""
+              C.Unmatched ps msr -> do
+
+                case msr of
+                  Just src -> putStrLn $ unlines $ prettyRange src
+                  Nothing -> pure ()
+                
+                putStrLn "  unmatched patterns: "
+                forM_ ps $ \ p ->
+                  -- TODO could do some fancy padding here
+                  putStrLn $ "  | " ++ concat (intersperse " => "  (C.patSum <$> p)) ++ " => ..."
+
+                -- loggg $ lfullshow w
+                putStrLn ""
+
+
           -- let warn = consolidate warnings
           -- prettyWarn warn
 
@@ -291,7 +327,7 @@ evalCastFilePath curState path =  do
 getCastExpTypeInfo :: REPLEval (String, Exp, C.Module)
 getCastExpTypeInfo curState (inpStr, exp, mod) = do
   let exp' = C.underModule exp mod -- add refferences from the loaded module
-  mExp <- runExceptT $ runFreshMT $ C.runWithModuleMT (C.runWithSourceLocMT (C.elabInf' exp' (C.empElabInfo Dynamic.Norm.whnf) ) (Just $ SourceRange (Just inpStr) (SourcePos "" 0 0) (endPos "" inpStr))) mod
+  mExp <- runExceptT $ runFreshMT $ C.runWithModuleMT (C.runWithSourceLocMT (C.elabInf' exp' (C.empElabInfo Dynamic.Norm.whnfd) ) (Just $ SourceRange (Just inpStr) (SourcePos "" 0 0) (endPos "" inpStr))) mod
   case mExp of
     Right (ctrm, cty) -> do
       -- putStrLn $ "elaborated to, " ++ show e
@@ -328,8 +364,8 @@ evalCastExp curState (inpStr, exp, mod) = do
           loggg $ lfullshow e'
           outputStrLn "~>"
           outputStrLn $ show (runFreshM $ C.erase e')
-        Left e@(l,info@C.Info{C.sr=mrange},r) -> do
-          outputStrLn "!!"
+        Left (C.EqErr l (info@C.Info{C.sr=mrange}) _ r) -> do
+          outputStrLn "unequal type assumption!!"
           case mrange of
             Just range -> outputStrLn $ unlines $ prettyRange range
             Nothing -> pure ()
@@ -337,6 +373,14 @@ evalCastExp curState (inpStr, exp, mod) = do
           outputStrLn $ show (runFreshM $ C.erase l)
           outputStrLn $ "=/="
           outputStrLn $ show (runFreshM $ C.erase r)
+        Left (C.UnMatchedPatErr scruts pats mrange) -> do
+          outputStrLn "unmatched pattern!!"
+          case mrange of
+            Just range -> outputStrLn $ unlines $ prettyRange range
+            Nothing -> pure ()
+          outputStrLn $ runFreshM $ do ghhh <- mapM C.erase scruts; pure $ concat (intersperse ", " (show <$> ghhh))
+          -- TODO could do some fancy padding here
+          outputStrLn $ "  | " ++ concat (intersperse " => "  (C.patSum <$> pats)) ++ " => ..."
     Left e -> do
       outputStrLn $ C.prettyErr e
   setREPLState curState

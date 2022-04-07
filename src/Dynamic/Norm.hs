@@ -48,6 +48,7 @@ import Control.Monad.State
 import Dynamic.ElabBase hiding (whnf)
 import Norm (isVal)
 import Control.Exception hiding (assert)
+import GHC.IO.Encoding.Latin1 (mkLatin1_checked)
 
 
 
@@ -60,6 +61,11 @@ data Next m = Next {
   -- critCast :: (Exp -> m Exp),
   after :: (Exp -> m Exp),
   assert :: Exp -> Info -> EqEv -> Exp ->  m Exp
+  ,
+  unmatched :: Exp -- orig expression (TODO probly remove this at some point)
+  -> [Exp] -- scrutninees
+  -> Maybe ([[Pat]], Maybe SourceRange) -- warning info
+  -> m Exp
   }
 
 noNext :: Applicative m => Next m
@@ -71,7 +77,9 @@ noNext = Next{
   -- critApp :: (Exp -> m Exp),
   -- critCast :: (Exp -> m Exp),
   after = pure,
-  assert = \ l info ev r -> pure $ Same l info ev r
+  assert = \ l info ev r -> pure $ Same l info ev r,
+  
+  unmatched = \ e _ _ -> pure e
   }
 
 -- evidence guarded norm, doesn't get stuck in the empty ctx
@@ -184,14 +192,15 @@ norm next (Dind i ev) = do
     DConF _ args (_, NoBnd _) _ _ | i < (fromIntegral $ length args) -> critN next $ args !! fromIntegral i
     C (DConF _ args (_, NoBnd _) _ _) (TConF _ _ (NoBnd ()) _)| i < (fromIntegral $ length args) -> critN next $ args !! fromIntegral i -- duble chack that this is acounted for formally
     _  -> pure $ Dind i ev'
-norm next e@(Case scrutinees branches _) = do
+norm next e@(Case scrutinees branches (An ann)) = do
   ans <- matches next scrutinees branches
   case ans of
     Right e' -> do
       -- logg "return from case"
       -- loggg $ lfullshow e'
       critN next $ e'
-    Left _ -> pure e -- don't try to simplify the scrutinees yet
+    Left (scrutinees', []) -> unmatched next e scrutinees' ann
+    Left _ -> pure e -- don't try to simplify the scrutinees/branches yet
 -- norm next (Blame ev) = undefined
 -- norm next x = pure x
 norm next e@(V{}) = pure e
@@ -209,8 +218,8 @@ norm next e@(Blame{}) = pure e
 
 match :: 
   HasCallStack => 
-  (Fresh m) => 
-  Next m -> [(Exp,Pat)] -> Exp -> m (YesNoStuck Exp)
+  (Subst Exp a, Fresh m) => 
+  Next m -> [(Exp,Pat)] -> a -> m (YesNoStuck a)
 match next []  bod = pure $ Yes bod
 match next ((e, PVar x):ms) bod = do 
   match next ms $ subst x e bod
@@ -232,15 +241,17 @@ match next ((e, Pat dcName pats evName): ms) bod = do --TODO can perhaps remove 
     DConF dcName' args (_, NoBnd _) _ _ | dcName' /= dcName -> pure No
     _ -> pure Stuck -- TODO expo
 
-matches ::
-  HasCallStack => 
-  (Fresh m) => 
-  Next m -> [Exp] -> [Match] -> m (Either ([Exp], [Match]) Exp)
-matches next scrutinees [] = pure $ Left (scrutinees, [])
+
+
+
+matches' :: (Alpha b, Fresh f, Subst Exp b) =>
+  Next f
+  -> [Exp] -> [Bind [Pat] b] -> f (Either ([Exp], [Bind [Pat] b]) b) -- TODO should also retune evaluated scruts
+matches' next scrutinees [] = pure $ Left (scrutinees, [])
 
   -- TODO inefficint since that scrutinee is recalculated every branch!
   -- TODO can simplify much more then currently
-matches next scrutinees ms@((Match bndbod):rest) = do
+matches' next scrutinees ms@((bndbod):rest) = do
   (pats, bod) <- unbind bndbod
   if length pats /= length scrutinees
     then pure $ Left (scrutinees, ms)
@@ -248,11 +259,20 @@ matches next scrutinees ms@((Match bndbod):rest) = do
     ans <- match next (zip scrutinees pats) bod
     case ans of
       Yes e -> pure $ Right e
-      No -> matches next scrutinees rest
+      No -> matches' next scrutinees rest
       Stuck -> pure $ Left (scrutinees, ms)
 
 
 
+-- matches ::
+--   HasCallStack => 
+--   (Fresh m) => 
+--   Next m -> [Exp] -> [Match] -> m (Either ([Exp], [Match]) Exp)
+matches :: HasCallStack => 
+  Fresh f =>
+  Next f
+  -> [Exp] -> [Match] -> f (Either ([Exp], [Bind [Pat] Term]) Term)
+matches next scrutinees ms = matches' next scrutinees (unMatch <$> ms)
 
 
 zipTConM :: 
@@ -400,8 +420,8 @@ isValue _ = False
 -- allM :: Applicative f => (a -> f Bool) -> [a] -> f Bool
 -- allM [] = pure True
 
-nextCbv :: (Fresh m, WithDynDefs m) => Next m
-nextCbv = (noNext{critN = cbv, after = cbv})
+-- nextCbv :: (Fresh m, WithDynDefs m) => Next m
+-- nextCbv = (noNext{critN = cbv, after = cbv})
 -- agarly open refferences
 -- TODO will cuase a bt of redundant work
 cbv :: (Fresh m, WithDynDefs m) => Exp -> m Exp
@@ -428,7 +448,8 @@ cbv e@(Ref refName) = do
 cbv e@(Case scrutinees branches unmatched) = do
   scrutinees' <- cbvs scrutinees
   if all isValue scrutinees'
-  then norm (noNext{critN = cbv}) $ Case scrutinees' branches unmatched
+  then do
+    norm (noNext{critN = cbv}) $ Case scrutinees' branches unmatched
   else pure $ Case scrutinees' branches unmatched 
 cbv e = norm (noNext{critN = cbv}) e -- use the defualt behavior over Same...
 
@@ -443,20 +464,53 @@ cbvs (h:ls) = do
   else pure $ h' : ls
 
 
-cbvErrNext :: (Fresh m, WithDynDefs m, MonadError (Exp, Info, Exp) m) => Next m
-cbvErrNext = Next {critN = cbvOrErr, assert =err, after=cbvOrErr}
 
-err :: (Fresh m, WithDynDefs m, MonadError (Exp, Info, Exp) m) => Exp -> Info -> Exp -> Exp -> m Exp
+data RunTimeError 
+  = EqErr Exp Info Exp Exp
+  | UnMatchedPatErr [Exp] [Pat] (Maybe SourceRange)
+      deriving (
+  -- Show, 
+  Generic, Typeable)
+  -- just for debugging
+instance Alpha RunTimeError
+instance AlphaLShow RunTimeError
+instance Show RunTimeError where
+  show = lfullshow
+
+
+cbvErrNext :: (Fresh m, WithDynDefs m, MonadError RunTimeError m) => Next m
+cbvErrNext = Next {
+  critN = cbvOrErr,
+  assert =err,
+  after=cbvOrErr,
+  unmatched=cbvUnmatchedErr}
+
+cbvUnmatchedErr ::  (Fresh m, WithDynDefs m, MonadError RunTimeError m) => 
+ Exp -- orig expression (TODO probly remove this at some point)
+  -> [Exp] -- scrutninees
+  -> Maybe ([[Pat]], Maybe SourceRange) -- warning info
+  -> m Exp
+cbvUnmatchedErr _ scrutninees (Just (pats,sr)) = do
+  ei <- matches' cbvErrNext scrutninees (fmap (\ (x, y) -> bind x y) $ zip pats [0..])  --akward
+  -- this is of course way more subtle then it seems like it should be... what if the cell required for the match non-terminates? since this is call by value, 
+  case ei of
+    Right i -> throwError $ UnMatchedPatErr scrutninees (pats !! i) sr
+    
+    Left l -> error $ "dirty error, " ++ lfullshow l
+  
+cbvUnmatchedErr e scrutninees _ = error $ "inncorrect pattern compilation, " ++ lfullshow e
+
+err :: (Fresh m, WithDynDefs m, MonadError RunTimeError m) => Exp -> Info -> Exp -> Exp -> m Exp
 err l info ev r = do
   ev' <- cbvOrErr ev
   l' <- cbvOrErr l
   r' <- cbvOrErr r
   if sameCon l' r' == Just False 
-  then throwError (l', info, r')
+  then throwError $ EqErr l' info ev' r'
   else pure $ Same l' info ev' r'
 
 -- cbvOrErr :: (Fresh m, WithDynDefs m) => Exp -> m Exp
-cbvOrErr :: (Fresh m, WithDynDefs m, MonadError (Exp, Info, Exp) m) => Exp -> m Exp
+cbvOrErr :: (Fresh m, WithDynDefs m, MonadError RunTimeError m) => Exp -> m Exp
 -- cbvOrErr (Same l info ev r) = err l info ev r
 cbvOrErr (f `App` a) = do
   f' <- cbvOrErr f
@@ -469,9 +523,9 @@ cbvOrErr (f `App` a) = do
   if isValue f'
   then do
     a' <- cbvOrErr a
-    loggg $ "isValue a' = " ++ (show $ isValue a')
-    loggg $ lfullshow a'
-    logg ""
+    -- loggg $ "isValue a' = " ++ (show $ isValue a')
+    -- loggg $ lfullshow a'
+    -- logg ""
     if isValue a'
     then norm cbvErrNext $ f' `App` a'
     else pure $ f' `App` a'
@@ -496,10 +550,16 @@ cbvOrErr e@(Case scrutinees branches unmatched) = do
   if all isValue scrutinees'
   then norm cbvErrNext $ Case scrutinees' branches unmatched
   else pure $ Case scrutinees' branches unmatched 
+  
+cbvOrErr (Blame why sameTy) = do
+  sameTy' <- norm cbvErrNext sameTy -- preffer type errors to term errors
+  why' <- norm cbvErrNext why 
+  pure $ Blame why' sameTy'
+
 cbvOrErr e = norm cbvErrNext e 
 
 
-cbvOrErrs :: (Fresh f, WithDynDefs f, MonadError (Exp, Info, Exp) f) => [Exp] -> f [Exp]
+cbvOrErrs :: (Fresh f, WithDynDefs f, MonadError RunTimeError f) => [Exp] -> f [Exp]
 cbvOrErrs [] = pure []
 cbvOrErrs (h:ls) = do
   h' <- cbvOrErr h

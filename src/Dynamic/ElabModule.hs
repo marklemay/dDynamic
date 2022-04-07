@@ -268,8 +268,9 @@ Right stdlibIO' = runIdentity $ runExceptT $ runFreshMT $ elabmodule E.stdlib No
 stdlibIO'' :: Module
 stdlibIO'' = runFreshM $ visitModule stdlibIO'  (visitFresh visitorCleanSameDef)
 
+
+stdlibwarns :: [Warning]
 stdlibIO :: Module
-stdlibwarns :: [(C.Exp, C.Exp, C.Info)]
 (stdlibIO, stdlibwarns) = rwf $ visitModule stdlibIO'' (visitFresh visitorWarnSame) 
 
 

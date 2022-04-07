@@ -54,6 +54,8 @@ import Ty (substsTel)
 import Dynamic.ElabBase
 import Dynamic.Unification
 import PreludeHelper
+import Dynamic.Patttern
+import Data.Either (partitionEithers)
 
 -- if the type contains supstitutes insert a cast and return the substituted result
 elabInf :: HasCallStack => (Fresh m, MonadError C.Err m, WithDynDefs m, WithSourceLoc m) => Ast.Exp -> ElabInfo m -> m (C.Exp, C.Ty)
@@ -154,11 +156,34 @@ elabInf' (Case scrutinees (An (Just tel)) branches) ctx = do
       (Prob{flex=flex,active=active',stuck=stuck'})  -> do
         -- loggg $ "uni=" ++ lfullshow uni
         -- loggg $ "active'=" ++ lfullshow active'
-        loggg $ "stuck'=" ++ lfullshow stuck'
-        loggg $ "flex=" ++ lfullshow flex
+        -- loggg $ "stuck'=" ++ lfullshow stuck'
+        -- loggg $ "flex=" ++ lfullshow flex
         throwPrettyError $ "unification timed out"
-      
-  pure (C.Case scrutinees' branches' noAn, caseTy) -- TODO calculate the unlisted branches, and synth additional cases
+  
+  pats' <- forM branches' $ \ (C.Match bndbod) -> do
+    (pats, _) <- unbind bndbod
+    pure pats
+
+  vars <- fillFresh tel'
+  unseenPats <- subAll [vars] pats'
+  (partitionEithers -> (unmatched, silentCases)) <- forM unseenPats $ \ pats -> do
+    (_, flexs, _, eq, ctx') <- getCPats pats tel' ctx
+    logg "TODO needs to set up the equations with the already existing assignments"
+    
+    uni <- fOUni flexs eq ctx'
+    -- should probly package up the unification with the unfufilled patterns
+    case uni of
+      (Prob{unsat=e@Equation{why=why,sameTy=sameTy}:_}) -> do
+        
+        logg "impossible case directed to blame"
+        loggg $ lfullshow e
+        logg ""
+        pure $ Right $ C.Match $ bind pats $ C.Blame why sameTy
+      _ -> pure $ Left pats
+
+  sr <- askSourceRange
+
+  pure (C.Case scrutinees' (branches'++silentCases) $ ann (unmatched, sr), caseTy) -- TODO calculate the unlisted branches, and synth additional cases
 
 elabInf' (Ref refName) _ = do
   ty <- getDefnTy refName
@@ -216,9 +241,12 @@ elabCast e t ctx = do
   if t' `aeq` t -- plug something more fancy here
   then pure e'
   else do
-    pure $ C.C e' $ C.Same t' (C.Info sr []) C.TyU t -- TODO would need to ensure t' and t are : TyU
+    pure $ C.C e' $ C.Same t' (C.initInfo sr t' t) C.TyU t -- TODO would need to ensure t' and t are : TyU
 
-getPat :: HasCallStack => (Fresh m, MonadError C.Err m, WithDynDefs m, WithSourceLoc m) => Pat -> C.Ty -> ElabInfo m -> m (C.Pat, Set C.Var, Set C.Var, [Equation], ElabInfo m)
+getPat :: HasCallStack => (Fresh m, MonadError C.Err m, WithDynDefs m, WithSourceLoc m) => Pat -> C.Ty -> ElabInfo m -> m (C.Pat, 
+  Set C.Var, -- flex vars
+  Set C.Var, -- path vars
+  [Equation], ElabInfo m)
 getPat (PVar x) ty info@(ElabInfo {varMap=varMap,tyCtx=tyCtx}) = do 
   x' <- fresh $ rename x
   pure (C.PVar x', Set.fromList [x'], Set.empty, [], info {varMap=Map.insert x x' varMap,tyCtx=Map.insert x' ty tyCtx })
@@ -244,6 +272,25 @@ getPats (arg:rest) (TelBnd argTy bndTelRest) info = do
   (args', ty, flex', path',eqs', info'') <- getPats rest (substBind  bndTelRest earg')info'
   pure (arg':args', ty, flex `Set.union` flex',path `Set.union` path', eqs ++ eqs', info'')
 getPats _ _ _ = error $ " applications do not match type (TODO better error)" 
+
+
+getCPat (C.PVar x) ty info@(ElabInfo {tyCtx=tyCtx}) = do 
+  pure (Set.fromList [x], Set.empty, [], info {tyCtx=Map.insert x ty tyCtx })
+getCPat (C.Pat dCName args p) ty info = do 
+  (tcName, tel) <- getConsTcon dCName
+  ttel <- getTConnTel tcName
+  let tytell = unsafeTelMap (\inds -> C.TConF tcName inds (NoBnd ()) ttel) tel
+  (tyunder, flex, path, eqs, info') <- getCPats args tytell info
+  pure (flex, Set.insert p path, Equation tyunder ty C.TyU (C.V p):eqs, info')
+
+getCPats :: HasCallStack => (Fresh m, MonadError C.Err m, WithDynDefs m, WithSourceLoc m) => [C.Pat] -> Tel C.Term C.Ty C.Ty -> ElabInfo m -> m (C.Ty, Set C.Var, Set C.Var, [Equation], ElabInfo m)
+getCPats [] (NoBnd ty) info = pure (ty, Set.empty,Set.empty,[],info)
+getCPats (arg:rest) (TelBnd argTy bndTelRest) info = do
+  (flex, path, eqs, info') <- getCPat arg argTy info
+  earg'<- patAsExp arg
+  (ty, flex', path',eqs', info'') <- getCPats rest (substBind  bndTelRest earg') info'
+  pure (ty, flex `Set.union` flex', path `Set.union` path', eqs ++ eqs', info'')
+getCPats _ _ _ = error $ " applications do not match type (TODO better error)" 
 
 patAsExp :: (Fresh m, MonadError C.Err m, WithDynDefs m, WithSourceLoc m) => C.Pat -> m C.Exp 
 patAsExp (C.PVar x) = pure $ C.V x

@@ -137,7 +137,6 @@ eqDef' l info ty r = do
     -- injective moves
     (zipTConM (\l i ev r -> eqDef' l (tconInfo i info) ev r) -> Just ans) -> ans
     (zipDConM (\l i ev r -> eqDef' l (dconInfo i info) ev r) (\l i ev r -> eqDef' l (tconInfo i info) ev r) -> Just ans) -> ans
-
     _ -> do
       -- perhaps the terms line up (except for casts)
       me <- runExceptT $ eqrefl l' (Just ty) r'

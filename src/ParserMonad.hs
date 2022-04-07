@@ -22,7 +22,6 @@ newtype Parser a = Parser (SourcePos -> String -> Either (String, SourcePos, Sou
 
 
 
-
 -- a helper function to pull out the function bit (same as book)
 parse :: Parser a
   -> String

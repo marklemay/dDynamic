@@ -157,37 +157,5 @@ polyId ctx = tlam ctx (arr (tv 0) (tv 0)) (lam ctx (tv 0) (tv 0) (V (ext ctx (tv
 tmext' : (ctx : Ctx) -> (ty : Ty) -> (inty : Ty) -> (here : Var) -> Term ctx inty -> Term (insertCtx ctx ty here) inty ;
 tmext' ctx ty inty here inthis = 
 case ctx, inty, inthis <ctx => inty => _ : Term ctx inty =>  Term (insertCtx ctx ty here) inty> {
-  | _ => _ => (V ctx x) => 
-    case (comp x here) < c =>      --TODO this will be really good to infer
-      case c < _ => * > {
-        | (Lt) => Term (insertCtx ctx ty here) ((insertCtx ctx ty here) x)
-        | _ => Term (insertCtx ctx ty here) ((insertCtx ctx ty here) (S x))
-      }
-      >{
-   | (Lt) => V (insertCtx ctx ty here) x -- local var
-   | _ => V (insertCtx ctx ty here) (S x) --global var
-  }
-  | _ => (arr _ _) => (lam ctx targ tbod bod) =>  lam (insertCtx ctx ty here) targ tbod (tmext' ctx ty tbod (S here) bod)
-  | _ => _ => (app ctx targ tbod f a) =>  app (insertCtx ctx ty here) targ tbod (tmext' ctx ty (arr targ tbod) here f) (tmext' ctx ty targ here a)
-  | _ => (forall _) => (tlam ctx tbod bod) => tlam (insertCtx ctx ty here) tbod (tmext' ctx ty tbod here bod)
-  | _ =>  _ => (tapp ctx targ tbod bod) => tapp  (insertCtx ctx ty here) targ tbod (tmext' ctx ty tbod here bod)
+  | _ => _ => (tapp ctx targ tbod bod) => tapp  (insertCtx ctx ty here) targ tbod (tmext' ctx ty tbod here bod)
 };
-
--- case (comp x insert) < _ => Ty>{
---    | (Lt) => tv x -- local var
---    | _ => tv (S x) --global var
---  }
-
-
---tmext :  (ctx : Ctx) -> (ty : Ty) -> (inty : Ty) -> Term ctx inty -> Term (ext ctx ty) inty ;
---tmext ctx ty inty inthis = inthis ;
-
---sub' : (ctx : Ctx) -> (ty : Ty) -> Term ctx ty -> (repaceThis : Var) -> (inty : Ty) 
---  -> Term (insertCtx ctx ty repaceThis) inty -> Term ctx inty;
---sub' ctx ty withThis repaceThis inty inthis = inthis ;
-
---sub : (ctx : Ctx) -> (ty : Ty) -> Term ctx ty -> (inty : Ty) -> Term (ext ctx ty) inty -> Term ctx inty;
---sub ctx ty withThis inty inthis = inthis ;
-
--- tmext : (ctx : Ctx) -> (ty : Ty) -> Term ctx ty -> Term (ext ctx tye) ty 
-

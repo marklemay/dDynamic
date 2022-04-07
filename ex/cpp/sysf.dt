@@ -56,7 +56,6 @@ case inthis < _ => Term ctx tinthis> {
 -- ...
 };
 
--- NOTE:  a bug prevents this from being used everywhere
 Ctx : * ;
 Ctx = Var -> Ty;
 
@@ -96,3 +95,5 @@ step ctx ty trm =
    sub ctx targ a tbod bod
  | x => x
  };
+
+ -- TODO there are now unification issues in this file

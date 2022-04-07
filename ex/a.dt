@@ -49,7 +49,7 @@ append A n vn m vm =
   case n, vn < n' => _ : Vec A n' => Vec A (add n' m) >{ -- multi matching allows for definitional computation
    | (Z)   => (Nil _) => vm
    | (S _) => (Cons _ a pn pvn) => Cons A a (add pn m) (append A pn pvn m vm)
-  };
+  }; -- TODO confirm that the pattern on n is needed
 
 
 mapVec : (A : *) -> (n : Nat) -> Vec A n -> (B : *) -> (A -> B) -> Vec B n ;

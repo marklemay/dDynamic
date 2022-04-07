@@ -119,6 +119,8 @@ removePat ((PVar _):rest) sub@(Pat dCName args) = do -- overlap. ( since var cov
 removePat [] _ = pure []
 removePat a@(Pat dCName args:rest) sub@(Pat dCName' args') -- possible overlap
   | dCName == dCName' && length args /= length args' = error $ "bad len, removePat " ++ show a ++ " " ++ show sub
+removePat a sub
+  = error $ "unhamdled " ++ show a ++ " " ++ show sub
 
 removePatsPar :: [Pat] -> [Pat] -> TcMonad [[Pat]]
 removePatsPar h s | length h == length s = do
@@ -261,7 +263,7 @@ tyInfer (Case scrutinees (An (Just bndoutTy)) branches) = do
 
   -- coverage checking
   pats <- forM branches $ \ (Match bndP) -> do
-    (pats, bod) <- unbind bndP
+    (pats, _) <- unbind bndP
     pure pats
 
   -- the all inclusive pattern

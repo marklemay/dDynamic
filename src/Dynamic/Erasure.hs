@@ -25,6 +25,7 @@ import Unbound.Generics.LocallyNameless
 import Helper
 import Control.Monad
 import GHC.Stack (HasCallStack)
+import Control.Exception (assert)
 
 
 
@@ -64,7 +65,7 @@ erase C.TyU = pure Ast.TyU
 erase (C.C u _) = erase u
 erase (C.Same u _ _ _) = erase u -- left biased
 erase (C.Union u _ _ ) = erase u -- left biased
-erase e = error $ "unhandled " ++ show e 
+erase e = pure $ Ast.Solve noAn -- error $ "unhandled " ++ show e 
 
 
 erasePat :: Fresh m => C.Pat -> m Ast.Pat

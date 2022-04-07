@@ -17,13 +17,17 @@ import Text.Pretty.Simple
 -- import Text.Pretty.Simple
 
 dPrinter a = pPrintStringOpt CheckColorTty defaultOutputOptionsDarkBg {outputOptionsCompact = True} $ show a
+
+dPrint a = pPrintStringOpt CheckColorTty defaultOutputOptionsDarkBg {outputOptionsCompact = True} $ a
+
 dTrace s a = pTraceOpt CheckColorTty defaultOutputOptionsDarkBg {outputOptionsCompact = True} s a
 
 -- todo a = trace ("optimistically assume " ++ show a) $ pure a
+
+logg a = pure a
 -- logg a = trace ("-- " ++ show a) $ pure a
 -- logg a = dTrace ("-- " ++ show a) $ pure a
 -- logg a = dTrace ("-- " ++ show a) $ pure a
-logg a = pure a
 -- did the haskell upgrade break trace?
 
 loggg a = pure a

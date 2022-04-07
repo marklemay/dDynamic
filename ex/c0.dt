@@ -88,7 +88,6 @@ almostFun x = head Bool x (rep Bool true (badd x 1)) ;
 
 
 
-
 test : Bool ;
 test = 1 ;
 

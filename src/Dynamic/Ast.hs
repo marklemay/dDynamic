@@ -17,7 +17,7 @@ module Dynamic.Ast where
 
 import Control.Applicative (Applicative (..), (<$>))
 import Control.Monad (guard)
-import Data.List (find)
+import Data.List (find, intersperse)
 
 import Data.Map (Map)
 import qualified Data.Map as Map
@@ -82,8 +82,19 @@ instance Subst Exp ObsAtom
 -- for some backwards compatiblity
 type Obs = [ObsAtom]
 
-data Info = Info {sr::Maybe SourceRange, obs::[ObsAtom]}-- also capture env?
+data Info = Info {sr::Maybe SourceRange, obs::[ObsAtom],  captured::Map String Exp, origL::Ignore Exp, origR::Ignore Exp }-- also capture env?
   deriving (Generic, Typeable)
+
+initInfo :: Maybe SourceRange -> Exp -> Exp -> Info
+initInfo msrc l r = let
+  vars = varLs l ++ varLs r
+  in Info msrc [] (Map.fromList $ fmap (\x -> (name2String x, V x)) vars) (ignore l) (ignore r)
+
+-- Maddness
+varLs :: Exp -> [Var]
+varLs = toListOf fv 
+varSet :: Exp -> Set Var
+varSet e = Set.fromList $ toListOf fv e
 
 appInfo :: Exp -> Info -> Info
 appInfo e inf@(Info{obs=obs'}) = inf{obs=obs'++[AppW e]} 
@@ -98,7 +109,12 @@ tconInfo i inf@(Info{obs=obs'}) = inf{obs=obs'++[Index i]}
 
 
 
-instance AlphaLShow Info
+instance AlphaLShow Info where
+  aShow _ Info{sr=sr, obs=obs} = do
+    (srv,srs) <- aShow 0 sr
+    (obsv,obss) <-  aShow 0 obs
+    pure (srv `Set.union` obsv, "Info{sr="++srs ++", obs="++ obss ++"}" )
+
 instance Show Info where
   show = lfullshow
 instance Alpha Info
@@ -111,6 +127,9 @@ newtype Match = Match (Bind [Pat] Term)
   deriving (
   -- Show, 
   Generic, Typeable)
+
+unMatch :: Match -> Bind [Pat] Term
+unMatch (Match x) = x
 
 instance Alpha Match
 instance Subst Exp Match
@@ -132,6 +151,10 @@ instance Subst Exp Pat -- vacous substitution
 instance AlphaLShow Pat
 instance Show Pat where
   show = lfullshow
+
+patSum :: Pat -> String
+patSum (PVar _) = "_"
+patSum (Pat dCName args _) = "(" ++ concat (intersperse " " ([dCName] ++ (patSum <$> args))) ++ ")"
 
 -- patToExp :: Pat -> Exp
 -- patToExp (PVar x) = V x
@@ -166,7 +189,7 @@ data Exp
     (Tel Exp Ty ()) --full
     (Tel Exp Ty ()) --full tcon (TODO if possible removes)
 
-  | Case [Term] [Match] (An [([Pat], SourceRange)])
+  | Case [Term] [Match] (An ([[Pat]],Maybe SourceRange))
 
   | TyU -- Type in type
 
@@ -174,7 +197,8 @@ data Exp
 
   | C Term EqEv
 
-  | Blame EqEv EqEv -- and why are the types the same?
+  | Blame EqEv -- incorrect type constructor
+    EqEv -- and why are the types the same?
 
   | Same Exp Info EqEv Exp
   | Union Exp EqEv Exp
