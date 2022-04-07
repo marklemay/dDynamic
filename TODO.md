@@ -1,5 +1,6 @@
 
 This week
+* doulbe check with Kori, about end date
 * test blame redrection
 * unseen pattern generation is a little buggy?
 * better motive inference / syntactic sugar for function by cases
@@ -12,11 +13,13 @@ This week
   * var printing bugs
 * fully worked system F interperter
 * check all examples
+
 4/11 (Next week)
-* rewrite CH5
+* rewrite CH5!
 * revise CH4
 * do a read through of everything but CH6
 * release Ch1-5+ conclusion to thesis committee, and other people
+* set deffence
 4/18 (possibly)
 * rebuild some of the experemantal stuff from CH6
 4/18-25

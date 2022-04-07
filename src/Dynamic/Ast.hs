@@ -90,6 +90,8 @@ initInfo msrc l r = let
   vars = varLs l ++ varLs r
   in Info msrc [] (Map.fromList $ fmap (\x -> (name2String x, V x)) vars) (ignore l) (ignore r)
 
+dummyInfo = Info Nothing [] Map.empty (ignore TyU) (ignore TyU)
+
 -- Maddness
 varLs :: Exp -> [Var]
 varLs = toListOf fv 

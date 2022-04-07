@@ -28,7 +28,6 @@ logg a = pure a
 -- logg a = trace ("-- " ++ show a) $ pure a
 -- logg a = dTrace ("-- " ++ show a) $ pure a
 -- logg a = dTrace ("-- " ++ show a) $ pure a
--- did the haskell upgrade break trace?
 
 loggg a = pure a
 -- loggg a = trace ("-- " ++  a) $ pure a

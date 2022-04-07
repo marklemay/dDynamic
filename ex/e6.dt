@@ -1,15 +1,15 @@
 
-data Nat : * {
-| Z : Nat
-| S : Nat -> Nat
+data Bool : * {
+  | true  : Bool
+  | false : Bool
 };
 
 data Id : (A : *) -> A -> A -> * {
 | refl  : (A : *) -> (a : A) -> Id A a a
 };
 
-badEq : Id (Nat -> Nat) (\x => 0) (\x => 1);
-badEq = refl (Nat -> Nat) (\x => 0) ;
+badEq : Id (Bool -> Bool) (\x => true) (\x => false);
+badEq = refl (Bool -> Bool) (\x => true) ;
 -- TODO no warning is happening here? 
 
 

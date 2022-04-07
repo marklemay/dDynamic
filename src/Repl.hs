@@ -119,7 +119,7 @@ loadFile path = do
     Left ls -> pure $ ParseError ls
     Right m@(ddefs,trmdefs) -> do
       putStrLn "parsed"
-      loggg $ lfullshow  m
+      -- loggg $ lfullshow  m
       em <- runExceptT $ runFreshMT $ C.elabmodule (empTyEnv{dataCtx=ddefs,defCtx=trmdefs}) sr 
 
       case em of
@@ -137,10 +137,12 @@ loadFile path = do
 
           -- putStrLn $ lfullshow mod
           putStrLn "elaborated" -- TODO after this point the programmer no longer needs to be blocked, 
-          -- putStrLn $ show m
-          -- pure $ Ok (ddefs,trmdefs)
+
+          -- loggg $ lfullshow mod
           mod' <- runFreshMT $ C.visitModule mod (C.visitFresh C.visitorCleanSameDef)
           putStrLn "cleaned"
+
+          -- loggg $ lfullshow mod'
           (mod'', warnings) <- runWriterT $ runFreshMT $ C.visitModule mod' (C.visitFresh C.visitorWarnSame)
           
           if null warnings
@@ -273,6 +275,7 @@ evalCastFilePath curState path =  do
   case res of
     Ok x -> do
       outputStrLn "loaded"
+      -- loggg $ lfullshow x 
       setREPLState $ Cast x
     ParseError ls -> do
       outputStrLn "ParseError"

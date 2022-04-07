@@ -29,6 +29,7 @@ import PreludeHelper
 import Dynamic.ElabBase
 import Dynamic.Env
 import Control.Monad.State
+import AlphaShow (lfullshow)
 
 --  A fancy eq would extract the definitional (erased) interpertation of terms 
 -- would requires tracking the endpoints of path variables
@@ -67,10 +68,18 @@ eqrefl l mty r | l `aeq` r = pure $ ecast l mty
 
 -- don't worry about eta for now
 eqrefl (Fun bndBodl) mty (Fun bndBodr) = do -- don't worry about eta for now
+
   ((ls,lx), bodl)<- unbind bndBodl
-  ((rs,rx), bodr)<- unbind bndBodl
+  ((rs,rx), bodr)<- unbind bndBodr
   bodl' <- safeWhnf' bodl
   bodr' <- safeWhnf' $ subst rs (V ls) $  subst rx (V lx) bodr
+
+  -- loggg $ "Fun"
+  -- loggg $ lfullshow bodl
+  -- loggg $ lfullshow bodr
+  -- loggg $ lfullshow bodl'
+  -- loggg $ lfullshow bodr'
+  -- loggg $ ""
 
   bod <- eqrefl bodl' Nothing bodr'
   pure $ ecast (Fun $ bind (ls,lx) bod) mty
@@ -114,7 +123,11 @@ ecast e Nothing = e
 eqDef :: (Fresh m, WithDynDefs m) =>
   Term -> Info -> Exp -> Exp -> m Exp
 eqDef l info ty r = do
+  -- loggg "eqDef"
+  -- loggg $ lfullshow l
+  -- loggg $ lfullshow r
   (me,_) <- runStateT (eqDef' l info ty r) 100
+  -- loggg $ "me=" ++ lfullshow me
   pure me
 
 
@@ -124,11 +137,10 @@ eqDef' l info ty r | l `aeq` r = pure $ C l ty -- redundent, but allows you to s
 eqDef' l info ty r = do
   l' <- safeWhnf' l
   r' <- safeWhnf' r
-  -- logg "eqdef"
-  -- logg "r'="
-  -- logg r'
-  -- logg "l'="
-  -- logg l'
+  -- logg "eqdef'"
+  -- loggg $ "r'=" ++  lfullshow r'
+  -- loggg $ "l'=" ++ lfullshow l'
+  -- loggg ""
 
   -- logg "getDefn' ... ="
   -- d <- getDefn' "first"
