@@ -34,3 +34,9 @@ ex4 =
  case (s f) < _ => Bs t > {
  | (s x) => (s x)
  };
+
+ex5 : Bs t;
+ex5 = 
+ case f, (s f) < b => _ : Bs b => Bs t > {
+ | b => (s (f)) => (s b)
+ };

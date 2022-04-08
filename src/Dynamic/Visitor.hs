@@ -122,7 +122,6 @@ visitFresh v@(VisitorM{vDind=vDind}) e@(Dind i ev) =
   vDind e $ \ finish -> do
     ev' <- visitFresh v ev
     finish i ev'
-visitFresh v e = undefined 
 
 visitorSelf :: (Monad m) => VisitorM m Exp
 visitorSelf = VisitorM {
@@ -136,9 +135,10 @@ visitorSelf = VisitorM {
   vCase = \ _ finish -> finish $ \ scruts branches an -> pure $ Case scruts (fmap (\ (p,b)-> Match $ bind p b) branches) an,
   vTyU = \ _ finish -> finish $ pure TyU,
   vC = \ _ finish -> finish $ \ trm ty -> pure $ C trm ty,
-  vBlame = \ _ finish -> finish $ \ trm ty -> pure $ C trm ty,
+  vBlame = \ _ finish -> finish $ \ trm ty -> pure $ Blame trm ty,
   vSame = \ _ finish -> finish $ \ l info ev r -> pure $ Same l info ev r,
   vUnion = \ _ finish -> finish $ \ l ev r -> pure $ Union l ev r,
   vTind = \ _ finish -> finish $ \ i ev -> pure $ Tind i ev,
   vDind = \ _ finish -> finish $ \ i ev -> pure $ Dind i ev
 }
+-- ok this should be gen tested

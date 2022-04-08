@@ -90,16 +90,16 @@ elabInf' (Pi aTy bndBod) ctx = do
   pure $ (C.Pi aTy' $ bind aName' bod', C.TyU)
 
 elabInf' (f `App` a) (ctx@ElabInfo{whnf=whnf}) = do
-  loggg ""
-  loggg "elabInf' App"
+  -- loggg ""
+  -- loggg "elabInf' App"
   (f', ty) <- elabInf f  ctx
   ty' <-  whnf ty
-  loggg $ "ty' = "
-  loggg $ lfullshow ty'
+  -- loggg $ "ty' = "
+  -- loggg $ lfullshow ty'
 
   case ty' of
     (C.Pi aTy bndBodTy) -> do
-      -- loggg $ "aTy = " ++ lfullshow aTy
+      -- -- loggg $ "aTy = " ++ lfullshow aTy
       a' <- elabCast a aTy ctx
       (aName, bodTybod) <- unbind bndBodTy
       pure $ (f' `C.App` a', substBind bndBodTy a')
@@ -135,7 +135,7 @@ elabInf' (Case scrutinees (An (Just tel)) branches) ctx = do
     (pats, bod) <- unbind bndbod
     (pat, outTy, flexs, paths, eq, ctx') <- getPats pats tel' ctx
     logg "TODO needs to set up the equations with the already existing assignments"
-    
+
     -- loggg $ "eq = " ++ lfullshow eq
     -- -- loggg $ "ctx' = " ++ show ctx'
     -- loggg $ "flexs = " ++ show flexs
@@ -302,89 +302,11 @@ patAsExp (C.Pat dcName args p) = do
 
 
 
--- getPat :: HasCallStack => (Fresh m) => Pat -> ElabInfo m -> m (C.Pat, Set C.Var, Set C.Var,ElabInfo m)
--- getPat (PVar x) info@(ElabInfo {varMap=varMap}) = do 
---   x' <- fresh $ s2n $ name2String x
---   pure (C.PVar x', Set.fromList [x'], Set.empty, info {varMap=Map.insert x x' varMap})
--- getPat (Pat dCName args) info = do 
---   p <- fresh $ s2n "p_"
---   (args', flex, path, info') <- getPats args info
---   pure (C.Pat dCName args' p, flex, Set.insert p path, info')
-
--- getPats :: HasCallStack => (Fresh m) => [Pat] -> ElabInfo m -> m ([C.Pat], Set C.Var, Set C.Var, ElabInfo m)
--- getPats [] info = pure ([],Set.empty,Set.empty,info)
--- getPats (arg:rest) info = do
---   (arg', flex, path, info') <- getPat arg info
---   (args', flex', path', info'') <- getPats rest info'
---   pure (arg':args', flex `Set.union` flex',path `Set.union` path', info'')
-
-
 toPi :: Tel C.Term C.Ty C.Exp -> C.Exp
 toPi (NoBnd e) = e
 toPi (TelBnd aTy (B p bod)) = C.Pi aTy (B p $ toPi bod)
 -- unsafeTelMap f (NoBnd b) = NoBnd $ f b
 -- unsafeTelMap f (TelBnd a (B p bod)) = TelBnd a (B p $ unsafeTelMap f bod)
-
--- elabCast e ty ctx rename assumeDefs = do
---   e' <- elabInf e ctx rename assumeDefs
---   mr <- askSourceRange
---   let ety = C.apparentTy e'
---   case mr of
---     Just r -> do
---       let info@(C.Info _ obs _ _ _) = (C.initInfo r ety ty)
---       -- logg $ show ety ++ " =?= " ++ show ty
---       pure $ C.C e' info ety (C.Same ety (C.initInfo r ety ty) ty) ty
---     _ -> throwPrettyError "no source range when needed" 
-
--- elabTy :: (Fresh m, MonadError C.Err m, WithDynDefs m, WithSourceLoc m) => Exp -> Ctx -> VMap -> TyDefs -> m C.Exp
--- elabTy = undefined
--- elabTy TyU ctx rename assumeDefs = pure C.TyU
--- elabTy e ctx rename assumeDefs = elabCast e C.TyU ctx rename assumeDefs
-
--- -- TODO this function should do mpre length checking
--- elabCastPats :: (Fresh m, MonadError C.Err m, WithDynDefs m, WithSourceLoc m) 
---   => [Pat] -> Tel C.Term C.Ty C.Ty -> Ctx -> VMap 
---   -> m ([(C.Pat, C.Exp)], C.Ty, [(C.Exp,C.Exp,C.Path)], Ctx, VMap)
--- elabCastPats [] (NoBnd outty) ctx rename = pure ([], outty, [], ctx, rename)
--- elabCastPats ((PVar x):rest) (TelBnd ty bndRestTel) ctx rename = do
---   x' <- fresh $ s2n $ name2String x
-  
---   let exp = C.V x' $ ann ty
---   let pat = C.PVar x'
-  
---   -- logg $ " ctx = " ++ lfullshow ctx
---   (cpesexps, outty, eqs, ctx', rename') <- elabCastPats rest (substBind bndRestTel exp) (Map.insert x ty ctx) (Map.insert x x' rename)
---   -- logg $ " ctx' = " ++ lfullshow ctx'
---   pure ((pat,exp):cpesexps, outty, eqs, ctx', rename')
-
--- elabCastPats ((Pat dCName args):rest) (TelBnd topTy bndRestTel) ctx rename = do
---   -- logg $ "topTy = " ++ show topTy
---   (tCName, tel) <- getConsTcon dCName
---   let telTy = unsafeTelMap (\ args -> C.TConF tCName args (ann $ NoBnd ())) tel
---   (unzip -> (pats, exps), botTy, eqs, ctx', rename') <- elabCastPats args telTy ctx rename
---   -- logg $ "botTy = " ++ show botTy
-
---   -- let botTy = substsTel telTy exps 
---   let botexp = C.DConF dCName exps $ ann (tCName, NoBnd $ snd $ substBindTel tel exps)
---   -- logg $ "botexp = " ++ show botexp
-
---   path <- fresh $ s2n "path"
-  
---   let exp = C.Rev botexp (C.PathV path $ ann (botTy, topTy)) (bind (s2n "x") $ C.V (s2n "x") $ ann C.TyU) $ ann topTy  -- TODO: this could be more specific becuase tcname is known
-  
---   -- logg $ "exp = " ++ show exp
-
---   let pat = C.Pat path dCName pats
---   -- logg $ "pat = " ++ show pat
-
---   -- logg $ "... "
---   let eq = (botTy, topTy, C.PathV path noAn) -- $ ann (botTy, topTy)) -- TODO: WHY CAN"T THE TYPE GO HERE?
---   -- logg $ "eq = " ++ show eq
-
---   (cpesexps, outty, eqs', ctx'', rename'') <- elabCastPats rest (substBind bndRestTel exp) ctx' rename'
---   pure ((pat,exp):cpesexps, outty, eq : eqs ++ eqs', ctx'', rename'')
-  
--- elabCastPats arg tel ctx rename = error $  " applications do not match type, " ++ show tel ++ "~/~" ++ show arg
 
 --fill in the unwritten types with the types infered from scrutinee terms
 -- TODO: a bit of a mess!
@@ -403,13 +325,13 @@ checkTelMaybe [] (NoBnd a) ctx defs = do
 checkTelMaybe (trm : trms) (TelBnd (Just ty) bndRestTel) ctx defs = do
   cty <- elabCast ty C.TyU ctx
   let ctyconcrete = substs (Map.toList defs) cty
-  loggg ""
-  loggg "checkTelMaybe"
-  loggg $ "ctyconcrete ="
-  logg ctyconcrete
+  -- loggg ""
+  -- loggg "checkTelMaybe"
+  -- loggg $ "ctyconcrete ="
+  -- logg ctyconcrete
   cexp <- elabCast trm ctyconcrete ctx
-  loggg "cexp ="
-  logg cexp
+  -- loggg "cexp ="
+  -- logg cexp
 
   (x,restTel) <- unbind bndRestTel
   (x', ctx') <- setVar x cty ctx
@@ -442,15 +364,15 @@ elabCastTelUnit :: (Fresh m, MonadError C.Err m, WithDynDefs m, WithSourceLoc m)
 elabCastTelUnit [] (NoBnd ()) ctx = pure []
 elabCastTelUnit (trm : restTrm) (TelBnd ty bndRestTel) ctx = do
   
-  loggg ""
-  loggg "elabCastTelUnit"
-  loggg $ "ty " ++ lfullshow ty
+  -- loggg ""
+  -- loggg "elabCastTelUnit"
+  -- loggg $ "ty " ++ lfullshow ty
   cexp <- elabCast trm ty ctx
-  -- logg "cexp"
-  -- logg $ lfullshow cexp
+  -- -- logg "cexp"
+  -- -- logg $ lfullshow cexp
   let restTel = substBind bndRestTel cexp
-  -- logg "restTel"
-  -- logg $ lfullshow restTel
+  -- -- logg "restTel"
+  -- -- logg $ lfullshow restTel
   rest <- elabCastTelUnit restTrm restTel ctx
   pure $ cexp : rest
 elabCastTelUnit _ _ _  = throwPrettyError " telescope different length"

@@ -17,6 +17,10 @@ module Dynamic.Warning where
 import Unbound.Generics.LocallyNameless
 import Unbound.Generics.LocallyNameless.Internal.Fold (foldMapOf, toListOf)
 import Unbound.Generics.LocallyNameless.Unsafe (unsafeUnbind)
+
+import Data.Map (Map)
+import qualified Data.Map as Map
+
 import Dynamic.Ast
 
 import Unbound.Generics.LocallyNameless.Unsafe (unsafeUnbind)
@@ -32,6 +36,7 @@ import Dynamic.Visitor
 import GHC.Generics
 import Data.Data
 import AlphaShow
+import Unbound.Generics.LocallyNameless.Ignore (Ignore(I))
 
 data Warning 
   = EqWarning Exp -- left
@@ -47,6 +52,37 @@ instance Alpha Warning
 instance AlphaLShow Warning
 instance Show Warning where
   show = lfullshow
+instance Eq Warning where
+  (==) = aeq
+instance Ord Warning where
+  compare = acompare
+
+consolidate :: [Warning] -> 
+  (Map SourceRange (Ty,Ty, Map Obs (Exp,Exp)), Map SourceRange [[Pat]], [Warning])
+consolidate [] = (Map.empty, Map.empty, [])
+consolidate (EqWarning l (Info{sr=(Just sr), obs=obs, origL= (I origL), origR= (I origR)}) _ r : rest) = let
+  (se, sw, noSource) = consolidate rest
+  in 
+  case Map.lookup sr se of
+    Nothing -> (Map.insert sr (origL, origR, Map.fromList [(obs, (l, r))]) se, sw, noSource)
+    Just (_, _, om) -> (Map.insert sr (origL, origR, Map.insert obs (l, r) om)  se, sw, noSource)
+consolidate (Unmatched ps (Just sr) : rest) = let
+  (se, sw, noSource) = consolidate rest
+  in 
+  (se, Map.insert sr ps sw, noSource)
+
+consolidate (w : rest) = let
+  (se, sw, noSource) = consolidate rest
+  in (se, sw, w : noSource)
+
+
+
+
+
+
+src :: Warning -> Maybe SourceRange
+src (Unmatched _ mrs) = mrs
+src (EqWarning _ (Info {sr=sr}) _ _) = sr
 
 
 visitorWarnSame :: (MonadWriter [Warning] m, Fresh m) => VisitorM m  Exp

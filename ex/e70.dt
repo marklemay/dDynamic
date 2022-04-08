@@ -1,0 +1,32 @@
+data Unit : * {
+  | tt  : Unit
+};
+
+
+data Nat : * {
+  | Z : Nat
+  | S : Nat -> Nat
+};
+
+-- length indexed lists
+data Vec :  Nat -> * {
+  | Nil  :  Vec 0
+  | Cons : Unit -> Vec 1
+};
+
+-- examples coresponding to ch5, test in whnf
+
+head : Vec 1 -> Unit ;
+head v = 
+  case v <_ => Unit >{
+   | (Cons a) => a
+   } ;
+
+ex2 : Unit ;
+ex2 = head (Nil : Vec 1) ; -- whnf breaks
+
+ex21 : Unit ;
+ex21 =  case Nil < _ : Vec 1 => Unit >{ | (Cons a) => a } ; -- whnf breaks.. but not when pasted directly into the REPL?
+
+ex22 : Unit ;
+ex22 = case (Nil : Vec 1) < _  => Unit >{ | (Cons a) => a } ; -- whnf breaks.. but not when pasted directly into the REPL?

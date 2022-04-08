@@ -1,9 +1,12 @@
 
 This week
-* doulbe check with Kori, about end date
+* doulbe check with Kori, about end date!
 * test blame redrection
-* unseen pattern generation is a little buggy?
 * better motive inference / syntactic sugar for function by cases
+
+* unseen pattern generation
+  * does not specialize the cases where the type is unique
+  * can extend `whnf` with info to track wich vars sould be expanded to "unstick" computations
 * needs more testing
   * exampels in CH5 of thesis
   * earier examples
@@ -12,7 +15,6 @@ This week
   * consolodate and order warnings
   * var printing bugs
 * fully worked system F interperter
-* check all examples
 
 4/11 (Next week)
 * rewrite CH5!

@@ -49,6 +49,7 @@ lfullshow x =
     (vars, str) = runLFreshM $ avoid (Set.toList freevars) $ aShow 0 x
   in case Set.toList freevars ++ Set.toList vars of
        [] -> str
+        --TODO should really convert any of  these that anr't valid hs identifiers in to hs identifiers
        [v] -> "let " ++ show v ++ "=s2n\""++ show v ++"\" in " ++ str
        ls -> "let (" ++ concat (intersperse "," $ show <$> ls) ++ ") = ("++ concat ((intersperse "," $ (\x -> "s2n\"" ++show x ++ "\"") <$> ls)) ++") in " ++ str
     --  else "let ..." ++ fmap show vars = 

@@ -1,0 +1,42 @@
+
+data Nat : * {
+  | Z : Nat
+  | S : Nat -> Nat
+};
+
+data Bool : * {
+  | true  : Bool
+  | false : Bool
+};
+
+data Id : (A : *) -> A -> A -> * {
+| refl  : (A : *) -> (a : A) -> Id A a a
+};
+
+badEq : Id (Bool -> Bool) (\x => true) (\x => false);
+badEq = refl (Bool -> Bool) (\x => true) ;
+-- TODO no warning is happening here? 
+
+butThen : (A : *) -> (B : *) -> 
+  (f : A -> B) -> 
+  (g : A -> B) ->
+  (a : A ) ->
+  Id (A -> B) f g -> Id B (f a) (g a) ;
+butThen A B f g a eq = 
+  case f, g, eq < f' => g' => _ : Id (A -> B) f' g' => Id B (f' a) (g' a) > {
+  | _ => _ => (refl _ h) => refl B (h a) 
+} ;
+
+uhho : Id Bool true false ;
+uhho = butThen Bool Bool (\x => true) (\x => false) true badEq;
+-- somthing's getting a little stuck
+
+
+
+
+
+badEq2 : Id (Nat -> Nat) (\x => 0) (\x => 1);
+badEq2 = refl (Nat -> Nat) (\x => x) ;
+
+badEq01 : Id Nat 0 1 ;
+badEq01 = refl Nat 0 ;

@@ -78,6 +78,10 @@ instance Show ObsAtom where
   show = lfullshow
 instance Alpha ObsAtom
 instance Subst Exp ObsAtom
+instance Eq ObsAtom where
+  (==) = aeq
+instance Ord ObsAtom where
+  compare = acompare
 
 -- for some backwards compatiblity
 type Obs = [ObsAtom]

@@ -200,7 +200,7 @@ elabmodule src range = do
 
 elabmodule' :: (WithDynDefs m, WithSourceLoc m, MonadError C.Err m) => E.TyEnv -> m Module
 elabmodule' src@(E.TyEnv{E.dataCtx=dt, E.defCtx=dfns}) = do
-  logg $  "dfns=" ++ show dfns
+  -- logg $  "dfns=" ++ show dfns
   let dfnRefs = fmap fst $ Map.toList dfns
   -- -- mapM_ (\ x -> elabdfnVar' x src) dfnVars
 

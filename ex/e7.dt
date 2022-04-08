@@ -1,0 +1,42 @@
+data Unit : * {
+  | tt  : Unit
+};
+
+data Bool : * {
+  | true  : Bool
+  | false : Bool
+};
+
+data Nat : * {
+  | Z : Nat
+  | S : Nat -> Nat
+};
+
+add : Nat -> Nat -> Nat ;
+add x y = 
+  case x <_ => Nat> {
+   | (Z)   => y
+   | (S p) => S (add p y)
+   } ;
+
+-- length indexed lists
+data Vec : * -> Nat -> * {
+  | Nil  : (A : *) -> Vec A 0
+  | Cons : (A : *) -> A -> (n : Nat) -> Vec A n -> Vec A (S n)
+};
+
+-- examples coresponding to ch5, test in whnf
+
+head : (A : *) -> (n : Nat) -> Vec A (S n) -> A ;
+head A n v = 
+  case v <_ => A >{
+   | (Cons _ a _ _) => a
+   } ;
+
+ex1 : Bool ;
+ex1 = head Bool 0 (true : Vec Bool 1) ; -- whnf will get sruck in the appropriate way
+ex2 : Bool ;
+ex2 = head Bool 0 (Nil Bool : Vec Bool 1) ; -- seemingly incorrect highlighting
+
+ex3 : Bool ;
+ex3 = head Bool 0 ((Cons Unit tt 0 (Nil Unit) ): Vec Bool 1) ; -- whnf will go through, with a cast if ever observed

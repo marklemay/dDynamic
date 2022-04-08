@@ -98,10 +98,6 @@ norm next (C u ev) = do
       case u' of
         (C u'' ev'') ->  critN next $ C u'' $ Union ev'' TyU ev' 
         _ -> pure (C u' ev')
-        -- (u'', Just ev') -> do
-        --   ev'' <- critN next $ Union ev' TyU ev 
-        --   pure (C u'' ev'') -- is impossible for this to be TyU, so this is the final form
-    -- Pi _ _ -> pure (C u ev')
     _ -> pure (C u ev')
 norm next (Same l info ev r) = do
   ev' <- critN next ev
@@ -133,20 +129,31 @@ norm next (Same l info ev r) = do
     _ -> pure $ Same l info ev' r 
     -- _ -> pure $ assert next l info ev' r 
 norm next (Union l ev r) = do
+  
+  -- loggg $ "Union" 
   ev' <- critN next ev
+  -- loggg $ "ev' = " ++ lfullshow ev'
   case ev' of
     TyU -> do
       l' <- critN next l
       r' <- critN next r
-      case (l', r) of
+      -- loggg $ "l' = " ++ lfullshow l'
+      -- loggg $ "r' = " ++ lfullshow r'
+      case (l', r') of
         (TyU , TyU) -> pure TyU
         (Pi la blBod , Pi ra brBod) -> do
           (lName, lbod) <-unbind blBod
           let rbod = substBind brBod (V lName)
           -- xx <- unbind2 blBod brBod
           pure $ Pi (Union la  TyU ra) $ bind lName (Union lbod  TyU rbod)
-        (zipTCon (\l i ev r -> Union l  ev r) -> Just ans) -> pure ans
-        _ -> pure (Union l' ev' r')
+        (zipTCon (\l _ ev r -> Union l ev r) -> Just ans) -> pure ans
+        _ -> do
+          -- loggg $ "l = " ++ lfullshow l
+          -- loggg $ "r = " ++ lfullshow r
+          -- loggg $ "l' = " ++ lfullshow l'
+          -- loggg $ "r' = " ++ lfullshow r'
+          -- loggg $ "... "
+          pure (Union l' ev' r')
     TConF _ _ (NoBnd ()) _ -> do
       l' <-  critN next l
       r' <-  critN next r --little redundant work
@@ -514,17 +521,17 @@ cbvOrErr :: (Fresh m, WithDynDefs m, MonadError RunTimeError m) => Exp -> m Exp
 -- cbvOrErr (Same l info ev r) = err l info ev r
 cbvOrErr (f `App` a) = do
   f' <- cbvOrErr f
-  logg ""
-  -- loggg "f = "
-  -- loggg $ lfullshow f
-  -- loggg "isValue f' = "
-  -- loggg $ show $ isValue f'
-  -- loggg $ lfullshow f'
+  -- logg ""
+  -- loggg $ "f = " ++ lfullshow f
+  -- loggg $ "isValue f' = " ++ (show $ isValue f')
+  -- loggg $ "f' = " ++ lfullshow f'
   if isValue f'
   then do
     a' <- cbvOrErr a
+    
+    -- loggg $ "a = " ++  lfullshow a
     -- loggg $ "isValue a' = " ++ (show $ isValue a')
-    -- loggg $ lfullshow a'
+    -- loggg $ "a' = " ++  lfullshow a'
     -- logg ""
     if isValue a'
     then norm cbvErrNext $ f' `App` a'
@@ -550,13 +557,17 @@ cbvOrErr e@(Case scrutinees branches unmatched) = do
   if all isValue scrutinees'
   then norm cbvErrNext $ Case scrutinees' branches unmatched
   else pure $ Case scrutinees' branches unmatched 
-  
 cbvOrErr (Blame why sameTy) = do
   sameTy' <- norm cbvErrNext sameTy -- preffer type errors to term errors
   why' <- norm cbvErrNext why 
   pure $ Blame why' sameTy'
 
-cbvOrErr e = norm cbvErrNext e 
+cbvOrErr e = do
+  e' <- norm cbvErrNext e 
+  
+  -- loggg $ "e = " ++  lfullshow e
+  -- loggg $ "e' = " ++  lfullshow e'
+  pure e'
 
 
 cbvOrErrs :: (Fresh f, WithDynDefs f, MonadError RunTimeError f) => [Exp] -> f [Exp]
@@ -575,33 +586,6 @@ cbvOrErrs (h:ls) = do
     pure $ h' : ls'
   else pure $ h' : ls
 
-
--- cbvOrErr (f `App` a) = do
---   f' <- cbv f
---   if isValue f'
---   then do
---     a' <- cbv a
---     if isValue a'
---     then norm (noNext{critN = cbv}) $ f' `App` a'
---     else pure $ f' `App` a'
---   else pure $ f' `App` a
--- cbv (DConF dcName args tel telAn telTyAn) = do
---   args' <- mapM cbv args
---   pure $ DConF dcName args' tel telAn telTyAn
--- cbv (TConF dcName inds tel telTyAn) = do
---   inds' <- mapM cbv inds
---   pure $ TConF dcName inds' tel telTyAn
--- cbv e@(Ref refName) = do
---   me' <- getDefn' refName
---   case me' of
---     Just e' -> cbv e'
---     Nothing -> pure e
--- cbv e@(Case scrutinees branches unmatched) = do
---   scrutinees' <- cbvs scrutinees
---   if all isValue scrutinees'
---   then norm (noNext{critN = cbv}) $ Case scrutinees' branches unmatched
---   else pure $ Case scrutinees' branches unmatched 
--- cbv e = pure e -- norm (noNext{critN = cbv}) e -- TODO pure e?
 
 
 

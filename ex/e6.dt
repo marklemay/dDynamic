@@ -12,6 +12,20 @@ badEq : Id (Bool -> Bool) (\x => true) (\x => false);
 badEq = refl (Bool -> Bool) (\x => true) ;
 -- TODO no warning is happening here? 
 
+butThen : 
+  (f : Bool -> Bool) -> 
+  (g : Bool -> Bool) ->
+  Id (Bool -> Bool) f g -> Id Bool (f true) (g true) ;
+butThen f g eq = 
+  case f, g, eq < f' => g' => _ : Id (Bool -> Bool) f' g' => Id Bool (f' true) (g' true) > {
+  | _ => _ => (refl _ h) => refl Bool (h true) 
+} ;
+
+--uhho : Id Bool true false ;
+--uhho = butThen (\x => true) (\x => false) (refl (Bool -> Bool) (\x => true));
+
+uhho : Id Bool true false ;
+uhho = butThen (\x => true) (\x => false) (refl (Bool -> Bool) (\x => true));
 
 --badEq2 : Id (Nat -> Nat) (\x => 0) (\x => 1);
 --badEq2 = refl (Nat -> Nat) (\x => x) ;
