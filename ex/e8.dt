@@ -1,0 +1,59 @@
+data Unit : * {
+  | tt  : Unit
+};
+
+data Bool : * {
+  | true  : Bool
+  | false : Bool
+};
+
+data Nat : * {
+  | Z : Nat
+  | S : Nat -> Nat
+};
+
+add : Nat -> Nat -> Nat ;
+add x y = 
+  case x <_ => Nat> {
+   | (Z)   => y
+   | (S p) => S (add p y)
+   } ;
+
+-- length indexed lists
+data Vec : * -> Nat -> * {
+  | Nil  : (A : *) -> Vec A 0
+  | Cons : (A : *) -> A -> (n : Nat) -> Vec A n -> Vec A (S n)
+};
+
+rep : (A : *) -> A -> (n : Nat) -> Vec A n ;
+rep A a n = 
+  case n < n' : Nat => Vec A n' >{
+   | (Z)   => Nil A
+   | (S p) => Cons A a p (rep A a p)
+   } ;
+
+data Id : (A : *) -> A -> A -> * {
+| refl  : (A : *) -> (a : A) -> Id A a a
+};
+
+e1 : Id Nat 2 2 -> Vec Bool 2 ;
+e1 x = case x <_ => Vec Bool 2> {
+| (refl _ a) => rep Bool true a
+} ;
+
+e12 : Vec Bool 2 ;
+e12 = e1 (refl Nat 2) ;
+
+e11 : Vec Bool 2 ;
+e11 = e1 (refl Nat 1) ;
+
+e2 : (x : Nat) -> Vec Bool x ;
+e2  x = case x < x : Nat => Vec Bool x> {
+| (S (Z)) => rep Bool true 1 } ;
+
+
+last : (A : *) -> (n : Nat) -> Vec A (S n) -> A;
+last A n v = case n, v <n => _ : Vec A (S n) => A> {
+| _ => (Cons _ a (Z) _) => a
+| _ => (Cons _ _ (S n') rest) => last A n' rest
+} ;

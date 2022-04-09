@@ -1,20 +1,4 @@
 
-This week
-* doulbe check with Kori, about end date!
-* test blame redrection
-* better motive inference / syntactic sugar for function by cases
-
-* unseen pattern generation
-  * does not specialize the cases where the type is unique
-  * can extend `whnf` with info to track wich vars sould be expanded to "unstick" computations
-* needs more testing
-  * exampels in CH5 of thesis
-  * earier examples
-* nested cases need to be turned on and tested
-* better warning/error messages
-  * consolodate and order warnings
-  * var printing bugs
-* fully worked system F interperter
 
 4/11 (Next week)
 * rewrite CH5!
@@ -28,6 +12,23 @@ This week
 * CH6
 4/25-end of April set defense
 Approx 5/15 defend
+
+time permitting
+* better motive inference / syntactic sugar for function by cases
+* that wierd source range issue
+* unseen pattern generation
+  * does not specialize the cases where the type is unique
+  * can extend `whnf` with info to track wich vars sould be expanded to "unstick" computations
+* needs more testing
+  * exampels in CH5 of thesis
+  * earier examples
+* nested cases need to be turned on and tested
+* better warning/error messages
+  * consolodate and order warnings
+  * var printing bugs
+* fully worked system F interperter
+* clean could also rela some unions?
+
 
 
 

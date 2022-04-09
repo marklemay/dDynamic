@@ -98,21 +98,23 @@ nameParser' = do
 
 
 withInfixl :: Parser Exp -> [(String, Exp -> Exp -> Exp)] -> Parser Exp
-withInfixl pa ls = let 
-  operators = fmap fst ls
-  opParsers = fmap (\ s -> token $ literal s) operators
+withInfixl = withInfix
+-- THE below is buggy since it keeps stating ther source locations incorrectly
+-- withInfixl pa ls = let 
+--   operators = fmap fst ls
+--   opParsers = fmap (\ s -> token $ literal s) operators
 
-  --innerParser :: a -> Parser a, where a is the same as above
-  innerParser left = do 
-    s <- oneOf opParsers
-    next <- pa
-    case lookup s ls of
-      Nothing -> error "this should be impossible"
-      Just f ->  let out = f left next
-                  in (tokenl $ innerParser out) <|> pure out
-  in do 
-    l <- tokenl pa
-    innerParser l <|> pure l
+--   --innerParser :: a -> Parser a, where a is the same as above
+--   innerParser left = do 
+--     s <- oneOf opParsers
+--     next <- pa
+--     case lookup s ls of
+--       Nothing -> error "this should be impossible"
+--       Just f ->  let out = f left next
+--                   in (tokenl $ innerParser out) <|> pure out
+--   in do 
+--     l <- tokenl pa
+--     innerParser l <|> pure l
 
 
 exp :: Parser Exp

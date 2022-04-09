@@ -1,0 +1,32 @@
+data Unit : * {
+  | tt  : Unit
+};
+
+data Bool : * {
+  | true  : Bool
+  | false : Bool
+};
+
+data Nat : * {
+  | Z : Nat
+  | S : Nat -> Nat
+};
+
+
+-- length indexed lists
+data Vec : * -> * {
+  | Nil  : Vec *
+  | Cons : * -> * -> Vec *
+};
+
+
+ee3 : (* -> * ->  *) ->  (* -> *) ;
+ee3 f = (f * *) ; -- well this underliing is off
+
+
+ee : (* -> * ->  *) ->  (* -> *) ;
+ee f = (f *) * ;
+
+
+ee2 : (* -> * ->  *) ->  (* -> *) ;
+ee2 = (\ f => f * *) : ((* -> * ->  *) ->  (* -> *)) ;

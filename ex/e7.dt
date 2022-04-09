@@ -36,7 +36,23 @@ head A n v =
 ex1 : Bool ;
 ex1 = head Bool 0 (true : Vec Bool 1) ; -- whnf will get sruck in the appropriate way
 ex2 : Bool ;
-ex2 = head Bool 0 (Nil Bool : Vec Bool 1) ; -- seemingly incorrect highlighting
+ex2 = head Bool 0 (Nil Bool : Vec Bool 1) ;
 
 ex3 : Bool ;
 ex3 = head Bool 0 ((Cons Unit tt 0 (Nil Unit) ): Vec Bool 1) ; -- whnf will go through, with a cast if ever observed
+
+sum2 : Vec Nat 2 -> Nat ;
+sum2 v = 
+  case v <_ => Nat >{
+   | (Cons _ i _ (Cons _ j _ _)) => add i j
+   } ;
+
+
+ex4 : Nat ;
+ex4 = sum2 ([1,4]<Nat>) ;
+
+-- eaither cuases whnf to get sruck in the appropriate way
+ex41 : Nat ;
+ex41 = sum2 (Cons Nat 1 1 (Cons Unit tt 0 (Nil Unit))) ;
+ex42 : Nat ;
+ex42 = sum2 (Cons Unit tt 1 (Cons Unit tt 0 (Nil Unit))) ;

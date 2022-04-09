@@ -292,7 +292,7 @@ evalCastExp curState (inpStr, exp, mod) = do
 whnfCastExp :: REPLEval (String, Exp, C.Module)
 whnfCastExp curState (inpStr, exp, mod) = do
   let exp' = C.underModule exp mod
-  -- loggg $ lfullshow exp'
+  -- loggg $ "exp'= " ++ lfullshow exp'
   mExp <- runExceptT $ runFreshMT $ C.runWithModuleMT (C.runWithSourceLocMT (C.elabInf' exp' (C.empElabInfo Dynamic.Norm.whnfd) ) (Just $ SourceRange (Just inpStr) (SourcePos "" 0 0) (endPos "" inpStr))) mod
   case mExp of
     Right (e,cty) -> do

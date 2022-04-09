@@ -209,6 +209,7 @@ elabCast' e ty ctx@(ElabInfo{Dynamic.ElabBase.assign=assign}) = do
 
 
 elabCast :: HasCallStack => (Fresh m, MonadError C.Err m, WithDynDefs m, WithSourceLoc m) => Ast.Exp -> C.Ty -> ElabInfo m -> m C.Exp
+-- elabCast (Pos s e s') ty ctx = elabCast e ty ctx
 elabCast (Pos s e s') ty ctx = localSources s s' $ elabCast e ty ctx
 elabCast (Fun bbndBod) ty (ctx@ElabInfo{whnf=whnf}) = do
   -- loggg $ ""
