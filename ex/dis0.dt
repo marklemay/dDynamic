@@ -1,0 +1,13 @@
+-- Does this have any impact on lambda encodings?
+
+Bool : *;
+Bool = (A : *) -> A -> A -> A; 
+
+True : Bool ;
+True _ t f = t ;
+
+False : Bool ;
+False _ t f = f ;
+
+indBool : (P : Bool -> * ) -> P True -> P False -> (b : Bool) -> P b ;
+indBool P t f b = b (P b) t f ;

@@ -1,18 +1,4 @@
 
-
-4/11 (Next week)
-* rewrite CH5!
-* revise CH4
-* do a read through of everything but CH6
-* release Ch1-5+ conclusion to thesis committee, and other people
-* set deffence
-4/18 (possibly)
-* rebuild some of the experemantal stuff from CH6
-4/18-25
-* CH6
-4/25-end of April set defense
-Approx 5/15 defend
-
 time permitting
 * better motive inference / syntactic sugar for function by cases
 * that wierd source range issue
@@ -42,3 +28,4 @@ find or create a large bank of test cases?
 move to more standard libs
 * https://github.com/haskell/pretty as in https://github.com/lambdageek/unbound-generics/blob/master/examples/Nanevski.lhs#L1080
 * smantic source
+* check this out http://leventerkok.github.io/sbv/ (no higher order?)

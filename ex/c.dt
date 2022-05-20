@@ -84,7 +84,7 @@ alsookFun x = head Bool x (rep Bool true (add 1 x)) ;
 
 badFun : Nat -> Bool ;
 badFun x = head Bool x (rep Bool true x) ;
--- TODO make cbv checknig more aggressive
+-- defualt cbv checknig is aggressive
 
 
 

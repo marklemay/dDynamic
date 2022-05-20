@@ -12,6 +12,7 @@ import qualified Data.Map as Map
 
 import ParserMonad  hiding(spaces)
 import Ast
+import PreludeHelper
 import UnboundHelper
 import Unbound.Generics.LocallyNameless
 
@@ -98,29 +99,31 @@ nameParser' = do
 
 
 withInfixl :: Parser Exp -> [(String, Exp -> Exp -> Exp)] -> Parser Exp
-withInfixl = withInfix
+-- withInfixl = withInfix
 -- THE below is buggy since it keeps stating ther source locations incorrectly
--- withInfixl pa ls = let 
---   operators = fmap fst ls
---   opParsers = fmap (\ s -> token $ literal s) operators
+withInfixl pa ls = let 
+  operators = fmap fst ls
+  opParsers = fmap (\ s -> token $ literal s) operators
 
---   --innerParser :: a -> Parser a, where a is the same as above
---   innerParser left = do 
---     s <- oneOf opParsers
---     next <- pa
---     case lookup s ls of
---       Nothing -> error "this should be impossible"
---       Just f ->  let out = f left next
---                   in (tokenl $ innerParser out) <|> pure out
---   in do 
---     l <- tokenl pa
---     innerParser l <|> pure l
+  --innerParser :: a -> Parser a, where a is the same as above
+  innerParser left lsr = do 
+    s <- oneOf opParsers
+    next <- pa
+    rsr <- gets
+    case lookup s ls of
+      Nothing -> error "this should be impossible"
+      Just f ->  let out = Pos lsr (f left next) rsr
+                  in (token $ innerParser out lsr) <|> pure out
+  in do 
+    sr <- gets
+    l <- token pa
+    innerParser l sr <|> pure l
 
 
 exp :: Parser Exp
 exp = loc $ pi <|> (do
   e <- exp2
-  (tokenl $ do 
+  (token $ do 
     literal "->" 
     e2 <- exp
     pure $ Pi e $ bind unnamed e2
@@ -131,7 +134,7 @@ exp = loc $ pi <|> (do
 exp2 :: Parser Exp
 exp2 = do
   e <- exp1
-  (tokenl $ do 
+  (token $ do 
     literal ":" 
     e2 <- exp2
     pure $ e ::: e2
@@ -311,3 +314,5 @@ motiveParser = (do
 -- TODO bake s2n into the var parser?
 -- TODO make sure there is no keyword overlap
 
+-- Right ee = prettyParse "" "* : *" exp
+-- Right ee2 = prettyParse "" "* -> *" exp

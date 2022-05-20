@@ -14,7 +14,6 @@ cabal new-run repl
 ```
 supports commands for 
 * loading files, cast elaboration `:l`
-* loading files, with surface typechecking `:ls`
 * quiting `:q`
 * checking types `:t`
 * normalizing expressions `:n`

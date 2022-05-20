@@ -187,8 +187,9 @@ codeshow e =
               (TCon tCName) ->  "(TCon \"" ++ tCName  ++ "\")"
               -- (TCon tCName indicies) ->  "(TCon \"" ++ tCName  ++ "\" "++ "[" ++ (concat $ intersperse ", " $ fmap codeshow indicies) ++ "]" ++ ")"
               TyU ->  "TyU"
+              Pos s ex e ->  "(Pos "++ show s ++ " " ++  codeshow ex ++ " " ++ show e ++")"
               -- Pos _ e _ ->  "(Pos _ " ++ codeshow e ++ " _)"
-              Pos _ e _ ->  codeshow e
+              -- Pos _ e _ ->  codeshow e
               e ->  "_"
               -- e ->  "{- " ++ show e ++ "-}"
 

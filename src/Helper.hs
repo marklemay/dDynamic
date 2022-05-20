@@ -65,3 +65,17 @@ validPos (e `App` t) = validPos e && validPos t
 validPos (Pi aTy (unsafeUnbind -> (a,bod))) = validPos aTy && validPos bod
 validPos (Case s _ bs) = error "case not done yet"
 validPos x = True
+
+
+validPos' s e (Pos start ex end) =  s <= start && start <= end && end <= e && validPos' start end ex
+validPos' s e (ex ::: t) = validPos' s e ex && validPos' s e t -- TODO could further check that ex starts befor t
+validPos' s e (Fun (unsafeUnbind -> ((_,a),bod))) = validPos' s e bod
+validPos' s e (f `App` a) = validPos' s e f && validPos' s e a
+--  --TODO ann
+-- -- validPos (Case s _ bs) = validPos s &&  all (\ (Match dCName (unsafeUnbind -> (p,bod))) -> validPos bod) bs -- TODO playing with unsafe fire
+validPos' s e (Pi aTy (unsafeUnbind -> (a,bod))) = validPos' s e aTy && validPos' s e bod
+validPos' s e TyU = True
+validPos' s e (V _) = True
+validPos' s e (Case sc _ bs) = error "case not done yet"
+validPos' s e x = error "case not done yet"
+

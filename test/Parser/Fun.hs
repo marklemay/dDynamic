@@ -53,12 +53,13 @@ x =~= y = counterexample (show x ++ " not alpha equivalent to " ++ show y ++
 showParses :: (Exp -> String) -> Exp -> Property
 showParses sho e = 
   let se = sho e
-  in case prettyParse "" se exp of -- trace se $ 
+      fakePath = ""
+  in case prettyParse fakePath se exp of -- trace se $ 
     Left er -> counterexample (show er) False
     Right ee -> 
        counterexample (
        "did not parse valid position ranges. printed, " ++ se++
-       "\n" ++ codeshow ee) (validPos ee)
+       "\n" ++ codeshow ee) (validPos' (SourcePos fakePath 0 0) (SourcePos fakePath 9999 9999) ee)
       .&&.
       counterexample (
        "printed, " ++ se++
