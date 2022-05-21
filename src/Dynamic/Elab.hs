@@ -115,7 +115,7 @@ elabInf' (DCon dCname) ctx = do
   pure $ (C.DConF dCname [] (tcName,tel) (unsafeTelMap (\_ -> ()) tel) ttel, 
     toPi $ unsafeTelMap (\inds -> C.TConF tcName inds (NoBnd ()) ttel) tel)
 
-elabInf' (Case scrutinees (An (Just tel)) branches) ctx = do
+elabInf' (Case scrutinees (An (Just tel)) branches) ctx = do -- TODO extract this out of here and in the check into a function
   -- loggg ""
   -- loggg "elabInf' Case _"
   
@@ -183,7 +183,7 @@ elabInf' (Case scrutinees (An (Just tel)) branches) ctx = do
 
   sr <- askSourceRange
 
-  pure (C.Case scrutinees' (branches'++silentCases) $ ann (unmatched, sr), caseTy) -- TODO calculate the unlisted branches, and synth additional cases
+  pure (C.Case scrutinees' (branches'++silentCases) $ ann (unmatched, sr), caseTy)
 
 elabInf' (Ref refName) _ = do
   ty <- getDefnTy refName
@@ -235,6 +235,78 @@ elabCast (Fun bbndBod) ty (ctx@ElabInfo{whnf=whnf}) = do
     e -> throwPrettyError $ "cast non pi to func " ++ show e ++ "  :  " ++ show ty' -- what if there is some wiggle room? not enough to safely infer a dependent output.
 -- TODO several other syntaxes
 -- elabCast (Case scrutinee (An Nothing) branches) ty ctx rename assumeDefs = throwPrettyError "not yet supporting case elaboration inference"
+
+
+elabCast (Case scrutinees (An Nothing) branches) ty ctx = do  -- TODO extract this out of here and in the check into a function
+  -- (ex', _)<- elabInf (Case scrutinees (ann $ dummyTellMaybe (length scrutinees) ty) branches) ctx  -- unfotunately can't just do this since ty has the wrong type
+-- (Case scrutinees (An (Just tel)) branches) ctx 
+  -- let tel = dummyTellMaybe (length scrutinees) ty
+  -- loggg ""
+  -- loggg "elabInf' Case _"
+  
+  (scrutinees', tel', caseTy) <- checkDummyTelMaybe scrutinees ty ctx Map.empty
+  
+  -- loggg "tel'="
+  -- loggg $ lfullshow tel'
+  
+  -- loggg "scrutinees'="
+  -- loggg $ lfullshow scrutinees'
+  -- loggg "caseTy="
+  -- loggg $ lfullshow caseTy
+
+  branches' <- forM branches $ \ (Match bndbod) -> do
+    (pats, bod) <- unbind bndbod
+    (pat, outTy, flexs, paths, eq, ctx') <- getPats pats tel' ctx
+    logg "TODO needs to set up the equations with the already existing assignments"
+
+    -- loggg $ "eq = " ++ lfullshow eq
+    -- -- loggg $ "ctx' = " ++ show ctx'
+    -- loggg $ "flexs = " ++ show flexs
+
+    -- logg $ "fOUni flexs eq ctx'"
+    uni <- fOUni flexs eq ctx'
+    case uni of
+      (Prob{unsat=e:_}) -> throwPrettyError $ "unsatisfieable pattern " ++ show e
+      (Prob{active=[],stuck=[],Dynamic.Unification.assign= assign'}) -> do
+        -- logg $ "worked!"
+        -- loggg $ "assign' ="
+        -- logg $ assign'
+        -- loggg $ "outTy ="
+        -- logg $ outTy
+        bod' <- elabCast' bod outTy $ ctx'{Dynamic.ElabBase.assign= assign' `Map.union` Dynamic.ElabBase.assign ctx'}
+        pure $ C.Match $ bind pat bod'
+        
+      (Prob{flex=flex,active=active',stuck=stuck'})  -> do
+        -- loggg $ "uni=" ++ lfullshow uni
+        -- loggg $ "active'=" ++ lfullshow active'
+        -- loggg $ "stuck'=" ++ lfullshow stuck'
+        -- loggg $ "flex=" ++ lfullshow flex
+        throwPrettyError $ "unification timed out"
+  
+  pats' <- forM branches' $ \ (C.Match bndbod) -> do
+    (pats, _) <- unbind bndbod
+    pure pats
+
+  vars <- fillFresh tel'
+  unseenPats <- subAll [vars] pats'
+  (partitionEithers -> (unmatched, silentCases)) <- forM unseenPats $ \ pats -> do
+    (_, flexs, _, eq, ctx') <- getCPats pats tel' ctx
+    logg "TODO needs to set up the equations with the already existing assignments"
+    
+    uni <- fOUni flexs eq ctx'
+    -- should probly package up the unification with the unfufilled patterns
+    case uni of
+      (Prob{unsat=e@Equation{why=why,sameTy=sameTy}:_}) -> do
+        
+        logg "impossible case directed to blame"
+        loggg $ lfullshow e
+        logg ""
+        pure $ Right $ C.Match $ bind pats $ C.Blame why sameTy
+      _ -> pure $ Left pats
+
+  sr <- askSourceRange
+
+  pure (C.Case scrutinees' (branches'++silentCases) $ ann (unmatched, sr))
 
 elabCast e t ctx = do
   sr <- askSourceRange
@@ -353,6 +425,30 @@ checkTelMaybe (trm : trms) (TelBnd Nothing bndRestTel) ctx defs  = do
 checkTelMaybe app tel _ _ = error $  " scrutinees do not match tell, " ++ show app ++ "~/~" ++ show tel
 
 
+checkDummyTelMaybe :: 
+  (Fresh m, MonadError C.Err m, WithDynDefs m, WithSourceLoc m) 
+  => [Term] -> C.Ty
+  -> ElabInfo m
+  -> Map C.Var C.Term 
+  -> m ([C.Exp], -- elaborated scrutinees
+   (Tel C.Term C.Ty C.Ty), -- elaborated telescope
+    C.Ty -- result of the telescope with scrutinees applied
+   )
+-- checkDummyTelMaybe = undefined
+checkDummyTelMaybe [] a' ctx defs = do
+  -- a' <- elabCast a C.TyU ctx
+  pure ([], NoBnd a', substs (Map.toList defs) a')
+
+checkDummyTelMaybe (trm : trms) a' ctx defs  = do
+  (cexp, cty) <- elabInf trm ctx
+
+  x <- fresh $ s2n "p"
+  (x', ctx') <- setVar x cty ctx
+
+  (args, telSym, a) <- checkDummyTelMaybe trms a' ctx' (Map.insert x' cexp defs)
+  
+  pure (cexp : args, TelBnd cty $ bind x' telSym, a)
+-- checkTelMaybe app tel _ _ = error $  " scrutinees do not match tell, " ++ show app ++ "~/~" ++ show tel
 
 
 

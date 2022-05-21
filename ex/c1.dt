@@ -1,0 +1,106 @@
+
+
+data Unit : * {
+  | tt  : Unit
+};
+
+data Bool : * {
+  | true  : Bool
+  | false : Bool
+};
+
+data Nat : * {
+  | Z : Nat
+  | S : Nat -> Nat
+};
+
+add : Nat -> Nat -> Nat ;
+add x y = 
+  case x{
+   | (Z)   => y
+   | (S p) => S (add p y)
+   } ;
+
+badd : Nat -> Nat -> Nat ;
+badd x y = 
+  case x {
+   | (Z)   => y
+   | (S (Z)) => 0 -- incorrect exactly when x = 1
+   | (S (S (Z))) => S (S y)
+   | (S p) => S (add p y) -- TODO clean up
+   } ;
+
+-- length indexed lists
+data Vec : * -> Nat -> * {
+  | Nil  : (A : *) -> Vec A 0
+  | Cons : (A : *) -> A -> (n : Nat) -> Vec A n -> Vec A (S n)
+};
+
+
+head : (A : *) -> (n : Nat) -> Vec A (S n) -> A ;
+head A n v = 
+  case v {
+   | (Cons _ a _ _) => a
+   } ;
+
+tail : (A : *) -> (n : Nat) -> Vec A (S n) -> Vec A n ;
+tail A n v = 
+  case v {
+   | (Cons _ _ _ v) => v
+   } ;
+
+append : (A : *) -> (n : Nat) -> Vec A n -> (m : Nat) -> Vec A m -> Vec A (add n m) ;
+append A n vn m vm = 
+  case n, vn < n' => _ : Vec A n' => Vec A (add n' m) >{
+   | (Z)   => (Nil _) => vm
+   | (S _) => (Cons _ a pn pvn) => Cons A a (add pn m) (append A pn pvn m vm)
+  };
+
+
+rep : (A : *) -> A -> (n : Nat) -> Vec A n ;
+rep A a n = 
+  case n < n' : Nat => Vec A n' >{
+   | (Z)   => Nil A
+   | (S p) => Cons A a p (rep A a p)
+   } ;
+
+
+
+okFun : Nat -> Bool ;
+okFun x = head Bool x (rep Bool true (add x 1)) ;
+
+
+
+
+alsookFun : Nat -> Bool ;
+alsookFun x = head Bool x (rep Bool true (add 1 x)) ;
+
+
+
+
+
+
+
+
+badFun : Nat -> Bool ;
+badFun x = head Bool x (rep Bool true x) ;
+-- defualt cbv checknig is aggressive
+
+
+
+almostFun : Nat -> Bool ;
+almostFun x = head Bool x (rep Bool true (badd x 1)) ;
+
+
+
+
+
+
+
+
+
+test : Bool ;
+test = 1 ;
+
+
+

@@ -1,0 +1,29 @@
+
+data Nat : * {
+  | Z : Nat
+  | S : Nat -> Nat
+};
+
+data Vec : * -> Nat -> * {
+  | Nil  : (A : *) -> Vec A 0
+  | Cons : (A : *) -> A -> (n : Nat) -> Vec A n -> Vec A (S n)
+};
+
+
+headd : (A : *) -> (n : Nat) -> Vec A (S (S n)) -> A ;
+headd A n v = 
+  case v <_ => A >{
+   | (Cons _ _ _ (Cons _ a _ _)) => a
+   } ;
+
+ex : Nat;
+ex = headd Nat 1 [1,2,3]<Nat>; -- = 2
+
+headd' : (A : *) -> (n : Nat) -> Vec A (S (S n)) -> A ;
+headd' A n v = 
+  case v <_ => A >{
+   | (Cons _ _ _ v') => 
+     ( case v' <_ => A >{| (Cons _ a _ _) => a } )
+   } ;
+
+-- TODO need to find some nested cases that don't work before compounding the equalities
