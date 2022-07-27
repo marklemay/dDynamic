@@ -1,0 +1,24 @@
+
+data Bool : * {
+  | true  : Bool
+  | false : Bool
+};
+
+data Id : (A : *) -> A -> A -> * {
+| refl  : (A : *) -> (a : A) -> Id A a a
+};
+
+eqelim : (m : Bool) -> (n : Bool) -> (P : Bool -> *) -> Id Bool m n -> P m -> P n;
+eqelim m n P prmn pm = 
+  case m, n, prmn, pm <m' => n' => _ : Id Bool m' n' => _ : P m' => P n' >
+  {
+    | _ => _ => (refl _ _) => pm' => pm'
+  }
+;
+
+
+
+
+
+--(A : Set) -> (m n : A) -> (P : A -> Set) -> m ≡A n -> P m -> P n
+-- eq-elim A m n P (refl x1 x2) pf = pf

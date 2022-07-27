@@ -20,7 +20,13 @@ library
     , Dynamic.Norm
     , Dynamic.ElabModule
     
-    , Dynamic.Elab, Dynamic.Env
+    , Dynamic.Elab
+    , Dynamic.ElabBase
+    , Dynamic.Eq
+    , Dynamic.Patttern
+    , Dynamic.Visitor
+    , Dynamic.Warning
+    , Dynamic.Env
     , Dynamic.Erasure
     , Dynamic.Err, Dynamic.Helper
     -- , Dynamic.Temp
@@ -40,7 +46,8 @@ library
     , UnboundHelper, AlphaShow 
     , PreludeHelper
 
-  ghc-options:        -fwarn-incomplete-patterns -fwarn-incomplete-uni-patterns -interactive-print=PreludeHelper.dPrinter
+  ghc-options:        -fwarn-incomplete-patterns -fwarn-incomplete-uni-patterns
+  -- -interactive-print=PreludeHelper.dPrinter
   -- (pPrintStringOpt CheckColorTty defaultOutputOptionsDarkBg {outputOptionsCompact = True})
   -- -interactive-print=Text.Pretty.Simple.pPrint
 
@@ -67,6 +74,11 @@ executable repl
     , haskeline
     , pretty-simple
   hs-source-dirs:     src
+  other-modules: Dynamic.ElabBase
+    , Dynamic.Eq
+    , Dynamic.Patttern
+    , Dynamic.Visitor
+    , Dynamic.Warning
   build-depends:
     dDynamic
 

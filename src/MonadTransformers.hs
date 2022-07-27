@@ -118,7 +118,7 @@ instance Fresh m => Fresh (LogicT m) where
   fresh = lift . fresh
 
 
-instance MonadLogic m => MonadLogic (FreshMT m) where
+instance (MonadLogic m, MonadPlus m) => MonadLogic (FreshMT m) where
   -- use the underling State imple
   msplit freshma = FreshMT $ fmap (fmap $ \(a,ma) -> (a, FreshMT ma))  $ msplit $ unFreshMT freshma
   -- TODO: this messes with delay in some of the supported libs
