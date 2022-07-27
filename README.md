@@ -13,25 +13,31 @@ To load the surface repl
 cabal new-run repl
 ```
 supports commands for 
-* loading files, cast elaboration `:l`
-* quiting `:q`
-* checking types `:t`
-* normalizing expressions `:n`
-* entering an expression with attemopt to get all information from it
+* loadfiles, cast elaboration `:l`
+* quit `:q`
+* check type of an expression `:t`
+* normalize expression `:n`
+* enter an expression without a prefix with attemopt to get all information from it, typing/normalization/..
 
 for example
 ```
-dt-surface> :l ex/ex1.dt
+dt-surface> :l ex/a0.dt
 parsed
-typechecked
+elaborated
+cleaned
 loaded
-dt-surface> :t not
-Right (not!,boool -> boool)
-dt-surface> :n not ttrue
-Right flasle
-dt-surface> not (not (ttrue))
-Right (not! (not! ttrue),boool)
-Right ttrue
+dt> :t not
+not : Bool -> Bool
+dt> :n not true
+not true
+ : Bool
+~>
+false
+dt> not (not (true))
+not (not true)
+ : Bool
+~>
+true
 ```
 
 ## Conrtibute
