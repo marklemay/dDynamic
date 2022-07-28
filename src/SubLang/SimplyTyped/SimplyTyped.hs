@@ -82,7 +82,7 @@ synth i ctx | i<=1 = do
   pure $ (V v,ty')
 synth i ctx = do
   aTy <- synthAnyTy (i `div` 2)
-  aTy <- synthAnyTy (i `div` 2)
+  undefined
 
 
 -- synth :: Integer -> TyCtx -> Ty -> [Trm]
@@ -119,4 +119,4 @@ synthAnyTy i = do
 --   | Arrow (Ty a) (Ty a)
 
 
-e = synth 0 (Map.fromList [(s2n "x", Atom "hi"),(s2n "y", Atom "bye"),(s2n "z", Atom "hi")]) (Atom "hi")
+-- e = synth 0 (Map.fromList [(s2n "x", Atom "hi"),(s2n "y", Atom "bye"),(s2n "z", Atom "hi")]) (Atom "hi")

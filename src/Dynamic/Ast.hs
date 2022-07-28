@@ -94,6 +94,9 @@ initInfo msrc l r = let
   vars = varLs l ++ varLs r
   in Info msrc [] (Map.fromList $ fmap (\x -> (name2String x, V x)) vars) (ignore l) (ignore r)
 
+initSame :: Maybe SourceRange -> Exp -> EqEv -> Exp -> Exp
+initSame msrc l ev r  = Same l (initInfo msrc l r) ev r
+
 dummyInfo = Info Nothing [] Map.empty (ignore TyU) (ignore TyU)
 
 -- Maddness

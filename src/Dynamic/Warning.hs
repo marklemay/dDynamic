@@ -140,17 +140,3 @@ eraseCast' e = visitFresh visitorSelf {
 eraseCast :: Term -> Exp
 eraseCast e = runIdentity $ runFreshMT $ eraseCast' e
 -- runIdentity $ runFreshMT $ 
-
-rwf :: Monoid w => FreshMT (WriterT w Identity) a -> (a, w)
-rwf e = runIdentity $ runWriterT $ runFreshMT $ e
-
-e0 = rwf $ visitFresh visitorWarnSame TyU
--- e1 = rwf $ visitFresh visitorWarnSame $ efun
-
--- e2 = rwf $ visitFresh visitorWarnSame $ Same TyU (Info Nothing []) TyU TyU 
-
--- e3 = rwf $ visitFresh visitorWarnSame $ Same TyU (Info Nothing []) TyU (Same (Same TyU (Info Nothing []) TyU TyU ) (Info Nothing []) TyU TyU ) 
-
-
-
--- efun = Fun $ bind (s2n "f",s2n "x") $ Same TyU (Info Nothing []) TyU (V $  s2n "x")

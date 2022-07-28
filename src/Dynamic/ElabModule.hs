@@ -52,6 +52,7 @@ import Data.Typeable
 import Dynamic.Visitor
 import Dynamic.Norm (safeWhnf)
 import Dynamic.Warning
+import Control.Monad.Writer (WriterT (runWriterT))
 
 -- to Elab a full module with fully mutual recirsive definitions we need to elaborate definitions in a "just in time" sort of way
 -- this is where the partial module comes in
@@ -273,7 +274,8 @@ stdlibwarns :: [Warning]
 stdlibIO :: Module
 (stdlibIO, stdlibwarns) = rwf $ visitModule stdlibIO'' (visitFresh visitorWarnSame) 
 
-
+rwf :: Monoid w => FreshMT (WriterT w Identity) a -> (a, w)
+rwf e = runIdentity $ runWriterT $ runFreshMT $ e
 -- eq 
 
 visitModule m@(Module {dataCtx=dataCtx, defCtx= DefCtx (Map.toList -> defCtx)}) w = runWithModuleMT (do

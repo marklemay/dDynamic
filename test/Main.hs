@@ -11,6 +11,7 @@ import Presentation.CastUncleaned
 import Parser.Fun
 import Parser.Exp
 import Elab.Fun
+import Dynamic.WarningTest
 
 -- import Dynamic.Main
 
@@ -48,5 +49,8 @@ allTests =
     --  Parser.Exp.tests,
     
     --  Elab.Fun.tests
+    
+      , Dynamic.WarningTest.tests
+    
     ]
 
