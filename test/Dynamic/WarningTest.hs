@@ -84,9 +84,5 @@ tests =
    ]
 efun = Fun $ bind (s2n "f",s2n "x") $ initSame Nothing TyU TyU (V $  s2n "x")
 
--- rwf :: Monoid w => FreshMT (WriterT w Identity) a -> (a, w)
--- rwf e = runIdentity $ runWriterT $ runFreshMT $ e
-
-
--- rwf :: Monoid w => FreshMT (WriterT w Identity) a -> (a, w)
--- rwf e = runIdentity $ runWriterT $ runFreshMT $ e
+rwf :: Monoid w => FreshMT (WriterT w Identity) a -> (a, w)
+rwf e = runIdentity $ runWriterT $ runFreshMT $ e
