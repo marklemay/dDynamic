@@ -16,7 +16,7 @@
 module Dynamic.Ast where
 
 import Control.Applicative (Applicative (..), (<$>))
-import Control.Monad (guard)
+import Control.Monad (guard, join)
 import Data.List (find, intersperse)
 
 import Data.Map (Map)
@@ -36,6 +36,8 @@ import UnboundHelper
 import AlphaShow
 
 import SourcePos
+import GHC.Stack
+import Data.Tree (flatten)
 
 type Term = Exp
 type Ty = Exp
@@ -210,7 +212,9 @@ data Exp
     EqEv -- and why are the types the same?
 
   | Same Exp Info EqEv Exp
-  | Union Exp EqEv Exp
+  -- | Union Exp EqEv Exp  
+  -- TODO instead represent this as `Union (Set Exp) EqEv` where set is never empty, and the singleton works like C
+  | Union (Set Exp) EqEv
 
 --  manipulate evidence, TODO rename Tind to Tindex?
   | Tind Integer EqEv
@@ -232,6 +236,8 @@ instance Subst Exp Exp where
   isvar (V x) = Just (SubstName x)
   isvar _     = Nothing
 
+instance Ord Exp where
+  compare = acompare
 
 instance Eq Exp where
   (==) = aeq
@@ -262,6 +268,71 @@ instance Show Exp where
   -- -- show (Tag s) = s
   -- -- show _ = "?"
   -- show e = lfullshow e
+
+union :: Exp -> EqEv -> Exp -> Exp
+union = undefined
+
+
+-- this extractor boiler plate should also be generated
+--TODO generalize set to traversable?
+flattenUnions' :: Exp -> ([Exp], [EqEv])
+flattenUnions' (C es t) = let
+  (es', t') = flattenUnions' es
+  in (es', t')
+flattenUnions' (Union es t) = let
+  (es', t') = unzip $ fmap flattenUnions' (Set.toList es)
+  in (join es', join t')
+flattenUnions' e = ([e], [])
+
+flattenUnions :: Set Exp -> EqEv -> (Set Exp, EqEv)
+flattenUnions se ev = let
+  (se', t') = unzip $ fmap flattenUnions' (Set.toList se)
+  in (Set.fromList $ join se', Union (Set.fromList $  ev : join t') TyU)
+
+allTyu :: Set Exp -> Maybe ()
+allTyu = undefined
+
+allPi :: Set Exp -> Maybe [(Ty, Bind Var Ty)] 
+allPi = undefined
+
+allTCon :: 
+  HasCallStack => 
+  Set Term -> Maybe [(TCName, [Term], (Tel Exp Ty ()), (Tel Exp Ty ()))] 
+allTCon = undefined
+
+allZipTCon :: 
+  HasCallStack => 
+  ([Exp] -> Integer -> EqEv -> Exp) -> Set Term -> Maybe Term
+allZipTCon f (allTCon-> Just ls@((tCNamel, indl, (NoBnd _), tell):rest))
+  | all (\ (tCName, _, b, _)-> tCNamel==tCName && 0 == depth b) rest = 
+    Just $ TConF tCNamel (zipTelCon' f tell 0 (fmap (\(_, ind, _, _)-> ind) ls)) (NoBnd ()) tell
+allZipTCon _ _ = Nothing
+
+allDCon :: 
+  HasCallStack => 
+  Set Term -> Maybe [(DCName, [Term], (TCName, Tel Exp Ty [Term]),  -- running tel
+    (Tel Exp Ty ()), --full
+    (Tel Exp Ty ()))] 
+allDCon = undefined
+
+allzipDCon :: 
+  HasCallStack => 
+  ([Exp] -> Integer -> EqEv -> Exp) -> 
+  ([Exp] -> Integer -> EqEv -> Exp) -> Set Term ->  Maybe Term
+allzipDCon f fty (allDCon-> Just ls@((dCNamel, argl, (tCNamel, NoBnd indl), tell, teltyl):rest))
+  | all (\ (dCName, _, (_,b), _, _)-> dCNamel==dCName && 0 == depth b) rest =  let
+    ind =  (zipTelCon' fty teltyl 0 (fmap (\(_,_, (_,b), _, _)-> ind) ls)) -- combind all teh type leve indexes
+    in Just $ DConF dCNamel (zipTelCon' f tell 0 (fmap (\(_,arg, _, _, _)-> arg) ls)) (tCNamel, NoBnd ind) tell teltyl
+allzipDCon _ _ _ = Nothing
+
+zipTelCon' :: 
+  HasCallStack => 
+  (t Term -> Integer -> EqEv -> Exp) -> (Tel Exp Ty ()) -> Integer -> [t Term] -> [Term]
+zipTelCon' f (TelBnd ty bndBod) i (h:rest) = let
+  otu = f h i ty
+  in otu : zipTelCon' f (substBind bndBod otu) (i+1) rest
+zipTelCon' _ (NoBnd _) _ [] = []
+zipTelCon' _ _ _ _  = error "missmatch len"
 
 
 

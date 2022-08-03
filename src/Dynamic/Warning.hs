@@ -26,7 +26,6 @@ import Dynamic.Ast
 import Unbound.Generics.LocallyNameless.Unsafe (unsafeUnbind)
 import Control.Monad.Writer
 import Control.Monad.Identity
-import Dynamic.Norm
 import UnboundHelper
 import SourcePos
 import Dynamic.Eq
@@ -37,6 +36,9 @@ import GHC.Generics
 import Data.Data
 import AlphaShow
 import Unbound.Generics.LocallyNameless.Ignore (Ignore(I))
+import Dynamic.Env (runWithModuleMT)
+import Control.Monad.Except (runExceptT)
+import Control.Monad.State (runStateT)
 
 data Warning 
   = EqWarning Exp -- left
@@ -101,31 +103,48 @@ visitorWarnSame = visitorSelf {
     pure $ Case scruts (fmap (\ (p,e)-> Match $ bind p e) branches) unmatched
 }
 
-visitorCleanSame :: (Fresh m) => VisitorM m  Exp
-visitorCleanSame = visitorSelf {
-  vSame = \_ finish -> finish $ \ l info ev r -> do
+-- visitorCleanSame :: (Fresh m) => VisitorM m  Exp
+-- visitorCleanSame = visitorSelf {
+--   vSame = \_ finish -> finish $ \ l info ev r -> do
 
-    -- loggg ""
-    -- loggg ""
-    -- loggg ""
-    -- loggg ""
-    -- logg "Clean "
-    -- -- logg "l="
-    -- -- logg l
+--     -- loggg ""
+--     -- loggg ""
+--     -- loggg ""
+--     -- loggg ""
+--     -- logg "Clean "
+--     -- -- logg "l="
+--     -- -- logg l
 
-    -- -- logg "!!"
+--     -- -- logg "!!"
 
-    -- l' <- whnf l
-    -- r' <- whnf r
-    -- eq l' info ev r'
-    eq l info ev r
-}
+--     -- l' <- whnf l
+--     -- r' <- whnf r
+--     -- eq l' info ev r'
+--     eq l info ev r
+-- }
 
 visitorCleanSameDef :: (Fresh m, WithDynDefs m) => VisitorM m Exp
 visitorCleanSameDef = visitorSelf {
+  -- TODO maybe just flatten?
+--   vUnion = \_ finish -> finish $ \ l ty r -> do
+--     (me, _) <- runStateT (runExceptT $ eqrefl l (Just ty) r) 100 -- the error thriwn should now be impossible, should be able to make this more efficent
+--     case me of
+--         Right e -> pure e
+--         _ -> pure $ Union l ty r
+-- ,
   vSame = \_ finish -> finish $ \ l info ev r -> do
-    eqDef l info ev r
+    -- eqDef l info ev r
+    undefined
 }
+
+
+
+
+-- visitorCleanSameDef2 :: (Fresh m, WithDynDefs m) => VisitorM m (Exp,[Exp]) -- the expression and it's endpoints... TODO could and should be more efficient
+-- visitorCleanSameDef2 = visitorSelf {
+--   vSame = \_ finish -> finish $ \ l info ev r -> do
+--     eqDef l info ev r
+-- }
 
 
 -- eraseCast e = runIdentity $ runFreshMT $ visitFresh visitorSelf {
@@ -140,3 +159,28 @@ eraseCast' e = visitFresh visitorSelf {
 eraseCast :: Term -> Exp
 eraseCast e = runIdentity $ runFreshMT $ eraseCast' e
 -- runIdentity $ runFreshMT $ 
+
+e0 = rfc TyU
+
+e1 = rfc $ initSame Nothing TyU TyU TyU 
+
+e2 = rfc $ initSame Nothing TyU (initSame Nothing TyU TyU TyU) TyU -- should clean evidence
+e3 = rfc $ initSame Nothing (initSame Nothing TyU TyU TyU) TyU (initSame Nothing TyU TyU TyU) -- should clean branches
+e4 = rfc $ initSame Nothing (initSame Nothing TyU TyU TyU) (initSame Nothing TyU TyU TyU) (initSame Nothing TyU TyU TyU) -- should clean branches + evidence
+e5 = rfc $ initSame Nothing (initSame Nothing (V $ s2n "x") TyU TyU) (initSame Nothing TyU TyU TyU) (initSame Nothing TyU TyU TyU) -- should remove asserion if matching endpoints
+
+
+e6 = rwf $ visitFresh visitorWarnSame $  initSame Nothing (initSame Nothing (initSame Nothing TyU TyU TyU) TyU TyU ) TyU (initSame Nothing (initSame Nothing TyU TyU TyU) TyU TyU )
+e7 = rwf $ visitFresh visitorWarnSame $  initSame Nothing (initSame Nothing (initSame Nothing (V $s2n "x") TyU TyU) TyU TyU ) TyU (initSame Nothing (initSame Nothing TyU TyU TyU) TyU TyU )
+
+-- e1 = rwf $ visitFresh visitorWarnSame $ efun
+-- (visitFresh visitorCleanSameDef TyU) 
+
+-- e2 = rwf $ visitFresh visitorWarnSame $ initSame Nothing TyU TyU TyU 
+
+-- e3 = rwf $ visitFresh visitorWarnSame $ initSame Nothing TyU TyU (initSame Nothing (initSame Nothing TyU TyU TyU ) TyU TyU ) 
+
+rfc e = runIdentity $ runFreshMT $ runWithModuleMT  (visitFresh visitorCleanSameDef e) (Module Map.empty (DefCtx Map.empty))
+
+rwf :: Monoid w => FreshMT (WriterT w Identity) a -> (a, w)
+rwf e = runIdentity $ runWriterT $ runFreshMT $ e

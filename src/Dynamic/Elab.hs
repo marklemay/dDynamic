@@ -66,7 +66,7 @@ elabInf e ctx@(ElabInfo {Dynamic.ElabBase.assign=assign}) = do
   if ty `aeq` ty' -- TODO erasable? normalizable?
   then pure (e', ty)
   else do
-    let s' = ((\ (v, (_, tyWhy, why)) -> (v, (C.Union (C.V v) tyWhy why))) <$> Map.toList assign)
+    let s' = ((\ (v, (_, tyWhy, why)) -> (v, (C.union (C.V v) tyWhy why))) <$> Map.toList assign)
     pure (C.C e' (substs s' ty), ty')
 
 elabInf' :: HasCallStack => (Fresh m, MonadError C.Err m, WithDynDefs m, WithSourceLoc m) => Ast.Exp -> ElabInfo m -> m (C.Exp, C.Ty)
@@ -199,7 +199,7 @@ elabCast' e ty ctx@(ElabInfo{Dynamic.ElabBase.assign=assign}) = do
   if ty `aeq` ty' -- TODO erasable? normalizable?
   then elabCast e ty ctx
   else do
-    let s' = ((\ (v, (_, tyWhy, why)) -> (v, (C.Union (C.V v) tyWhy why))) <$> Map.toList assign)
+    let s' = ((\ (v, (_, tyWhy, why)) -> (v, (C.union (C.V v) tyWhy why))) <$> Map.toList assign)
     e' <- elabCast e ty' ctx
     pure $ C.C e' (substs s' ty)
 

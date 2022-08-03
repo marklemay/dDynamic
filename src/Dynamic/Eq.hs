@@ -53,20 +53,79 @@ eqNorm e = norm (noNext{critN=eqNorm}) e
 
 
 
+
+-- unionClean :: (Fresh m, WithDynDefs m) => Term -> Maybe Exp -> Term -> m Exp
+-- unionClean l ty r = do
+--   (me,_) <- runStateT (do
+--     l' <- safeWhnf' l
+--     r' <- safeWhnf' r
+--     unionClean' l' ty r') 100
+--   pure me
+
+-- -- precondition l and r are alraedy whnf'ed (up to timeout)
+-- unionClean' :: (Fresh m, WithDynDefs m, MonadState Integer m) => Term -> Maybe Exp -> Term -> m Exp
+-- unionClean' (C l lc) Nothing r = unionClean' l (Just lc) r -- don't need to normalize l, since safeWhnf goes under C
+-- unionClean' l Nothing (C r rc) = unionClean' l (Just rc) r
+-- unionClean' (C l lc) (Just ty) r = unionClean' l (Just $ Union lc TyU ty) r
+-- unionClean' l (Just ty) (C r rc) = unionClean' l (Just $ Union ty TyU rc) r
+-- unionClean' l mty r | l `aeq` r = pure $ ecast l mty
+-- unionClean' (Fun bndBodl) mty (Fun bndBodr) = do
+
+--   ((ls,lx), bodl)<- unbind bndBodl
+--   ((rs,rx), bodr)<- unbind bndBodr
+--   bodl' <- safeWhnf' bodl
+--   bodr' <- safeWhnf' $ subst rs (V ls) $  subst rx (V lx) bodr
+
+--   bod <- unionClean' bodl' Nothing bodr'
+--   pure $ ecast (Fun $ bind (ls,lx) bod) mty
+
+-- -- unclear if this can be justified
+-- -- unionClean' (fl `App` al) mty (fr `App` ar) = do 
+-- --   f <- unionClean' fl Nothing fr
+-- --   al' <- safeWhnf' al
+-- --   ar' <- safeWhnf' ar
+-- --   a <- unionClean' al' Nothing ar'
+-- --   pure  $ ecast (f `App` a) mty
+
+-- unionClean' (Pi al bndBodl) mty (Pi ar bndBodr) = do
+
+--   al' <- safeWhnf' al
+--   ar' <- safeWhnf' ar
+
+--   a <- unionClean' al' Nothing ar'
+
+--   (lx, bodl)<- unbind bndBodl
+--   (rx, bodr)<- unbind bndBodl
+--   bodl' <- safeWhnf' bodl
+--   bodr' <- safeWhnf' $ subst rx (V lx) bodr
+
+--   bod <- unionClean' bodl' Nothing bodr'
+--   pure $ ecast (Pi a $ bind lx bod) mty
+
+--   -- for  now cases need to match exactly
+--   -- ...
+-- -- unionClean' l  ty r  = 
+-- --   case (l, r) of
+-- --     (zipTConM (\l _ ev r -> unionClean' l (Just ev) r) -> Just ans) -> ans
+-- --     (zipDConM (\l _ ev r -> unionClean' l (Just ev) r) (\l _ ev r ->  unionClean' l (Just ev) r) -> Just ans) -> ans
+-- --     _ -> throwError ()
+
+
+
+
+-- TODO depricate below
 eq :: Fresh m => Term -> Info -> Exp -> Exp -> m Exp
 eq l info ty r = runWithModuleMT (eqDef l info ty r) emptyModule
 
--- the term needs to line up exctly
+-- the term needs to equal up to some erasure
 -- TODO , the  MonadError () m allows a "fail fast", that can remove a lot of branching in code
 -- precondition called into whnf
 eqrefl :: (Fresh m, WithDynDefs m, MonadError () m, MonadState Integer m) => Term -> Maybe Exp -> Exp -> m Exp
 eqrefl (C l lc) Nothing r = eqrefl l (Just lc) r
 eqrefl l Nothing (C r rc) = eqrefl l (Just rc) r
-eqrefl (C l lc) (Just ty) r = eqrefl l (Just $ Union lc TyU ty) r
-eqrefl l (Just ty) (C r rc) = eqrefl l (Just $ Union ty TyU rc) r
+eqrefl (C l lc) (Just ty) r = eqrefl l (Just $ union lc TyU ty) r
+eqrefl l (Just ty) (C r rc) = eqrefl l (Just $ union ty TyU rc) r
 eqrefl l mty r | l `aeq` r = pure $ ecast l mty
-
--- don't worry about eta for now
 eqrefl (Fun bndBodl) mty (Fun bndBodr) = do -- don't worry about eta for now
 
   ((ls,lx), bodl)<- unbind bndBodl
@@ -120,6 +179,24 @@ ecast e (Just ty) = C e ty
 ecast e Nothing = e
 
 
+
+
+
+
+-- interps :: (Fresh m, WithDynDefs m, MonadError () m, MonadState Integer m) => Term -> Maybe Exp -> Exp -> m Exp
+-- interps
+
+
+
+
+
+
+
+-- returns the sameness of teh 2 expresions embedded in the output expression
+-- for instance 1 0 ->  1 ~ 0
+-- 1 2 -> S( 0 ~ 1)
+-- TODO (0 ~ 1)  (1 ~ 2) -> (0 ~ 1) U (1 ~ 2) 
+-- normalization may be performed
 eqDef :: (Fresh m, WithDynDefs m) =>
   Term -> Info -> Exp -> Exp -> m Exp
 eqDef l info ty r = do
@@ -131,8 +208,10 @@ eqDef l info ty r = do
   pure me
 
 
-eqDef' (C l lc) info ty r = eqDef' l info (Union lc TyU ty) r
-eqDef' l info ty (C r rc) = eqDef' l info (Union ty TyU rc) r
+eqDef' :: (MonadState Integer m, WithDynDefs m, Fresh m) =>
+  Term -> Info -> Exp -> Exp -> m Exp
+eqDef' (C l lc) info ty r = eqDef' l info (union lc TyU ty) r
+eqDef' l info ty (C r rc) = eqDef' l info (union ty TyU rc) r
 eqDef' l info ty r | l `aeq` r = pure $ C l ty -- redundent, but allows you to skip normalization sometimes
 eqDef' l info ty r = do
   l' <- safeWhnf' l
@@ -156,6 +235,16 @@ eqDef' l info ty r = do
         Right e -> pure e
         _ -> pure $ Same l' info ty r'
 
+
+-- --  a ptetty nasty way to do a pretty simple thing
+-- shareOverlap :: (MonadState Integer m, WithDynDefs m, Fresh m) => [Exp] -> [Exp] -> Info -> [Exp] -> [Exp] -> m Bool
+-- shareOverlap l (lrest)  _ _ (r:rrest) = do
+--   l' <- safeWhnf' r
+--   r' <- safeWhnf' r
+--   case (l, r') of
+--     (TyU,TyU) -> pure $ True
+--     (TyU,r') -> shareOverlap 
+-- -- shareOverlap = undefined
 
 
 -- eq l r info ty = 

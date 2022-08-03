@@ -15,6 +15,9 @@
 
 module Dynamic.Erasure where
 
+import Data.Set (Set)
+import qualified Data.Set as Set
+
 import Dynamic.Ast as C
 -- import Erasure
 import Ast
@@ -64,7 +67,7 @@ erase (C.Case scruts branch _ ) = do
 erase C.TyU = pure Ast.TyU
 erase (C.C u _) = erase u
 erase (C.Same u _ _ _) = erase u -- left biased
-erase (C.Union u _ _ ) = erase u -- left biased
+erase (C.Union (Set.toList -> (u:_)) _ ) = erase u -- left biased
 erase e = pure $ Ast.Solve noAn -- error $ "unhandled " ++ show e 
 
 

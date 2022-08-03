@@ -2,6 +2,9 @@ module PreludeHelper where
 
 import GHC.Stack
 
+import Data.Set (Set)
+import qualified Data.Set as Set
+
 import Control.Monad (guard)
 
 import Data.Monoid (Any(..))
@@ -48,6 +51,10 @@ parenthesize outerLevel curLevel showExp
 -- guardThrow True s ma = ma
 -- guardThrow False s ma = throwError $ s  -- ++ "\n" ++ prettyCallStack callStack
 
+-- of course not defined in the lib
+-- setMapM :: Ord b => (a -> b) -> Set a -> Set b
+setMapM :: (Ord a1, Monad f) => (a2 -> f a1) -> Set a2 -> f (Set a1)
+setMapM f sa = Set.fromList <$> (mapM f $ Set.toList sa)
 
 -- TODO why is this not in the stdlib, also needs some string output?
 justM :: Alternative f => Maybe a -> f a

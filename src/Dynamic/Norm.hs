@@ -51,7 +51,6 @@ import Control.Exception hiding (assert)
 import GHC.IO.Encoding.Latin1 (mkLatin1_checked)
 
 
-
 data Next m = Next {
   -- chkN :: (Exp -> Info -> EqEv -> Exp -> m Exp),
   critN :: Exp -> m Exp
@@ -96,7 +95,7 @@ norm next (C u ev) = do
     TConF _ _ (NoBnd ()) _ -> do
       u' <- critN next u
       case u' of
-        (C u'' ev'') ->  critN next $ C u'' $ Union ev'' TyU ev' 
+        (C u'' ev'') ->  critN next $ C u'' $ union ev'' TyU ev' 
         _ -> pure (C u' ev')
     _ -> pure (C u ev')
 norm next (Same l info ev r) = do
@@ -120,50 +119,49 @@ norm next (Same l info ev r) = do
       l' <-  critN next l
       r' <-  critN next r --little redundant work
       case (l', r') of
-        (C l'' lev, _) -> critN next $ (Same l'' info (Union lev TyU ev') r') 
-        (_, C r'' rev) -> critN next $ (Same l' info (Union ev' TyU rev) r'') 
+        (C l'' lev, _) -> critN next $ (Same l'' info (union lev TyU ev') r') 
+        (_, C r'' rev) -> critN next $ (Same l' info (union ev' TyU rev) r'') 
         (zipDConM (\l i ev r -> assert next l (dconInfo i info) ev r) (\l i ev r -> assert next l (tconInfo i info) ev r) -> Just ans) -> do
           ans' <- ans
           pure $ C ans' ev'
         _ -> assert next l' info ev' r'
     _ -> pure $ Same l info ev' r 
     -- _ -> pure $ assert next l info ev' r 
-norm next (Union l ev r) = do
+norm next (Union l ev) = do 
+  -- TODO would be nice to have a reduction that flattens the unions?
   
   -- loggg $ "Union" 
   ev' <- critN next ev
   -- loggg $ "ev' = " ++ lfullshow ev'
   case ev' of
     TyU -> do
-      l' <- critN next l
-      r' <- critN next r
+      l' <- setMapM (critN next) l
       -- loggg $ "l' = " ++ lfullshow l'
       -- loggg $ "r' = " ++ lfullshow r'
-      case (l', r') of
-        (TyU , TyU) -> pure TyU
-        (Pi la blBod , Pi ra brBod) -> do
+      case l' of
+        (allTyu -> Just ()) -> pure TyU
+        (allPi -> Just ((la, blBod):(unzip -> (as, bBods)))) -> do -- Pi la blBod , Pi ra brBod)
           (lName, lbod) <-unbind blBod
-          let rbod = substBind brBod (V lName)
+          let bods = fmap (\bBod -> substBind bBod (V lName)) bBods
           -- xx <- unbind2 blBod brBod
-          pure $ Pi (Union la  TyU ra) $ bind lName (Union lbod  TyU rbod)
-        (zipTCon (\l _ ev r -> Union l ev r) -> Just ans) -> pure ans
+          pure $ Pi (Union (Set.fromList as) TyU ) $ bind lName (Union (Set.fromList bods) TyU)
+        (allZipTCon (\l _ ev -> Union (Set.fromList l) ev) -> Just ans) -> pure ans
         _ -> do
           -- loggg $ "l = " ++ lfullshow l
           -- loggg $ "r = " ++ lfullshow r
           -- loggg $ "l' = " ++ lfullshow l'
           -- loggg $ "r' = " ++ lfullshow r'
           -- loggg $ "... "
-          pure (Union l' ev' r')
+          pure (Union l' ev')
     TConF _ _ (NoBnd ()) _ -> do
-      l' <-  critN next l
-      r' <-  critN next r --little redundant work
-      case (l', r') of
-        (C l'' lev, _) -> critN next $ (Union l'' (Union lev TyU ev') r') 
-        (_, C r'' rev) -> critN next $ (Union l' (Union ev' TyU rev) r'') 
-        (zipDCon (\l i ev r -> Union l ev r) (\l i ev r -> Union l ev r) -> Just ans) -> do
-          pure $ C ans ev'
-        _ -> pure (Union l' ev' r')
-    _ -> pure (Union l ev' r)
+      l' <-  setMapM (critN next) l --little redundant work?
+      case flattenUnions l' ev' of
+        -- (C l'' lev, _) -> critN next $ (Union l'' (Union lev TyU ev') r') 
+        -- (_, C r'' rev) -> critN next $ (Union l' (Union ev' TyU rev) r'') 
+        ((allzipDCon (\l i ev -> Union (Set.fromList l) ev) (\l i ev -> Union (Set.fromList l) ev) -> Just ans), ev'') -> do
+          pure $ C ans ev''
+        (l'', ev'') -> pure $ Union l'' ev''
+    _ -> pure (Union l ev')
 norm next (f `App` a) = do
   f' <- critN next f 
   case f' of
@@ -181,9 +179,9 @@ norm next (f `App` a) = do
     Same l info (Pi arTy bndbodTy) r -> do
       let ac = C a arTy
       critN next $ Same (l `App` ac) (appInfo ac info) (substBind bndbodTy ac) (r `App` ac)
-    Union l (Pi arTy bndbodTy) r -> do
+    Union ls (Pi arTy bndbodTy) -> do
       let ac = C a arTy
-      critN next $ Union (l `App` ac) (substBind bndbodTy ac) (r `App` ac)
+      critN next $ Union (Set.map (\l -> l `App` ac) ls) (substBind bndbodTy ac) 
 
     _ -> pure $ f' `App` a
 
@@ -418,8 +416,8 @@ isValue (C _ (Pi _ _)) = True
 isValue (C u t) = isValue u && isValue t
 isValue (Same l _ (Pi _ _) r) = True
 isValue (Same l _ tev r) = isValue l && isValue tev && isValue r -- TODO think about this.. shouldn't block?
-isValue (Union l (Pi _ _) r) = True
-isValue (Union l tev r) = isValue l && isValue tev && isValue r
+isValue (Union l (Pi _ _)) = True
+isValue (Union l tev) = all isValue l && isValue tev
 -- isValue (V _) = True -- ...  could go either way
 isValue _ = False
 

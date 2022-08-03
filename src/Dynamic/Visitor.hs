@@ -15,6 +15,9 @@
 module Dynamic.Visitor where
 -- TODO this is the kind of thing that should be generatable automatically
 
+import Data.Set (Set)
+import qualified Data.Set as Set
+
 import Unbound.Generics.LocallyNameless
 import Unbound.Generics.LocallyNameless.Internal.Fold (foldMapOf, toListOf)
 import Unbound.Generics.LocallyNameless.Unsafe (unsafeUnbind)
@@ -47,7 +50,7 @@ data VisitorM m a = VisitorM {
   vC :: Exp -> ((a -> a -> m a) -> m a) -> m a, 
   vBlame :: Exp -> ((a -> a -> m a) -> m a) -> m a, 
   vSame :: Exp -> ((a -> Info -> a -> a -> m a) -> m a) -> m a,
-  vUnion :: Exp -> ((a -> a -> a-> m a) -> m a) -> m a,
+  vUnion :: Exp -> (([a] -> a -> m a) -> m a) -> m a,
   vTind :: Exp -> ((Integer -> a ->  m a) -> m a) -> m a, 
   vDind :: Exp -> ((Integer -> a ->  m a) -> m a) -> m a
 }
@@ -108,12 +111,11 @@ visitFresh v@(VisitorM{vSame=vSame}) e@(Same l info ev r) =
     ev' <- visitFresh v ev
     r' <- visitFresh v r
     finish l' info ev' r'
-visitFresh v@(VisitorM{vUnion=vUnion}) e@(Union l ev r) = 
+visitFresh v@(VisitorM{vUnion=vUnion}) e@(Union l ev) = 
   vUnion e $ \ finish -> do
-    l' <- visitFresh v l
+    l' <- mapM (visitFresh v) $ Set.toList l
     ev' <- visitFresh v ev
-    r' <- visitFresh v r
-    finish l' ev' r'
+    finish l' ev'
 visitFresh v@(VisitorM{vTind=vTind}) e@(Tind i ev) = 
   vTind e $ \ finish -> do
     ev' <- visitFresh v ev
@@ -137,8 +139,27 @@ visitorSelf = VisitorM {
   vC = \ _ finish -> finish $ \ trm ty -> pure $ C trm ty,
   vBlame = \ _ finish -> finish $ \ trm ty -> pure $ Blame trm ty,
   vSame = \ _ finish -> finish $ \ l info ev r -> pure $ Same l info ev r,
-  vUnion = \ _ finish -> finish $ \ l ev r -> pure $ Union l ev r,
+  vUnion = \ _ finish -> finish $ \ l ev -> pure $ Union (Set.fromList l) ev,
   vTind = \ _ finish -> finish $ \ i ev -> pure $ Tind i ev,
   vDind = \ _ finish -> finish $ \ i ev -> pure $ Dind i ev
 }
--- ok this should be gen tested
+
+-- -- ok this should be gen tested
+-- visitorSelfF :: (Monad m) => (Exp -> f Exp) -> (Exp -> f Exp) -> VisitorM m (f Exp)
+-- visitorSelfF ff = VisitorM {
+--   vV = \ _ finish -> finish $ \ x -> pure $ ff $ V x,
+--   vRef = \ _ finish -> finish $ \ x -> pure $ ff $ Ref x,
+--   vFun = \ _ finish -> finish $ \ s x bod -> pure $ ff $ Fun $ bind (s,x) bod,
+--   vApp = \ _ finish -> finish $ \ f a -> pure $ ff $ f `App` a,
+--   vPi = \ _ finish -> finish $ \ a x bod -> pure $ Pi a $ bind x bod,
+--   vTConF = \ _ finish -> finish $ \ name inds tel1 tel2 -> pure $ TConF name inds tel1 tel2,
+--   vDConF = \ _ finish -> finish $ \ name args tcname tel1 tel2 tel3 -> pure $ DConF name args (tcname, tel1) tel2 tel3,
+--   vCase = \ _ finish -> finish $ \ scruts branches an -> pure $ Case scruts (fmap (\ (p,b)-> Match $ bind p b) branches) an,
+--   vTyU = \ _ finish -> finish $ pure TyU,
+--   vC = \ _ finish -> finish $ \ trm ty -> pure $ C trm ty,
+--   vBlame = \ _ finish -> finish $ \ trm ty -> pure $ Blame trm ty,
+--   vSame = \ _ finish -> finish $ \ l info ev r -> pure $ Same l info ev r,
+--   vUnion = \ _ finish -> finish $ \ l ev r -> pure $ Union l ev r,
+--   vTind = \ _ finish -> finish $ \ i ev -> pure $ Tind i ev,
+--   vDind = \ _ finish -> finish $ \ i ev -> pure $ Dind i ev
+-- }

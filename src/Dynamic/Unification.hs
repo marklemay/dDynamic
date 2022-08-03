@@ -57,14 +57,14 @@ substWhy subThis withThis becuse (Equation {left= left', right= right', sameTy= 
     left= subst subThis withThis left', 
     right= subst subThis withThis right',
     sameTy= (subst subThis becuse sameTy'),
-    why= Union (subst subThis becuse left') tyok
-      $ Union why' tyok (subst subThis becuse right') }
+    why= union (subst subThis becuse left') tyok
+      $ union why' tyok (subst subThis becuse right') }
       where
-        tyok = (Union (subst subThis becuse sameTy') TyU sameTy') 
+        tyok = (union (subst subThis becuse sameTy') TyU sameTy') 
 
 substWhy' :: Var -> Term -> EqEv -> (Term, Cast, EqEv) -> (Term, Cast, EqEv)
 substWhy' subThis withThis becuse (left, cast, why)= 
-  (subst subThis ac left, cast', Union why cast' (subst subThis becuse left))
+  (subst subThis ac left, cast', union why cast' (subst subThis becuse left))
       where
         cast' = subst subThis becuse cast
         ac = C withThis cast
@@ -173,11 +173,11 @@ fOUni' elabInfo prob@(Prob {
 fOUni' elabInfo prob@(Prob {
   active = (Equation {left = C l p,right =r, why=why, sameTy=sameTy}) : active'}) = do
   -- loggg $ "C _"
-  fOUni' elabInfo $ prob {active = (Equation {left = l,right =r, why=why, sameTy= Union p TyU sameTy}) : active'}
+  fOUni' elabInfo $ prob {active = (Equation {left = l,right =r, why=why, sameTy= union p TyU sameTy}) : active'}
 fOUni' elabInfo prob@(Prob {
   active = (Equation {left = l,right = C r p, why=why, sameTy=sameTy}) : active'}) = do
   -- loggg $ "_ C"
-  fOUni' elabInfo $ prob {active = (Equation {left = l,right =r, why=why, sameTy= Union sameTy TyU p}) : active'}
+  fOUni' elabInfo $ prob {active = (Equation {left = l,right =r, why=why, sameTy= union sameTy TyU p}) : active'}
 
 --TODO these cases should be subsumed by erased aeq
 fOUni' elabInfo prob@(Prob {
