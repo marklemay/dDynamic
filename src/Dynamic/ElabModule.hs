@@ -274,8 +274,8 @@ stdlibwarns :: [Warning]
 stdlibIO :: Module
 (stdlibIO, stdlibwarns) = rwf $ visitModule stdlibIO'' (visitFresh visitorWarnSame) 
 
-rwf :: Monoid w => FreshMT (WriterT w Identity) a -> (a, w)
-rwf e = runIdentity $ runWriterT $ runFreshMT $ e
+-- rwf :: Monoid w => FreshMT (WriterT w Identity) a -> (a, w)
+-- rwf e = runIdentity $ runWriterT $ runFreshMT $ e
 -- eq 
 
 visitModule m@(Module {dataCtx=dataCtx, defCtx= DefCtx (Map.toList -> defCtx)}) w = runWithModuleMT (do
