@@ -1,6 +1,6 @@
 source-repository-package
   type: git
   location: https://github.com/marklemay/unbound-generics.git
-  tag: d710aeb11195a62da24a4a989402fa68f60fabcc
+  tag: e54afea7a8756c4970df10ad62b4bed2c8b6af13
 
 packages: ./dDynamic.cabal

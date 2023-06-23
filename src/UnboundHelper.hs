@@ -138,7 +138,7 @@ instance (Alpha a, Ord a) => Alpha (Set a) where
 instance (Subst b a, Ord a) => Subst b (Set a) where
   subst replaceThis withThis = Set.map (subst replaceThis withThis)
   substs subs = Set.map (substs subs)
-  substPat ctx i withThis = Set.map (substPat ctx i withThis)
+  substBvs ctx withThese = Set.map (substBvs ctx withThese)
 
 instance (Ord a, AlphaLShow a) => AlphaLShow (Set a) where
   aShow _ m = do
@@ -184,7 +184,7 @@ instance (Alpha v, Ord k, Show k) => Alpha (Map k v) where
 instance (Subst b v, Ord k, Show k) => Subst b (Map k v) where
   subst replaceThise withThis = Map.map (subst replaceThise withThis)
   substs subs = Map.map (substs subs)
-  substPat ctx i withThis = Map.map (substPat ctx i withThis)
+  substBvs ctx withThese = Map.map (substBvs ctx withThese)
 
 instance (AlphaLShow k, Ord k, AlphaLShow v) => AlphaLShow (Map k v) where
   aShow _ m = do

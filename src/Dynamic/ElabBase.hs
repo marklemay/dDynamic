@@ -53,6 +53,8 @@ import Control.Applicative
 import Control.Monad.Reader
     ( ReaderT(..), MonadReader(ask, local) )
 import Control.Monad.State
+import Control.Monad (MonadPlus)
+import Control.Monad.Fix (MonadFix)
 
 -- this file exsts becuase GHC is bad aobut cyclic module depndnecies!
 

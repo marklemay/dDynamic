@@ -56,6 +56,7 @@ import Dynamic.Unification
 import PreludeHelper
 import Dynamic.Patttern
 import Data.Either (partitionEithers)
+import Control.Monad (forM)
 
 -- if the type contains supstitutes insert a cast and return the substituted result
 elabInf :: HasCallStack => (Fresh m, MonadError C.Err m, WithDynDefs m, WithSourceLoc m) => Ast.Exp -> ElabInfo m -> m (C.Exp, C.Ty)

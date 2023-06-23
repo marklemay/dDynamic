@@ -11,7 +11,7 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 
 import Control.Monad.Reader
-import Control.Monad.Except ( forM_, MonadError(throwError, catchError) )
+import Control.Monad.Except (MonadError(throwError, catchError) )
 
 import PreludeHelper
 import UnboundHelper hiding (Telescope)
@@ -23,6 +23,7 @@ import Eq -- TODO: parameterize this over a monadic equality? so different falvo
 
 import Norm 
 import Unification
+import Control.Monad (forM, forM_)
 
 
 setRegionFrom :: Exp -> TcMonad a -> TcMonad a

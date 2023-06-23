@@ -29,6 +29,7 @@ import SourcePos
 import Dynamic.Eq
 import PreludeHelper
 import Dynamic.ElabBase
+import Control.Monad (forM)
 
 
 -- partially instantiate the visitor pattern for now

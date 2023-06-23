@@ -53,6 +53,7 @@ import Dynamic.Visitor
 import Dynamic.Norm (safeWhnf)
 import Dynamic.Warning
 import Control.Monad.Writer (WriterT (runWriterT))
+import Control.Monad (forM)
 
 -- to Elab a full module with fully mutual recirsive definitions we need to elaborate definitions in a "just in time" sort of way
 -- this is where the partial module comes in

@@ -29,7 +29,7 @@ import UnboundHelper
 import AlphaShow
 
 import Control.Monad.Except (catchError, MonadError(throwError), runExceptT)
-import Control.Monad (guard) -- TODO: need a version with string error
+import Control.Monad (guard, forM_) -- TODO: need a version with string error
 import qualified Data.Foldable
 import Control.Monad.Reader
 

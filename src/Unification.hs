@@ -13,7 +13,7 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 
 import Control.Monad.Reader
-import Control.Monad.Except ( forM_, MonadError(throwError, catchError) )
+import Control.Monad.Except (MonadError(throwError, catchError) )
 
 import PreludeHelper
 import UnboundHelper hiding (Telescope)

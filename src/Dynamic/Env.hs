@@ -45,6 +45,8 @@ import Dynamic.ElabBase
 import Dynamic.Norm
 import Control.Monad.RWS (MonadWriter)
 import Control.Monad.Writer
+import Control.Monad (MonadPlus)
+import Control.Monad.Fix (MonadFix)
 
 -- machinery to translate module definitions from the surface language into the core languguage
 -- TODO seperate the dynamic stuff (needed for reading acuatual files) from the static stuff (good for testing)

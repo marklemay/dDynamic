@@ -18,9 +18,8 @@ import qualified Data.Map as Map
 
 import Unbound.Generics.LocallyNameless
 import Control.Monad.Identity (runIdentity, Identity)
-import Control.Monad.List (ListT(..), runListT)
 import Control.Monad.Trans (MonadTrans(lift))
-import Control.Monad (guard)
+import Control.Monad (guard, MonadPlus,ap)
 import qualified Data.Functor.Classes as DataFunctorClasses
 
 
@@ -69,7 +68,7 @@ instance (Monad m) => MonadEither e (EitherT e m) where
 
 
 instance  (Monad m) => Functor (EitherT e m) where
-  fmap f dtma = do  a <- dtma; pure $ f a
+  fmap f dtma = do a <- dtma; pure $ f a
 
 
 instance  (Monad m) => Applicative (EitherT e  m) where
