@@ -53,7 +53,7 @@ library
 
   build-depends:
       containers, mtl,  base 
-    , unbound-generics, lens
+    , unbound-generics
     , logict
     , raw-strings-qq
     , haskeline
@@ -67,8 +67,9 @@ executable repl
   main-is:        Main.hs
   ghc-options:        -fwarn-incomplete-patterns -fwarn-incomplete-uni-patterns
   build-depends:
-      containers, mtl,  base 
-    , unbound-generics, lens
+      containers, mtl, base 
+    , unbound-generics
+    , lens
     , logict
     , raw-strings-qq  
     , haskeline
