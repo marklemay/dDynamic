@@ -11,16 +11,14 @@ import Control.Applicative (Alternative(empty),  Applicative(..), (<$>))
 
 import Control.Monad.Except (throwError, MonadError)
 
-import Debug.Pretty.Simple
-import Text.Pretty.Simple
 
 -- import Text.Pretty.Simple
 
-dPrinter a = pPrintStringOpt CheckColorTty defaultOutputOptionsDarkBg {outputOptionsCompact = True} $ show a
+dPrinter a = undefined -- pPrintStringOpt CheckColorTty defaultOutputOptionsDarkBg {outputOptionsCompact = True} $ show a
 
-dPrint a = pPrintStringOpt CheckColorTty defaultOutputOptionsDarkBg {outputOptionsCompact = True} $ a
+dPrint a = undefined -- pPrintStringOpt CheckColorTty defaultOutputOptionsDarkBg {outputOptionsCompact = True} $ a
 
-dTrace s a = pTraceOpt CheckColorTty defaultOutputOptionsDarkBg {outputOptionsCompact = True} s a
+dTrace s a = undefined -- pTraceOpt CheckColorTty defaultOutputOptionsDarkBg {outputOptionsCompact = True} s a
 
 -- todo a = trace ("optimistically assume " ++ show a) $ pure a
 
