@@ -11,8 +11,12 @@ import Control.Applicative (Alternative(empty),  Applicative(..), (<$>))
 
 import Control.Monad.Except (throwError, MonadError)
 
-import Debug.Pretty.Simple
+import Debug.Pretty.Simple ( pTraceOpt )
 import Text.Pretty.Simple
+    ( CheckColorTty(CheckColorTty),
+      OutputOptions(outputOptionsCompact),
+      pPrintStringOpt,
+      defaultOutputOptionsDarkBg )
 
 -- import Text.Pretty.Simple
 
