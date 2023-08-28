@@ -171,7 +171,7 @@ parseModule path s = prettyParse path s $ token modulep
 data ReplRes a
   = ParseError ParseError
   | TypeError C.Err
-  | SurfaceTypeError String 
+  -- | SurfaceTypeError String 
   -- TODO bad path
   | Ok a
   deriving Show

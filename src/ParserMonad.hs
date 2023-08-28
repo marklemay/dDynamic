@@ -1,8 +1,11 @@
+{-# LANGUAGE DeriveGeneric #-}
 -- origionally from https://github.com/BU-CS320/Summer-2019/blob/master/assignments/HW4/src/ParserMonad.hs
 
 module ParserMonad where
 
 import GHC.Stack
+
+import GHC.Generics (Generic)
 
 import Control.Monad(ap)
 import SourcePos hiding (endPos)
@@ -15,7 +18,7 @@ import PreludeHelper
 
 -- Path
 data ParseError = ParseError {message::String,range::SourceRange}
-  deriving Show
+  deriving (Show, Generic)
 
 -- the type of a parser
 newtype Parser a = Parser (SourcePos -> String -> Either (String, SourcePos, SourcePos) (a, SourcePos, String))
