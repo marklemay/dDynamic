@@ -1,5 +1,6 @@
 ## TODO
-put the reasonable ghc cmdline args into cabal
+* put the reasonable ghc cmdline args into cabal
+* kill the makefile if possible
 
 # dDynamic
 [![Haskell CI](https://github.com/marklemay/dDynamic/actions/workflows/haskell.yml/badge.svg)](https://github.com/marklemay/dDynamic/actions/workflows/haskell.yml)
