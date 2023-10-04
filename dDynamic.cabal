@@ -67,7 +67,7 @@ executable Ffi
   build-depends:
       containers, mtl, base 
     , unbound-generics
-    --, aeson 
+    , aeson 
     --, bytestring
 
   other-modules: Ffi.Ffi
