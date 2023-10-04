@@ -20,7 +20,7 @@ import Unbound.Generics.LocallyNameless
 import AlphaShow
 import PreludeHelper
 
-import Control.Monad.Logic
+--import Control.Monad.Logic
 import Control.Applicative
 import MonadTransformers
 
@@ -271,18 +271,18 @@ boolVec i  = do
   t <- boolVec (i-1 )
   pure $ h : t
 
-boolPatVec :: (MonadLogic m, Fresh m, Eq t, Num t) => t -> m [Pat]
-boolPatVec i | i == 0 = pure []
-boolPatVec i  = do 
-  px <- fresh $ s2n "px"
-  wild <- fresh $ s2n "_"
-  h <- choose [Pat "t" [] px, Pat "f" [] px, PVar wild]
-  t <- boolPatVec (i-1 )
-  pure $ h : t
+-- boolPatVec :: (MonadLogic m, Fresh m, Eq t, Num t) => t -> m [Pat]
+-- boolPatVec i | i == 0 = pure []
+-- boolPatVec i  = do 
+--   px <- fresh $ s2n "px"
+--   wild <- fresh $ s2n "_"
+--   h <- choose [Pat "t" [] px, Pat "f" [] px, PVar wild]
+--   t <- boolPatVec (i-1 )
+--   pure $ h : t
 
 
 -- pe0 = runLogicT $ runFreshMT $ boolPatVec 3
-pe0 = runFreshM $ observeManyT 10 (boolPatVec 3) 
+-- pe0 = runFreshM $ observeManyT 10 (boolPatVec 3) 
 
 
 -- ehostiveTest i = do

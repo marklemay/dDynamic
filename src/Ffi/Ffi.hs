@@ -7,7 +7,7 @@ module Ffi.Ffi where
 import Foreign.C
 
 
-import Data.Aeson -- (FromJSON, ToJSON, decode, encode)
+--import Data.Aeson -- (FromJSON, ToJSON, decode, encode)
 -- import qualified Data.ByteString.Lazy.Char8 as BL
 
 import Unbound.Generics.LocallyNameless
@@ -29,9 +29,6 @@ import Control.Monad.Except (catchError, MonadError(throwError), runExcept)
 import Control.Monad (guard, forM_) -- TODO: need a version with string error
 import qualified Data.Foldable
 import Control.Monad.Reader
-
--- for command line features
-import System.Console.Haskeline
 
 import System.IO
 
@@ -89,31 +86,31 @@ foreign export ccall doublestr :: CString ->  IO CString
 
 webPath = "" 
 
-loadString :: String -> Res
-loadString s = 
-  let sr = Just $ SourceRange (Just s) (SourcePos webPath 0 0) (endPos webPath s) in
+-- loadString :: String -> Res
+-- loadString s = 
+--   let sr = Just $ SourceRange (Just s) (SourcePos webPath 0 0) (endPos webPath s) in
 
-  -- putStrLn $ show $ pmstd path s
+--   -- putStrLn $ show $ pmstd path s
 
-  case parseModule webPath s of
-    Left ls -> ParseError ls
-    Right m@(ddefs,trmdefs) -> 
-      -- loggg $ lfullshow  m
-      let em = runExcept $ runFreshMT $ C.elabmodule (empTyEnv{dataCtx=ddefs,defCtx=trmdefs}) sr in
+--   case parseModule webPath s of
+--     Left ls -> ParseError ls
+--     Right m@(ddefs,trmdefs) -> 
+--       -- loggg $ lfullshow  m
+--       let em = runExcept $ runFreshMT $ C.elabmodule (empTyEnv{dataCtx=ddefs,defCtx=trmdefs}) sr in
 
-      case em of
-        Left e -> TypeError e
+--       case em of
+--         Left e -> TypeError e
 
-        Right mod ->  
+--         Right mod ->  
 
-          let 
-            mod' = runFreshM $ C.visitModule mod (C.visitFresh C.visitorCleanSameDef)
+--           let 
+--             mod' = runFreshM $ C.visitModule mod (C.visitFresh C.visitorCleanSameDef)
 
-            (mod'', warnings) = runWriter $ runFreshMT $ C.visitModule mod' (C.visitFresh C.visitorWarnSame)
-           in
+--             (mod'', warnings) = runWriter $ runFreshMT $ C.visitModule mod' (C.visitFresh C.visitorWarnSame)
+--            in
           
-          -- pure $ Ok mod'' 
-            Warnings warnings
+--           -- pure $ Ok mod'' 
+--             Warnings warnings
 
 
 
@@ -124,45 +121,45 @@ parseModule path s = prettyParse path s $ token modulep
 -- since everything is dumb: structured data -> (json) String -> CString -> js string
 
 
-instance ToJSON SourcePos
-instance ToJSON SourceRange
-instance ToJSON ParseError
-instance ToJSON C.Err
+-- instance ToJSON SourcePos
+-- instance ToJSON SourceRange
+-- instance ToJSON ParseError
+-- instance ToJSON C.Err
 
-instance ToJSON Info
-instance ToJSON Warning
+-- instance ToJSON Info
+-- instance ToJSON Warning
 
--- this is string for now
-instance ToJSON C.Exp where
-  toJSON e = object [ "userView" .=  (show $ runFreshM $ C.erase e)] -- risks some var capture
+-- -- this is string for now
+-- instance ToJSON C.Exp where
+--   toJSON e = object [ "userView" .=  (show $ runFreshM $ C.erase e)] -- risks some var capture
 
-instance ToJSON C.Pat where
-  toJSON e = object [ "userView" .=  (show $ runFreshM $ C.erasePat e)] -- risks some var capture
-
-
--- instance ToJSON C.Pat
-instance ToJSON a => ToJSON (Ignore a) where
-     toJSON (I a) = toJSON a
-
-instance ToJSON C.ObsAtom
+-- instance ToJSON C.Pat where
+--   toJSON e = object [ "userView" .=  (show $ runFreshM $ C.erasePat e)] -- risks some var capture
 
 
-data Res
-  = ParseError ParseError
-  | TypeError C.Err
-  | Warnings [Warning] 
-  deriving (Generic)
+-- -- instance ToJSON C.Pat
+-- instance ToJSON a => ToJSON (Ignore a) where
+--      toJSON (I a) = toJSON a
 
-instance ToJSON Res
+-- instance ToJSON C.ObsAtom
 
 
+-- data Res
+--   = ParseError ParseError
+--   | TypeError C.Err
+--   | Warnings [Warning] 
+--   deriving (Generic)
+
+-- instance ToJSON Res
 
 
-check :: CString -> IO CString
-check cs = do 
-  s <- peekCString cs
-  newCString $ show $ encode $ loadString s
-foreign export ccall check :: CString ->  IO CString
+
+
+-- check :: CString -> IO CString
+-- check cs = do 
+--   s <- peekCString cs
+--   newCString $ show $ encode $ loadString s
+-- foreign export ccall check :: CString ->  IO CString
 
 
 -- tups _ = (6,7)
