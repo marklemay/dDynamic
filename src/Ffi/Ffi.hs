@@ -68,21 +68,27 @@ import Data.List (intersperse, sortBy, sort)
 import Data.Function (on)
 import Dynamic.Warning (Warning, src)
 
-num _ = 4
 foreign export ccall num :: Int -> Int
+num _ = 4
+
+foreign export ccall numNum :: Int -> IO Int
+numNum _ = pure 4
 
 
-astr _ = newCString  "hello"
 foreign export ccall astr :: Int ->  IO CString
+astr _ = newCString  "hello"
 
-
-explode _ = error "whopssies"
-foreign export ccall explode :: Int ->  Int
 
 
 doublestr :: CString -> IO CString
 doublestr cs = do s <- peekCString cs; newCString $ s ++ s
 foreign export ccall doublestr :: CString ->  IO CString
+
+-- TODO
+
+foreign export ccall explode :: Int ->  Int
+explode _ = error "whopssies"
+
 
 webPath = "" 
 
