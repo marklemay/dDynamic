@@ -108,10 +108,10 @@ foreign export ccall doublestr :: CString ->  IO CString
 
 
 foreign export ccall e1 :: CString -> IO CString
-e1 _ = newCString $ unpack $ encode debugSR
+e1 _ = newCString $ show $ encode debugSR 
 
 foreign export ccall loadStringJson :: CString -> IO CString
-loadStringJson cs = do s <- peekCString cs; newCString $ unpack $ encode $ loadString s
+loadStringJson cs = do s <- peekCString cs; newCString $ show $ encode $ loadString s -- TODO unpack better than show?
 
 
 -- TODO test how bad stuff works
