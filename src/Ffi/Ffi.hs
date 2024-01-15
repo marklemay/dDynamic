@@ -110,6 +110,9 @@ foreign export ccall doublestr :: CString ->  IO CString
 foreign export ccall e1 :: CString -> IO CString
 e1 _ = newCString $ unpack $ encode debugSR
 
+foreign export ccall loadStringJson :: CString -> IO CString
+loadStringJson cs = do s <- peekCString cs; newCString $ unpack $ encode $ loadString s
+
 
 -- TODO test how bad stuff works
 
