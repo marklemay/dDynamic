@@ -68,6 +68,25 @@ import Data.List (intersperse, sortBy, sort)
 import Data.Function (on)
 import Dynamic.Warning (Warning, src)
 
+-- copied form https://github.com/hellwolf/haskell-examples someday a library should handle this
+
+import           Foreign.C.String
+import           Foreign.Marshal.Alloc
+import           Foreign.Ptr
+
+foreign export ccall callocBuffer :: Int -> IO (Ptr a)
+callocBuffer = callocBytes
+foreign export ccall freeBuffer :: Ptr a -> IO ()
+freeBuffer = free
+
+
+
+-- ...
+
+
+
+
+
 foreign export ccall num :: Int -> Int
 num _ = 4
 
