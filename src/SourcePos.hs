@@ -120,11 +120,11 @@ fullChar s (SourcePos _ row char) = char + fullChar' (lines' s) row
 
 fullChar' :: [String] -> Int -> Int
 fullChar' _ 0 = 0
-fullChar' (s:rest) lines | lines > 0  = length s +  fullChar' rest (lines-1)
+fullChar' (s:rest) lines | lines > 0  = length s + 1 +  fullChar' rest (lines-1)
 
 
 
-
+--eee = "data Unit : * {\n  | tt  : Unit\n};\n\n\ndata Unit : * {\n  | tt  : Uni\n};\n\n\ndata Unit : * {\n  | tt  : Unit\n};\n"
 
 -- another missind std lib function
 slice :: Int -> Int -> [a] -> [a]
