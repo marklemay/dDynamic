@@ -87,11 +87,13 @@ freeBuffer = free
 
 
 
+
+
 foreign export ccall num :: Int -> Int
-num _ = 4
+num x = x
 
 foreign export ccall numNum :: Int -> IO Int
-numNum _ = pure 4
+numNum x = pure x
 
 
 foreign export ccall astr :: Int ->  IO CString
@@ -103,7 +105,13 @@ doublestr :: CString -> IO CString
 doublestr cs = do s <- peekCString cs; newCString $ s ++ s
 foreign export ccall doublestr :: CString ->  IO CString
 
--- TODO
+
+
+e1 :: CString -> IO CString
+e1 _ = newCString $ show $ toEncoding debugSR
+
+
+-- TODO test how bad stuff works
 
 foreign export ccall explode :: Int ->  Int
 explode _ = error "whopssies"
@@ -185,6 +193,7 @@ check cs = do
   s <- peekCString cs
   newCString $ show $ encode $ loadString s
 foreign export ccall check :: CString ->  IO CString
+
 
 
 -- tups _ = (6,7)
