@@ -36,7 +36,10 @@ import Dynamic.Visitor
 import GHC.Generics
 import Data.Data
 import AlphaShow
+
+import Dynamic.Erasure
 import Unbound.Generics.LocallyNameless.Ignore (Ignore(I))
+import Data.List
 
 data Warning 
   = EqWarning Exp -- left
@@ -56,6 +59,35 @@ instance Eq Warning where
   (==) = aeq
 instance Ord Warning where
   compare = acompare
+
+getRange :: Warning -> SourceRange
+getRange (Unmatched _ (Just srange)) = srange
+getRange (EqWarning _ (Info{sr=(Just srange)}) _ _) = srange
+
+getMsg :: Warning -> String
+getMsg (EqWarning l info@Info{sr=msr,origL=I origL,origR=I origR} _ r)= let
+    
+    l' = runFreshM $ erase l
+    r' = runFreshM $ erase r
+
+    origL' = runFreshM $ erase origL
+    origR' = runFreshM $ erase origR
+
+
+  in "possibly mismatched types: \n" ++ 
+    (if (show origL', show origR') /= (show l', show r') 
+    then  "  " ++ show origL' ++ " =?= " ++ show origR' ++ " ~>"
+    else "")
+    ++ "  " ++ show l' ++ " =?= " ++ show r'
+    -- loggg $ lfullshow w
+
+getMsg (Unmatched ps msr)= 
+  "possibly unmatched patterns: \n" ++
+   (unlines $ map ( \ p ->
+                  -- TODO could do some fancy padding here
+                  "  | " ++ concat (intersperse " => "  (patSum <$> p)) ++ " => ...")
+                  ps)
+  
 
 consolidate :: [Warning] -> 
   (Map SourceRange (Ty,Ty, Map Obs (Exp,Exp)), Map SourceRange [[Pat]], [Warning])

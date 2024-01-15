@@ -8,8 +8,7 @@ import Foreign.C
 
 
 import Data.Aeson -- (FromJSON, ToJSON, decode, encode)
--- import qualified Data.ByteString.Lazy.Char8 as BL
-import qualified Data.ByteString.Lazy.Char8 as C
+import qualified Data.ByteString.Lazy.Char8 as BL
 
 import Unbound.Generics.LocallyNameless
 import Unbound.Generics.LocallyNameless.Ignore
@@ -110,10 +109,10 @@ foreign export ccall doublestr :: CString ->  IO CString
 
 
 foreign export ccall e1 :: CString -> IO CString
-e1 _ = newCString $ C.unpack $ encode debugSR 
+e1 _ = newCString $ BL.unpack $ encode debugSR 
 
 foreign export ccall loadStringJson :: CString -> IO CString
-loadStringJson cs = do s <- peekCString cs; newCString $ C.unpack $ encode $ loadString s -- TODO unpack better than show?
+loadStringJson cs = do s <- peekCString cs; newCString $ BL.unpack $ encode $ loadString s -- TODO unpack better than show?
 
 
 -- TODO test how bad stuff works
@@ -137,7 +136,7 @@ loadString s =
       let em = runExcept $ runFreshMT $ C.elabmodule (empTyEnv{dataCtx=ddefs,defCtx=trmdefs}) sr in
 
       case em of
-        Left e -> TypeError e
+        Left e -> typeErrorToRes e
 
         Right mod ->  
 
@@ -148,7 +147,7 @@ loadString s =
            in
           
           -- pure $ Ok mod'' 
-            Warnings warnings
+            warningsToRes warnings
 
 
 
@@ -182,18 +181,32 @@ instance ToJSON a => ToJSON (Ignore a) where
 instance ToJSON C.ObsAtom
 
 
+data WarningWrapper = WarningWrapper {warn::Warning, msg::String, warningStart::Int, warningEnd::Int}
+  deriving (Generic)
+
+instance ToJSON WarningWrapper
 
 data Res
   = ParseError 
     {err::ParseError, start::Int, end::Int} -- for dumb codemirror theneeds the literal exact start and end
-  | TypeError C.Err
-  | Warnings [Warning] 
+  | TypeError 
+  {typeError::C.Err , typeErrorStart::Int, typeErrorEnd::Int} 
+  | Warnings [WarningWrapper] 
   deriving (Generic)
 
 instance ToJSON Res
 
 parseError :: ParserMonad.ParseError -> Res
 parseError (pe@(ParserMonad.ParseError _ (SourceRange (Just src) start end))) = Ffi.Ffi.ParseError pe (fullChar src start) (fullChar src end)
+
+
+typeErrorToRes :: C.Err -> Res
+typeErrorToRes (te@(C.Msg _ (Just (SourceRange (Just src) start end)))) = TypeError te (fullChar src start) (fullChar src end)
+
+
+warningsToRes :: [Warning] -> Res
+warningsToRes ws = Warnings $ map (\ w -> case C.getRange w of
+  SourceRange (Just src) start end -> WarningWrapper w (C.getMsg w) (fullChar src start) (fullChar src end)) ws 
 
 
 check :: CString -> IO CString
