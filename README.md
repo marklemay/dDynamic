@@ -1,7 +1,15 @@
 ## TODO
+
+* https://joeyh.name/blog/entry/Haskell_webassembly_in_the_browser/ (can pay this guy?)
+https://news.ycombinator.com/item?id=37605688
+
+
 * put the reasonable ghc cmdline args into cabal
 * kill the makefile if possible
 * build the regular stuff in "normal" ghc also
+
+
+
 
 # dDynamic
 [![Haskell CI](https://github.com/marklemay/dDynamic/actions/workflows/haskell.yml/badge.svg)](https://github.com/marklemay/dDynamic/actions/workflows/haskell.yml)

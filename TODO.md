@@ -1,3 +1,6 @@
+clean up the bin output
+https://www.tweag.io/blog/2023-06-15-ghc-libfuzzer/
+
 
 time permitting
 * better motive inference / syntactic sugar for function by cases
