@@ -18,7 +18,8 @@ import qualified Data.Set as Set
 type Path = String
 
 -- TODO figure out what is going on here and possibly do that https://github.com/sweirich/trellys/blob/63ea89d8fa09929c23504665c55a3d909fe047c5/zombie-trellys/src/Language/Trellys/GenericBind.hs#L44
-data SourcePos = SourcePos {path::Path, col::Int, char :: Int}
+-- TODO rename char =col
+data SourcePos = SourcePos {path::Path, row::Int, char :: Int}
   deriving (
     Show,
    Generic, Typeable)
@@ -108,6 +109,21 @@ prettyRangeloc (SourcePos path col row) (SourcePos path' col' row')
       path ++ ":" ++ show col ++ "@" ++ show row ++ "-" ++ show col' ++ "@" ++ show row'
 prettyRangeloc (SourcePos path col row) (SourcePos path' col' row') =
       path ++ ":" ++ show col ++ "@" ++ show row ++ "-" ++ path ++ show col' ++ "@" ++ show row'
+
+
+
+
+-- for webASM codemirror
+
+fullChar :: String -> SourcePos -> Int
+fullChar s (SourcePos _ row char) = char + fullChar' (lines' s) row
+
+fullChar' :: [String] -> Int -> Int
+fullChar' _ 0 = 0
+fullChar' (s:rest) lines | lines > 0  = length s +  fullChar' rest (lines-1)
+
+
+
 
 
 -- another missind std lib function

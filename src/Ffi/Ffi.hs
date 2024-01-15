@@ -36,7 +36,7 @@ import Debug.Trace
 
 import Prelude hiding((^^), exp, pi, pred)
 import Parser
-import ParserMonad hiding (ParseError)
+import ParserMonad
 import Env
 import Ast
 -- import StdLib
@@ -73,6 +73,7 @@ import Dynamic.Warning (Warning, src)
 import           Foreign.C.String
 import           Foreign.Marshal.Alloc
 import           Foreign.Ptr
+import GHC.Base (undefined)
 
 foreign export ccall callocBuffer :: Int -> IO (Ptr a)
 callocBuffer = callocBytes
@@ -129,7 +130,7 @@ loadString s =
   -- putStrLn $ show $ pmstd path s
 
   case parseModule webPath s of
-    Left ls -> ParseError ls
+    Left ls -> parseError ls
     Right m@(ddefs,trmdefs) -> 
       -- loggg $ lfullshow  m
       let em = runExcept $ runFreshMT $ C.elabmodule (empTyEnv{dataCtx=ddefs,defCtx=trmdefs}) sr in
@@ -180,15 +181,18 @@ instance ToJSON a => ToJSON (Ignore a) where
 instance ToJSON C.ObsAtom
 
 
+
 data Res
-  = ParseError ParseError
+  = ParseError 
+    {err::ParseError, start::Int, end::Int} -- for dumb codemirror theneeds the literal exact start and end
   | TypeError C.Err
   | Warnings [Warning] 
   deriving (Generic)
 
 instance ToJSON Res
 
-
+parseError :: ParserMonad.ParseError -> Res
+parseError (pe@(ParserMonad.ParseError _ (SourceRange (Just src) start end))) = Ffi.Ffi.ParseError pe (fullChar src start) (fullChar src end)
 
 
 check :: CString -> IO CString
@@ -196,8 +200,6 @@ check cs = do
   s <- peekCString cs
   newCString $ show $ encode $ loadString s
 foreign export ccall check :: CString ->  IO CString
-
-
 
 -- tups _ = (6,7)
 -- foreign export ccall tups :: Int -> (Int,Int)
