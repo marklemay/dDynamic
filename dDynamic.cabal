@@ -70,7 +70,7 @@ executable Ffi
       containers, mtl, base 
     , unbound-generics
     , aeson 
-    --, bytestring
+    , bytestring
 
   other-modules: Ffi.Ffi
   hs-source-dirs:     src
