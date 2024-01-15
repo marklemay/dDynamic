@@ -63,7 +63,7 @@ library
 
 executable Ffi
   main-is:        Ffi/Main.hs
-  ghc-options:        -optl-mexec-model=reactor -optl-Wl,--export=hs_init,--export=num,--export=numNum,--export=numNum,--export=astr,--export=doublestr
+  ghc-options:        -optl-mexec-model=reactor -optl-Wl,--export=hs_init,--export=num,--export=numNum,--export=astr,--export=doublestr
   build-depends:
       containers, mtl, base 
     , unbound-generics
