@@ -57,13 +57,15 @@ library
     --, logict
     --, raw-strings-qq
     --, haskeline
-
+    
   hs-source-dirs:     src
   default-language:   Haskell2010
 
 executable Ffi
+-- FFI for web assmbly for the web frontend
   main-is:        Ffi/Main.hs
-  ghc-options:        -optl-mexec-model=reactor -optl-Wl,--export=hs_init,--export=callocBuffer,--export=freeBuffer,--export=num,--export=numNum,--export=astr,--export=doublestr
+-- TODO can kill main?
+  ghc-options:        -optl-mexec-model=reactor -optl-Wl,--export=hs_init,--export=callocBuffer,--export=freeBuffer,--export=num,--export=numNum,--export=astr,--export=doublestr,--export=e1
   build-depends:
       containers, mtl, base 
     , unbound-generics
