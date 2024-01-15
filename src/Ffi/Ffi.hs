@@ -107,7 +107,7 @@ foreign export ccall doublestr :: CString ->  IO CString
 
 
 
-e1 :: CString -> IO CString
+foreign export ccall e1 :: CString -> IO CString
 e1 _ = newCString $ show $ toEncoding debugSR
 
 
