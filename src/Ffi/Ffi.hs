@@ -26,7 +26,7 @@ import UnboundHelper
 import AlphaShow
 
 import Control.Monad.Except (catchError, MonadError(throwError), runExcept)
-import Control.Monad (guard, forM_) -- TODO: need a version with string error
+import Control.Monad (guard, forM) -- TODO: need a version with string error
 import qualified Data.Foldable
 import Control.Monad.Reader
 
@@ -139,26 +139,22 @@ loadString s =
       case em of
         Left e -> typeErrorToRes e
 
-        Right mod -> do
-          let mod' = runFreshM $ C.visitModule mod (C.visitFresh C.visitorCleanSameDef)
+        Right mod -> let 
+          mod' = runFreshM $ C.visitModule mod (C.visitFresh C.visitorCleanSameDef)
 
-          let (mod'', warnings) = runWriter $ runFreshMT $ C.visitModule mod' (C.visitFresh C.visitorWarnSame)
-          
-          infos <- forM examples $ \ (start,end, example) -> do
-            let sr = SourceRange (Just s) start end
-            let exp' = C.underModule example mod''
-            
-            mExp <- runExceptT $ runFreshMT $ C.runWithModuleMT (C.runWithSourceLocMT (C.elabInf' exp' (C.empElabInfo Dynamic.Norm.whnfd) ) sr ) mod
-            case mExp of
-              Right (e,cty) -> do
-                -- Info ((show (runFreshM $ C.erase e)) ++  " : " ++ show (runFreshM $ C.erase cty))
-                me' <- runExceptT $ runFreshMT $ C.runWithModuleMT (Dynamic.Norm.whnfd e) mod
-                case me' of
-                  Right e' -> pure $ Info ((show (runFreshM $ C.erase e')) ++  " : " ++ (show (runFreshM $ C.erase cty))  ) (fullChar src start) (fullChar src end)
-                  _ -> pure $ Info "TODO" (fullChar src start) (fullChar src end)
-              _ -> pure $ Info "TODO" (fullChar src start) (fullChar src end)
-
-          toRes warnings infos
+          (mod'', warnings) = runWriter $ runFreshMT $ C.visitModule mod' (C.visitFresh C.visitorWarnSame)
+          infos = fmap ( \ (start,end, example) -> let
+            sr = SourceRange (Just s) start end
+            exp' = C.underModule example mod''
+            in 
+              case runExcept $ runFreshMT $ C.runWithModuleMT (C.runWithSourceLocMT (C.elabInf' exp' (C.empElabInfo Dynamic.Norm.whnfd) ) (Just sr) ) mod of
+                Right (e,cty) ->
+                  case runExcept $ runFreshMT $ C.runWithModuleMT (Dynamic.Norm.whnfd e) mod of
+                    Right e' -> BangInfo ((show (runFreshM $ C.erase e')) ++  " : " ++ (show (runFreshM $ C.erase cty))  ) (fullChar s start) (fullChar s end)
+                    _ -> BangInfo "TODO" (fullChar s start) (fullChar s end)
+                _ -> BangInfo "TODO" (fullChar s start) (fullChar s end)
+            ) examples
+          in toRes warnings infos
 
 
 
@@ -205,17 +201,17 @@ instance ToJSON WarningWrapper
 
 
 
-data Info = Info {msg::String, warningStart::Int, warningEnd::Int}
+data BangInfo = BangInfo {infoMsg::String, infoStart::Int, infoEnd::Int}
   deriving (Generic)
 
-instance ToJSON Info
+instance ToJSON BangInfo
 
 data Res
   = ParseError 
     {err::ParseError, start::Int, end::Int} -- for dumb codemirror theneeds the literal exact start and end
   | TypeError 
   {typeError::C.Err , typeErrorStart::Int, typeErrorEnd::Int} 
-  | Warnings [WarningWrapper] [Info]
+  | Warnings [WarningWrapper] [BangInfo]
   deriving (Generic)
 
 instance ToJSON Res
@@ -228,9 +224,9 @@ typeErrorToRes :: C.Err -> Res
 typeErrorToRes (te@(C.Msg _ (Just (SourceRange (Just src) start end)))) = TypeError te (fullChar src start) (fullChar src end)
 
 
-toRes :: [Warning] ->  [Info] -> Res
+toRes :: [Warning] ->  [BangInfo] -> Res
 toRes ws infos = Warnings (map (\ w -> case C.getRange w of
-  SourceRange (Just src) start end -> WarningWrapper w (C.getMsg w) (fullChar src start) (fullChar src end)) ws ) toRes
+  SourceRange (Just src) start end -> WarningWrapper w (C.getMsg w) (fullChar src start) (fullChar src end)) ws ) infos
 
 
 warningsToRes :: [Warning] -> Res
