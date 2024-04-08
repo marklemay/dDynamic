@@ -1,9 +1,11 @@
 # dDynamic
 [![Haskell CI](https://github.com/marklemay/dDynamic/actions/workflows/haskell.yml/badge.svg)](https://github.com/marklemay/dDynamic/actions/workflows/haskell.yml)
 
+try it out: https://marklemay.github.io/ddynamic-web/
+
 a minimal dependently typed langugage where deffintional equality can be resolved dynamically at runtime.
 
-The project is tested in the following environments:
+The project is tested in the following environment(s):
 - GHC 9.6.1 and cabal 3.10.1.0
 
 ## REPL
