@@ -131,7 +131,7 @@ loadString s =
 
   case parseModule webPath s of
     Left ls -> parseError ls
-    Right m@(ddefs,trmdefs) -> 
+    Right (m@(ddefs,trmdefs), examples) -> 
       -- loggg $ lfullshow  m
       let em = runExcept $ runFreshMT $ C.elabmodule (empTyEnv{dataCtx=ddefs,defCtx=trmdefs}) sr in
 
@@ -151,7 +151,7 @@ loadString s =
 
 
 
-parseModule :: Path -> String -> Either ParseError Module
+parseModule :: Path -> String -> Either ParseError Env.OpenModule
 parseModule path s = prettyParse path s $ token modulep 
 
 

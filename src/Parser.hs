@@ -231,11 +231,11 @@ pat = (do
   keyword ")"
   pure $ Pat dCname args
 
-modulep :: Parser Module
+modulep :: Parser Env.OpenModule
 modulep = do
-  e <- rep $ do d <- datadef <||> termdef; keyword ";"; pure d
-  let (Map.fromList -> datas, Map.fromList -> terms) = partitionEithers e
-  pure $ Env.undermodule (datas, terms) datas terms
+  e <- rep $ do d <- datadef <||> termdef <||> exampleStatment; keyword ";"; pure d
+  let (partitionEithers -> (partitionEithers -> (Map.fromList -> datas, Map.fromList -> terms), examples)) = e
+  pure $ Env.undermodule ((datas, terms),examples) datas terms
 
 datadef :: Parser (TCName, DataDef)
 datadef = do
@@ -269,6 +269,10 @@ termdef = do
   pure (x, (lamall largs bod, ty))
 
 
+exampleStatment :: Parser Term
+exampleStatment = do
+  keyword "!"
+  loc exp
 
 lamall :: [Var] -> Exp -> Exp
 lamall [] e = e 

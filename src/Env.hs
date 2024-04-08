@@ -38,6 +38,9 @@ type DefCtx = Map RefName (Term, Ty)
 
 type Module = (Map TCName DataDef, DefCtx)
 
+-- we can have some internal stuff in a module that should not be exposed (examples for instnace)
+type OpenModule = (Module, [Term])
+
 -- TODO clean up the notion of module, undermodule
 
 -- | rempaps all the unbound vars that match dataconstructors and typeconstructors 
