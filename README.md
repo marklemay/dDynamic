@@ -1,18 +1,6 @@
-## TODO
-
-* https://joeyh.name/blog/entry/Haskell_webassembly_in_the_browser/ (can pay this guy?)
-https://news.ycombinator.com/item?id=37605688
-
-
-* put the reasonable ghc cmdline args into cabal
-* kill the makefile if possible
-* build the regular stuff in "normal" ghc also
-
-
-
-
 # dDynamic
 [![Haskell CI](https://github.com/marklemay/dDynamic/actions/workflows/haskell.yml/badge.svg)](https://github.com/marklemay/dDynamic/actions/workflows/haskell.yml)
+[![Haskell webasm compile](https://github.com/marklemay/dDynamic/actions/workflows/webasm.yaml/badge.svg)](https://github.com/marklemay/dDynamic/actions/workflows/webasm.yaml)
 
 a minimal dependently typed langugage where deffintional equality can be resolved dynamically at runtime.
 
@@ -58,3 +46,12 @@ To run the haskell project: ```cabal new-repl```
 
 To run the test suit: ```cabal new-test```
 
+## TODO
+
+* https://joeyh.name/blog/entry/Haskell_webassembly_in_the_browser/ (can pay this guy?)
+https://news.ycombinator.com/item?id=37605688
+
+
+* put the reasonable ghc cmdline args into cabal
+* kill the makefile if possible
+* build the regular stuff in "normal" ghc also

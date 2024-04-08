@@ -215,7 +215,7 @@ data Res
     {err::ParseError, start::Int, end::Int} -- for dumb codemirror theneeds the literal exact start and end
   | TypeError 
   {typeError::C.Err , typeErrorStart::Int, typeErrorEnd::Int} 
-  | Warnings [WarningWrapper] [BangInfo]
+  | Warnings {warnings::[WarningWrapper], infos::[BangInfo]}
   deriving (Generic)
 
 instance ToJSON Res

@@ -74,9 +74,9 @@ getMsg (EqWarning l info@Info{sr=msr,origL=I origL,origR=I origR} _ r)= let
     origR' = runFreshM $ erase origR
 
 
-  in "possibly mismatched types: \n" ++ 
+  in "possibly mismatched types: <br>\n" ++ 
     (if (show origL', show origR') /= (show l', show r') 
-    then  "  " ++ show origL' ++ " =?= " ++ show origR' ++ " ~>\n"
+    then  "  " ++ show origL' ++ " =?= " ++ show origR' ++ "\n ~> <br>\n"
     else "")
     ++ "  " ++ show l' ++ " =?= " ++ show r'
     -- loggg $ lfullshow w
