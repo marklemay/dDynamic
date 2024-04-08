@@ -151,7 +151,7 @@ loadString s =
             in 
               case runExcept $ runFreshMT $ C.runWithModuleMT (C.runWithSourceLocMT (C.elabInf' exp' (C.empElabInfo Dynamic.Norm.whnfd) ) (Just sr) ) mod of
                 Right (e,cty) ->
-                  case runExcept $ runFreshMT $ C.runWithModuleMT (Dynamic.Norm.whnfd e) mod of
+                  case runExcept $ runFreshMT $ C.runWithModuleMT (C.cbvOrErr e) mod of
                     Right e' -> Right $ BangInfo ((show (runFreshM $ C.erase e')) ++  " : " ++ (show (runFreshM $ C.erase cty))  ) (fullChar s start) (fullChar s end)
                     Left (C.EqErr l (info@C.Info{C.sr=(Just (SourceRange (Just s) start1 end1))}) _ r) -> Left $ WarningWrapper ("unequal type assumption! " ++ show (runFreshM $ C.erase l) ++ " =/= " ++ show (runFreshM $ C.erase r)) (fullChar s start1) (fullChar s end1)
                     Left (C.UnMatchedPatErr scruts pats (Just (SourceRange (Just s) start1 end1))) -> Left $ WarningWrapper ("unmatched pattern! ") (fullChar s start1) (fullChar s end1)
