@@ -22,6 +22,7 @@ import qualified Env
 
 import Data.Char
 import Env (Module)
+import SourcePos (SourcePos)
 
 comment :: Parser ()
 comment = do
@@ -269,10 +270,13 @@ termdef = do
   pure (x, (lamall largs bod, ty))
 
 
-exampleStatment :: Parser Term
+exampleStatment :: Parser (SourcePos,SourcePos,Term)
 exampleStatment = do
+  s <- gets
   keyword "!"
-  loc exp
+  e <- exp
+  s' <- gets
+  pure (s,s', e)
 
 lamall :: [Var] -> Exp -> Exp
 lamall [] e = e 

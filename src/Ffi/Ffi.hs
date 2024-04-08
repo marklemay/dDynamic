@@ -74,6 +74,7 @@ import           Foreign.C.String
 import           Foreign.Marshal.Alloc
 import           Foreign.Ptr
 import GHC.Base (undefined)
+import SourcePos (SourceRange(SourceRange))
 
 foreign export ccall callocBuffer :: Int -> IO (Ptr a)
 callocBuffer = callocBytes
@@ -138,18 +139,34 @@ loadString s =
       case em of
         Left e -> typeErrorToRes e
 
-        Right mod ->  
+        Right mod -> do
+          let mod' = runFreshM $ C.visitModule mod (C.visitFresh C.visitorCleanSameDef)
 
-          let 
-            mod' = runFreshM $ C.visitModule mod (C.visitFresh C.visitorCleanSameDef)
-
-            (mod'', warnings) = runWriter $ runFreshMT $ C.visitModule mod' (C.visitFresh C.visitorWarnSame)
-           in
+          let (mod'', warnings) = runWriter $ runFreshMT $ C.visitModule mod' (C.visitFresh C.visitorWarnSame)
           
-          -- pure $ Ok mod'' 
-            warningsToRes warnings
+          infos <- forM examples $ \ (start,end, example) -> do
+            let sr = SourceRange (Just s) start end
+            let exp' = C.underModule example mod''
+            
+            mExp <- runExceptT $ runFreshMT $ C.runWithModuleMT (C.runWithSourceLocMT (C.elabInf' exp' (C.empElabInfo Dynamic.Norm.whnfd) ) sr ) mod
+            case mExp of
+              Right (e,cty) -> do
+                -- Info ((show (runFreshM $ C.erase e)) ++  " : " ++ show (runFreshM $ C.erase cty))
+                me' <- runExceptT $ runFreshMT $ C.runWithModuleMT (Dynamic.Norm.whnfd e) mod
+                case me' of
+                  Right e' -> pure $ Info ((show (runFreshM $ C.erase e')) ++  " : " ++ (show (runFreshM $ C.erase cty))  ) (fullChar src start) (fullChar src end)
+                  _ -> pure $ Info "TODO" (fullChar src start) (fullChar src end)
+              _ -> pure $ Info "TODO" (fullChar src start) (fullChar src end)
+
+          toRes warnings infos
 
 
+
+-- getRes :: SourceRange -> Either Err (Term, Term) -> Either Warning Info
+-- getRes (SourceRange (Just src) start end) (Right (e,cty)) = Right $ Info ((show (runFreshM $ C.erase e)) ++  " : " ++ show (runFreshM $ C.erase cty)) (fullChar src start) (fullChar src end)
+-- getRes _ 
+
+--   SourceRange (Just src) start end -> WarningWrapper w (C.getMsg w) (fullChar src start) (fullChar src end)) ws ) toRes
 
 parseModule :: Path -> String -> Either ParseError Env.OpenModule
 parseModule path s = prettyParse path s $ token modulep 
@@ -186,12 +203,19 @@ data WarningWrapper = WarningWrapper {warn::Warning, msg::String, warningStart::
 
 instance ToJSON WarningWrapper
 
+
+
+data Info = Info {msg::String, warningStart::Int, warningEnd::Int}
+  deriving (Generic)
+
+instance ToJSON Info
+
 data Res
   = ParseError 
     {err::ParseError, start::Int, end::Int} -- for dumb codemirror theneeds the literal exact start and end
   | TypeError 
   {typeError::C.Err , typeErrorStart::Int, typeErrorEnd::Int} 
-  | Warnings [WarningWrapper] 
+  | Warnings [WarningWrapper] [Info]
   deriving (Generic)
 
 instance ToJSON Res
@@ -204,9 +228,14 @@ typeErrorToRes :: C.Err -> Res
 typeErrorToRes (te@(C.Msg _ (Just (SourceRange (Just src) start end)))) = TypeError te (fullChar src start) (fullChar src end)
 
 
+toRes :: [Warning] ->  [Info] -> Res
+toRes ws infos = Warnings (map (\ w -> case C.getRange w of
+  SourceRange (Just src) start end -> WarningWrapper w (C.getMsg w) (fullChar src start) (fullChar src end)) ws ) toRes
+
+
 warningsToRes :: [Warning] -> Res
-warningsToRes ws = Warnings $ map (\ w -> case C.getRange w of
-  SourceRange (Just src) start end -> WarningWrapper w (C.getMsg w) (fullChar src start) (fullChar src end)) ws 
+warningsToRes ws = Warnings (map (\ w -> case C.getRange w of
+  SourceRange (Just src) start end -> WarningWrapper w (C.getMsg w) (fullChar src start) (fullChar src end)) ws ) []
 
 
 check :: CString -> IO CString
