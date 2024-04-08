@@ -16,6 +16,8 @@ import Unbound.Generics.LocallyNameless.Ignore
 import GHC.Generics (Generic, SourceStrictness (SourceStrict))
 import Data.Typeable (Typeable)
 
+import Data.Either
+
 import Data.Map (Map)
 import qualified Data.Map as Map
 
@@ -143,24 +145,26 @@ loadString s =
           mod' = runFreshM $ C.visitModule mod (C.visitFresh C.visitorCleanSameDef)
 
           (mod'', warnings) = runWriter $ runFreshMT $ C.visitModule mod' (C.visitFresh C.visitorWarnSame)
-          infos = fmap ( \ (start,end, example) -> let
+          (moreWarns, infos) = partitionEithers $ fmap ( \ (start,end, example) -> let
             sr = SourceRange (Just s) start end
             exp' = C.underModule example mod''
             in 
               case runExcept $ runFreshMT $ C.runWithModuleMT (C.runWithSourceLocMT (C.elabInf' exp' (C.empElabInfo Dynamic.Norm.whnfd) ) (Just sr) ) mod of
                 Right (e,cty) ->
                   case runExcept $ runFreshMT $ C.runWithModuleMT (Dynamic.Norm.whnfd e) mod of
-                    Right e' -> BangInfo ((show (runFreshM $ C.erase e')) ++  " : " ++ (show (runFreshM $ C.erase cty))  ) (fullChar s start) (fullChar s end)
-                    _ -> BangInfo "TODO" (fullChar s start) (fullChar s end)
-                _ -> BangInfo "TODO" (fullChar s start) (fullChar s end)
+                    Right e' -> Right $ BangInfo ((show (runFreshM $ C.erase e')) ++  " : " ++ (show (runFreshM $ C.erase cty))  ) (fullChar s start) (fullChar s end)
+                    Left (C.EqErr l (info@C.Info{C.sr=(Just (SourceRange (Just s) start1 end1))}) _ r) -> Left $ WarningWrapper ("unequal type assumption! " ++ show (runFreshM $ C.erase l) ++ " =/= " ++ show (runFreshM $ C.erase r)) (fullChar s start1) (fullChar s end1)
+                    Left (C.UnMatchedPatErr scruts pats (Just (SourceRange (Just s) start1 end1))) -> Left $ WarningWrapper ("unmatched pattern! ") (fullChar s start1) (fullChar s end1)
+                    _ -> Left $ WarningWrapper "Error2" (fullChar s start) (fullChar s end)
+                Left e -> Left $ WarningWrapper "Error" (fullChar s start) (fullChar s end)
             ) examples
-          in toRes warnings infos
+          in Warnings (moreWarns ++ warningsToWarningWrapper warnings) infos
 
 
 
--- getRes :: SourceRange -> Either Err (Term, Term) -> Either Warning Info
+-- getRes :: SourceRange -> Either C.Err (Term, Term) -> Either Warning Info
 -- getRes (SourceRange (Just src) start end) (Right (e,cty)) = Right $ Info ((show (runFreshM $ C.erase e)) ++  " : " ++ show (runFreshM $ C.erase cty)) (fullChar src start) (fullChar src end)
--- getRes _ 
+-- getRes _ _ = undefined
 
 --   SourceRange (Just src) start end -> WarningWrapper w (C.getMsg w) (fullChar src start) (fullChar src end)) ws ) toRes
 
@@ -194,7 +198,7 @@ instance ToJSON a => ToJSON (Ignore a) where
 instance ToJSON C.ObsAtom
 
 
-data WarningWrapper = WarningWrapper {warn::Warning, msg::String, warningStart::Int, warningEnd::Int}
+data WarningWrapper = WarningWrapper {msg::String, warningStart::Int, warningEnd::Int}
   deriving (Generic)
 
 instance ToJSON WarningWrapper
@@ -224,14 +228,15 @@ typeErrorToRes :: C.Err -> Res
 typeErrorToRes (te@(C.Msg _ (Just (SourceRange (Just src) start end)))) = TypeError te (fullChar src start) (fullChar src end)
 
 
+
 toRes :: [Warning] ->  [BangInfo] -> Res
 toRes ws infos = Warnings (map (\ w -> case C.getRange w of
-  SourceRange (Just src) start end -> WarningWrapper w (C.getMsg w) (fullChar src start) (fullChar src end)) ws ) infos
+  SourceRange (Just src) start end -> WarningWrapper (C.getMsg w) (fullChar src start) (fullChar src end)) ws ) infos
 
 
-warningsToRes :: [Warning] -> Res
-warningsToRes ws = Warnings (map (\ w -> case C.getRange w of
-  SourceRange (Just src) start end -> WarningWrapper w (C.getMsg w) (fullChar src start) (fullChar src end)) ws ) []
+warningsToWarningWrapper :: [Warning] -> [WarningWrapper]
+warningsToWarningWrapper ws = map (\ w -> case C.getRange w of
+  SourceRange (Just src) start end -> WarningWrapper (C.getMsg w) (fullChar src start) (fullChar src end)) ws
 
 
 check :: CString -> IO CString
