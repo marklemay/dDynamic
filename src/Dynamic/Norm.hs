@@ -561,9 +561,6 @@ cbvOrErr (Blame why sameTy) = do
   sameTy' <- norm cbvErrNext sameTy -- preffer type errors to term errors
   why' <- norm cbvErrNext why 
   pure $ Blame why' sameTy'
-cbvOrErr (C u ev) = do
-  u' <- norm cbvErrNext u
-  pure $ (C u' ev)
 cbvOrErr e = do
   e' <- norm cbvErrNext e 
   
