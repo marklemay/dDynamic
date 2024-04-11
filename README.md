@@ -19,7 +19,7 @@ supports commands for
 * quit `:q`
 * check type of an expression `:t`
 * normalize expression `:n`
-* enter an expression without a prefix with attemopt to get all information from it, typing/normalization/..
+* enter an expression without a prefix attempts to get all information from it, typing/normalization/..
 
 for example
 ```
