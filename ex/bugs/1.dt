@@ -1,0 +1,24 @@
+Nat : *;
+Nat = (A : *) -> A -> (Nat -> A -> A) -> A;
+
+Z : Nat;
+Z A z s = z;
+
+S : Nat -> Nat;
+S n A z s = s n (n A z s);
+
+elimNat : (P : Nat -> *) -> P Z -> ((m : Nat) -> P m -> P (S m)) -> (n : Nat) -> P n;
+elimNat P z s n = n (P n) z s;
+
+predMotive : Nat -> *;
+predMotive _ = Nat;
+
+sCase : Nat -> Nat -> Nat;
+sCase n _ = n;
+
+pred : Nat -> Nat;
+pred n = elimNat predMotive Z sCase n;
+
+-- ! pred (S Z);
+
+-- this works somewhat as intended, since there is an invisible Cast blocking whnf

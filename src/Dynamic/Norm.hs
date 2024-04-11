@@ -50,7 +50,7 @@ import Norm (isVal)
 import Control.Exception hiding (assert)
 import GHC.IO.Encoding.Latin1 (mkLatin1_checked)
 
-
+-- TODO honestly could all use a rewrite
 
 data Next m = Next {
   -- chkN :: (Exp -> Info -> EqEv -> Exp -> m Exp),
@@ -561,7 +561,9 @@ cbvOrErr (Blame why sameTy) = do
   sameTy' <- norm cbvErrNext sameTy -- preffer type errors to term errors
   why' <- norm cbvErrNext why 
   pure $ Blame why' sameTy'
-
+cbvOrErr (C u ev) = do
+  u' <- norm cbvErrNext u
+  pure $ (C u' ev)
 cbvOrErr e = do
   e' <- norm cbvErrNext e 
   
